@@ -368,6 +368,36 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     return `${newHeight}%`;
   };
 
+  // Получение состава продукта
+  const getProductIngredients = () => {
+    const category = product.category || 'coffee';
+    
+    // Разные составы в зависимости от категории и типа продукта
+    if (category === 'food') {
+      if (product.name.toLowerCase().includes('круассан')) {
+        return 'мука, сливочное масло, сахар, соль, дрожжи, яйца';
+      } else if (product.name.toLowerCase().includes('сэндвич')) {
+        return 'хлеб, куриное филе, томаты, салат, соус, специи';
+      } else if (product.name.toLowerCase().includes('авокадо')) {
+        return 'хлеб, авокадо, помидоры черри, микрозелень, оливковое масло, соль, перец';
+      }
+      return 'мука, сахар, яйца, растительные и животные жиры, разрыхлитель';
+    } else if (category === 'coffee') {
+      return 'кофе арабика, вода' + (product.name.toLowerCase().includes('капучино') || product.name.toLowerCase().includes('латте') ? ', молоко' : '');
+    } else if (category === 'tea') {
+      if (product.name.toLowerCase().includes('зеленый')) {
+        return 'листья зеленого чая, природные ароматизаторы';
+      } else if (product.name.toLowerCase().includes('черный')) {
+        return 'листья черного чая';
+      } else if (product.name.toLowerCase().includes('травяной')) {
+        return 'смесь трав, цветов и специй';
+      }
+      return 'чайные листья, натуральные экстракты';
+    }
+    
+    return '';
+  };
+
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
@@ -385,14 +415,14 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         ></div>
         
         {/* Декоративный элемент на изображении */}
-        <div className={`absolute top-3 left-3 z-20 rounded-full transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className={`absolute top-[100px] left-3 z-20 rounded-full transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <span className="flex items-center space-x-2 bg-black/40 backdrop-blur-sm rounded-full py-1 px-3 border border-white/10">
             <span className="text-lg">{getProductEmoji()}</span>
             <span className="text-xs font-medium">{product.category?.toUpperCase()}</span>
           </span>
         </div>
         
-        <div className="absolute top-3 right-3 z-20 flex space-x-2 transition-all duration-500">
+        <div className="absolute top-[100px] right-3 z-20 flex space-x-2 transition-all duration-500">
           {/* Кнопка закрытия в правом верхнем углу */}
           <button 
             onClick={onBackClick}
@@ -427,24 +457,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             priority
           />
         </div>
-        
-        {/* Кнопка расширения/сворачивания изображения */}
-        <button 
-          className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 bg-black/40 backdrop-blur-sm rounded-full p-2 border border-white/10 hover:bg-black/60 ${
-            isImageExpanded ? 'rotate-180' : ''
-          }`}
-          onClick={toggleImageExpansion}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
       </div>
       
       {/* Контент продукта */}
       <div 
         ref={contentRef}
-        className="flex-1 overflow-auto pb-32 mt-[calc(var(--telegram-header-padding))] relative z-20"
+        className="flex-1 overflow-auto pb-32 relative z-20"
         style={{ 
           paddingTop: getImageHeight(),
           transition: 'padding-top 0.5s ease-in-out'
@@ -452,6 +470,20 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       >
         {/* Информация о продукте с эффектом наезжающей шапки */}
         <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-10 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
+          {/* Кнопка расширения/сворачивания изображения над названием */}
+          <div className="flex justify-center mb-3">
+            <button 
+              className={`transition-all duration-300 bg-black/20 backdrop-blur-sm rounded-full p-2 border border-white/10 hover:bg-black/40 ${
+                isImageExpanded ? 'rotate-180' : ''
+              }`}
+              onClick={toggleImageExpansion}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+          
           {/* Название и цена */}
           <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <div className="flex justify-between items-start">
@@ -470,19 +502,29 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
             
             {/* Описание продукта */}
-            <p className="text-white/70 mt-3 mb-6">{product.description}</p>
+            <p className="text-white/70 mt-3 mb-3">{product.description}</p>
             
-            {/* Аллергены */}
-            {product.allergens && product.allergens.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-white/50 mb-2">Аллергены:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.allergens.map(allergen => (
-                    <span key={allergen} className="text-xs px-2 py-1 bg-white/10 rounded-full">{allergen}</span>
-                  ))}
+            {/* Состав и аллергены в блоке под названием и описанием */}
+            <div className="mb-4 p-3 bg-white/5 rounded-lg border border-white/10">
+              {/* Состав */}
+              {getProductIngredients() && (
+                <p className="text-sm text-white/60 mb-2">
+                  Состав: {getProductIngredients()}.
+                </p>
+              )}
+              
+              {/* Аллергены */}
+              {product.allergens && product.allergens.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-white/60 mb-1">Аллергены:</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.allergens.map(allergen => (
+                      <span key={allergen} className="text-xs px-2 py-1 bg-white/10 rounded-full">{allergen}</span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
             {/* Выбор размера */}
             <div className="mb-5">
