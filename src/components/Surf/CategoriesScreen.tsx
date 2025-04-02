@@ -156,11 +156,7 @@ const CategoriesScreen = ({
       
       {/* Заголовок категории c выпадающим меню */}
       <div className="px-6 pt-4 pb-2 relative z-10">
-        <div className="text-white flex items-center space-x-2 opacity-80">
-          <div className="text-xl">{getCategoryEmoji(selectedCategory)}</div>
-          <h2 className="text-2xl font-bold">Категории</h2>
-        </div>
-        <div className="flex items-center mt-4">
+        <div className="flex items-center mt-2">
           <div className="relative">
             <button 
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}

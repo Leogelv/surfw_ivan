@@ -376,6 +376,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
              backgroundImage: getBgPattern(), 
              backgroundSize: "40px 40px"
            }}></div>
+      
+      {/* Кнопка закрытия */}
+      <button 
+        onClick={onBackClick}
+        className="absolute top-4 left-4 z-50 bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-all"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
             
       {/* Изображение продукта с эффектом затемнения и зума при загрузке */}
       <div className="relative z-10 transition-all duration-500 ease-in-out"
@@ -437,25 +447,27 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         ref={contentRef}
         className="flex-1 overflow-auto pb-32"
       >
-        {/* Информация о продукте с эффектом прозрачности при загрузке */}
-        <div className="bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
-          <div className={`transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            {/* Заголовок и цена */}
-            <div className="flex justify-between items-start mb-4">
+        {/* Информация о продукте с эффектом наезжающей шапки */}
+        <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-10 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
+          {/* Название и цена */}
+          <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className="flex justify-between items-start">
               <h1 className="text-3xl font-bold">{product.name}</h1>
-              <div className="text-2xl font-bold">{getPrice()} ₽</div>
+              <div className={`bg-gradient-to-r ${colors.gradient} px-3 py-1 rounded-full text-white font-medium shadow-lg ${colors.shadow}`}>
+                <p className="text-xl font-medium">{getPrice()} ₽</p>
+              </div>
             </div>
             
             {/* Дополнительная плашка с доп. ценой */}
             {getExtraModifiersPrice() > 0 && (
-              <div className="flex justify-between items-center mb-4 p-2 bg-[#A67C52]/20 rounded-lg border border-[#A67C52]/30">
+              <div className="flex justify-between items-center my-4 p-2 bg-[#A67C52]/20 rounded-lg border border-[#A67C52]/30">
                 <span className="text-sm">Модификаторы</span>
                 <span className="text-sm font-medium">+{getExtraModifiersPrice()} ₽</span>
               </div>
             )}
             
             {/* Описание продукта */}
-            <p className="text-white/70 mb-6">{product.description}</p>
+            <p className="text-white/70 mt-3 mb-6">{product.description}</p>
             
             {/* Аллергены */}
             {product.allergens && product.allergens.length > 0 && (

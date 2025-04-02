@@ -45,7 +45,7 @@ function SurfApp() {
       if (isFullScreenEnabled) {
         document.documentElement.style.setProperty(
           '--telegram-header-gradient',
-          'linear-gradient(to bottom, #1D1816 0%, #1D1816 70%, rgba(29, 24, 22, 0) 100%)'
+          'linear-gradient(to bottom, #1D1816 90%, #1D1816 95%)'
         );
       } else {
         document.documentElement.style.setProperty(
