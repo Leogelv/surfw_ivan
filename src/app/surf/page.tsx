@@ -41,6 +41,18 @@ function SurfApp() {
         '--telegram-header-padding', 
         isFullScreenEnabled ? `${telegramHeaderPadding}px` : '0px'
       );
+      // Добавляем стиль для верхнего градиента в Telegram
+      if (isFullScreenEnabled) {
+        document.documentElement.style.setProperty(
+          '--telegram-header-gradient',
+          'linear-gradient(to bottom, #1D1816 0%, #1D1816 70%, rgba(29, 24, 22, 0) 100%)'
+        );
+      } else {
+        document.documentElement.style.setProperty(
+          '--telegram-header-gradient',
+          'none'
+        );
+      }
     }
   }, [isFullScreenEnabled, telegramHeaderPadding]);
 
@@ -105,6 +117,16 @@ function SurfApp() {
 
   return (
     <div style={contentStyle} className="h-screen bg-black">
+      {/* Градиентный оверлей для верхней части Telegram WebApp */}
+      {isFullScreenEnabled && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
+          style={{
+            height: `${telegramHeaderPadding}px`,
+            background: 'var(--telegram-header-gradient)'
+          }}
+        ></div>
+      )}
       <div className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {currentScreen === 'home' && (
           <HomeScreen 

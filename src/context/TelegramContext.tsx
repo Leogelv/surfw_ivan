@@ -108,7 +108,7 @@ const TelegramContext = createContext<TelegramContextType>({
   user: null,
   webApp: null,
   isFullScreenEnabled: false,
-  telegramHeaderPadding: 70,
+  telegramHeaderPadding: 100,
   enableFullScreen: () => {},
   initializeTelegramApp: () => {},
 });
@@ -127,7 +127,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [isFullScreenEnabled, setIsFullScreenEnabled] = useState(false);
-  const [telegramHeaderPadding] = useState(70);
+  const [telegramHeaderPadding] = useState(100);
 
   // Инициализация Telegram WebApp
   useEffect(() => {
