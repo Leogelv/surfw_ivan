@@ -1,22 +1,24 @@
+'use client';
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Vibe Coding - Уникальный курс по современному программированию",
-  description: "Присоединяйтесь к нашему уникальному курсу вайб кодинга для создания креативных проектов. Изучайте программирование в атмосфере позитива и творчества.",
-};
-
-// Добавляем этот импорт, но делаем его динамическим с использованием dynamic
+// Динамический импорт с отключенным SSR
 import dynamic from 'next/dynamic';
 
-// Динамический импорт CartProvider с отключенным SSR (компонент использует localStorage)
+// Импорт CartProvider
 const CartProviderWithNoSSR = dynamic(
   () => import('@/components/Surf/CartContext').then((mod) => mod.CartProvider),
   { ssr: false }
 );
+
+export const metadata: Metadata = {
+  title: "Vibe Coding - Уникальный курс по современному программированию",
+  description: "Присоединяйтесь к нашему уникальному курсу вайб кодинга для создания креативных проектов. Изучайте программирование в атмосфере позитива и творчества.",
+};
 
 export default function RootLayout({
   children,

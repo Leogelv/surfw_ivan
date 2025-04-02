@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCart, DeliveryAddress } from './CartContext';
+import Image from 'next/image';
 
 // Объявление типа для Google Maps API
 declare global {
@@ -34,7 +35,6 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onBackClick, onOrderPla
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Загружаем данные из контекста при монтировании
   useEffect(() => {
@@ -45,149 +45,6 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onBackClick, onOrderPla
     }
   }, [address]);
 
-  // Загрузка Google Maps API
-  useEffect(() => {
-    // Проверяем, не загружен ли уже скрипт
-    if (typeof window !== 'undefined' && !window.google && !document.getElementById('google-maps-script')) {
-      const script = document.createElement('script');
-      script.id = 'google-maps-script';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => initMap();
-      
-      document.head.appendChild(script);
-    } else if (typeof window !== 'undefined' && window.google) {
-      initMap();
-    }
-  }, []);
-
-  // Инициализация карты
-  const initMap = () => {
-    if (typeof window !== 'undefined' && window.google && !mapLoaded) {
-      const spot = SPOTS.find(s => s.id === selectedSpot);
-      if (!spot) return;
-
-      const mapElement = document.getElementById('map');
-      if (!mapElement) return;
-
-      const map = new google.maps.Map(mapElement, {
-        center: spot.location,
-        zoom: 15,
-        styles: [
-          { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-          { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-          { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-          {
-            featureType: "administrative.locality",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#d59563" }],
-          },
-          {
-            featureType: "poi",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#d59563" }],
-          },
-          {
-            featureType: "poi.park",
-            elementType: "geometry",
-            stylers: [{ color: "#263c3f" }],
-          },
-          {
-            featureType: "poi.park",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#6b9a76" }],
-          },
-          {
-            featureType: "road",
-            elementType: "geometry",
-            stylers: [{ color: "#38414e" }],
-          },
-          {
-            featureType: "road",
-            elementType: "geometry.stroke",
-            stylers: [{ color: "#212a37" }],
-          },
-          {
-            featureType: "road",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#9ca5b3" }],
-          },
-          {
-            featureType: "road.highway",
-            elementType: "geometry",
-            stylers: [{ color: "#746855" }],
-          },
-          {
-            featureType: "road.highway",
-            elementType: "geometry.stroke",
-            stylers: [{ color: "#1f2835" }],
-          },
-          {
-            featureType: "road.highway",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#f3d19c" }],
-          },
-          {
-            featureType: "transit",
-            elementType: "geometry",
-            stylers: [{ color: "#2f3948" }],
-          },
-          {
-            featureType: "transit.station",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#d59563" }],
-          },
-          {
-            featureType: "water",
-            elementType: "geometry",
-            stylers: [{ color: "#17263c" }],
-          },
-          {
-            featureType: "water",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#515c6d" }],
-          },
-          {
-            featureType: "water",
-            elementType: "labels.text.stroke",
-            stylers: [{ color: "#17263c" }],
-          },
-        ],
-      });
-
-      // Добавляем маркер для спота
-      const marker = new google.maps.Marker({
-        position: spot.location,
-        map: map,
-        title: spot.name,
-        icon: {
-          url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-        }
-      });
-
-      // Добавляем информационное окно
-      const infoWindow = new google.maps.InfoWindow({
-        content: `
-          <div style="color: #333; padding: 5px;">
-            <strong>${spot.name}</strong><br>
-            ${spot.address}<br>
-            Часы работы: ${spot.workHours}
-          </div>
-        `
-      });
-
-      marker.addListener('click', () => {
-        infoWindow.open(map, marker);
-      });
-
-      // Открываем информационное окно по умолчанию
-      infoWindow.open(map, marker);
-      
-      setMapLoaded(true);
-    }
-  };
-
   // Форматирование телефонного номера
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -197,7 +54,7 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onBackClick, onOrderPla
     } else if (numbers.length <= 1) {
       return `+7 (${numbers}`;
     } else if (numbers.length <= 4) {
-      return `+7 (${numbers.substring(0, 3)}${numbers.length > 3 ? ') ' + numbers.substring(3) : '')`;
+      return `+7 (${numbers.substring(0, 3)}${numbers.length > 3 ? ') ' + numbers.substring(3) : ''}`;
     } else if (numbers.length <= 7) {
       return `+7 (${numbers.substring(0, 3)}) ${numbers.substring(3, 6)}${numbers.length > 6 ? '-' + numbers.substring(6) : ''}`;
     } else if (numbers.length <= 9) {
@@ -283,9 +140,19 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onBackClick, onOrderPla
       {/* Содержимое формы */}
       <div className="flex-1 overflow-auto p-4">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Карта */}
-          <div className="rounded-xl overflow-hidden h-48 mb-6 bg-gray-800">
-            <div id="map" className="w-full h-full"></div>
+          {/* Карта (статическое изображение вместо Google Maps) */}
+          <div className="rounded-xl overflow-hidden h-48 mb-6 bg-gray-800 relative">
+            <div className="absolute inset-0 bg-gray-700 flex items-center justify-center">
+              <div className="text-center">
+                <div className="mb-2">
+                  <svg className="w-8 h-8 mx-auto text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z" />
+                  </svg>
+                </div>
+                <p className="text-blue-300 font-medium">Surf Coffee Красная Поляна</p>
+                <p className="text-gray-400 text-sm">ул. Горнолыжная, 12</p>
+              </div>
+            </div>
           </div>
           
           {/* Выбор спота */}
