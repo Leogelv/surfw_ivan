@@ -1,18 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import HomeScreen from '@/components/Surf/HomeScreen';
-import CategoriesScreen from '@/components/Surf/CategoriesScreen';
-import ProductScreen from '@/components/Surf/ProductScreen';
+
+// Динамический импорт компонентов с отключенным SSR
+const HomeScreen = dynamic(() => import('@/components/Surf/HomeScreen'), { ssr: false });
+const CategoriesScreen = dynamic(() => import('@/components/Surf/CategoriesScreen'), { ssr: false });
+const ProductScreen = dynamic(() => import('@/components/Surf/ProductScreen'), { ssr: false });
+const CartScreen = dynamic(() => import('@/components/Surf/CartScreen'), { ssr: false });
+const CheckoutScreen = dynamic(() => import('@/components/Surf/CheckoutScreen'), { ssr: false });
+const OrderScreen = dynamic(() => import('@/components/Surf/OrderScreen'), { ssr: false });
+
+// Импорт контекста корзины
+import { useCart } from '@/components/Surf/CartContext';
 
 export default function SurfPage() {
-  const [currentScreen, setCurrentScreen] = useState<'home' | 'categories' | 'product'>('home');
+  const [currentScreen, setCurrentScreen] = useState<'home' | 'categories' | 'product' | 'cart' | 'checkout' | 'order'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const { orderPlaced } = useCart();
 
   // Определяем мобильный или десктоп при загрузке и изменении размера окна
   useEffect(() => {
@@ -45,8 +55,15 @@ export default function SurfPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // Проверяем статус заказа и переходим на экран заказа если он оформлен
+  useEffect(() => {
+    if (orderPlaced && currentScreen !== 'order') {
+      transitionTo('order');
+    }
+  }, [orderPlaced]);
+
   // Функция для анимированного перехода между экранами
-  const transitionTo = (screen: 'home' | 'categories' | 'product', callback?: () => void) => {
+  const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart' | 'checkout' | 'order', callback?: () => void) => {
     setIsTransitioning(true);
     setTimeout(() => {
       if (callback) callback();
@@ -80,16 +97,75 @@ export default function SurfPage() {
       navigator.vibrate(50);
     }
     
-    // Здесь будет переход в корзину (пока просто заглушка)
-    setTimeout(() => {
-      alert('Переход в корзину');
-    }, 100);
+    // Переход в корзину
+    transitionTo('cart');
+  };
+
+  const goToCheckout = () => {
+    transitionTo('checkout');
+  };
+
+  const goToOrder = () => {
+    transitionTo('order');
+  };
+
+  // Содержимое экрана (зависит от текущего экрана)
+  const renderScreen = () => {
+    switch(currentScreen) {
+      case 'home':
+        return (
+          <HomeScreen 
+            onCategoryClick={goToCategories} 
+            onMenuClick={goToCategories} 
+            onCartClick={goToCart} 
+          />
+        );
+      case 'categories':
+        return (
+          <CategoriesScreen 
+            selectedCategory={selectedCategory} 
+            onProductClick={goToProduct} 
+            onHomeClick={goHome} 
+            onCartClick={goToCart} 
+          />
+        );
+      case 'product':
+        return (
+          <ProductScreen 
+            productName={selectedProduct} 
+            onBackClick={() => goToCategories(selectedCategory)} 
+            onCartClick={goToCart} 
+          />
+        );
+      case 'cart':
+        return (
+          <CartScreen 
+            onBackClick={() => goToCategories(selectedCategory)} 
+            onCheckoutClick={goToCheckout} 
+          />
+        );
+      case 'checkout':
+        return (
+          <CheckoutScreen 
+            onBackClick={() => transitionTo('cart')} 
+            onOrderPlaced={goToOrder} 
+          />
+        );
+      case 'order':
+        return (
+          <OrderScreen 
+            onHomeClick={goHome} 
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   // Мобильная версия без эмуляции телефона
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="flex flex-col min-h-screen bg-gray-900 text-white">
         {/* Статус бар для мобильной версии */}
         <div className="sticky top-0 left-0 right-0 w-full bg-black py-3 px-4 flex justify-between items-center text-white z-50">
           <span>{currentTime || '9:41'}</span>
@@ -111,49 +187,34 @@ export default function SurfPage() {
 
         {/* Текущий экран с анимацией перехода */}
         <div className={`flex-1 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-          {currentScreen === 'home' && (
-            <HomeScreen onCategoryClick={goToCategories} onMenuClick={goToCategories} onCartClick={goToCart} />
-          )}
-          {currentScreen === 'categories' && (
-            <CategoriesScreen 
-              selectedCategory={selectedCategory} 
-              onProductClick={goToProduct} 
-              onHomeClick={goHome} 
-              onCartClick={goToCart} 
-            />
-          )}
-          {currentScreen === 'product' && (
-            <ProductScreen 
-              productName={selectedProduct} 
-              onBackClick={() => goToCategories(selectedCategory)} 
-              onCartClick={goToCart} 
-            />
-          )}
+          {renderScreen()}
         </div>
 
-        {/* Нижняя навигация для мобильной версии */}
-        <div className="sticky bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md py-4 px-6 flex justify-between items-center text-white z-50">
-          <button onClick={goHome} className="flex flex-col items-center">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
-            </svg>
-            <span className="text-xs mt-1">Домой</span>
-          </button>
+        {/* Нижняя навигация для мобильной версии (показываем только на определенных экранах) */}
+        {['home', 'categories', 'product'].includes(currentScreen) && (
+          <div className="sticky bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md py-4 px-6 flex justify-between items-center text-white z-50">
+            <button onClick={goHome} className="flex flex-col items-center">
+              <svg className={`w-6 h-6 ${currentScreen === 'home' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+              </svg>
+              <span className={`text-xs mt-1 ${currentScreen === 'home' ? 'text-blue-500' : ''}`}>Домой</span>
+            </button>
 
-          <button onClick={() => goToCategories()} className="flex flex-col items-center">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M3,4H7V8H3V4M9,5V7H21V5H9M3,10H7V14H3V10M9,11V13H21V11H9M3,16H7V20H3V16M9,17V19H21V17H9" />
-            </svg>
-            <span className="text-xs mt-1">Меню</span>
-          </button>
+            <button onClick={() => goToCategories()} className="flex flex-col items-center">
+              <svg className={`w-6 h-6 ${currentScreen === 'categories' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3,4H7V8H3V4M9,5V7H21V5H9M3,10H7V14H3V10M9,11V13H21V11H9M3,16H7V20H3V16M9,17V19H21V17H9" />
+              </svg>
+              <span className={`text-xs mt-1 ${currentScreen === 'categories' ? 'text-blue-500' : ''}`}>Меню</span>
+            </button>
 
-          <button onClick={goToCart} className="flex flex-col items-center">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M1,2V4H3L6.6,11.59L5.24,14.04C5.09,14.32 5,14.65 5,15A2,2 0 0,0 7,17H19V15H7.42A0.25,0.25 0 0,1 7.17,14.75C7.17,14.7 7.18,14.66 7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5C20.95,5.34 21,5.17 21,5A1,1 0 0,0 20,4H5.21L4.27,2M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18Z" />
-            </svg>
-            <span className="text-xs mt-1">Корзина</span>
-          </button>
-        </div>
+            <button onClick={goToCart} className="flex flex-col items-center">
+              <svg className={`w-6 h-6 ${currentScreen === 'cart' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M1,2V4H3L6.6,11.59L5.24,14.04C5.09,14.32 5,14.65 5,15A2,2 0 0,0 7,17H19V15H7.42A0.25,0.25 0 0,1 7.17,14.75C7.17,14.7 7.18,14.66 7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5C20.95,5.34 21,5.17 21,5A1,1 0 0,0 20,4H5.21L4.27,2M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18Z" />
+              </svg>
+              <span className={`text-xs mt-1 ${currentScreen === 'cart' ? 'text-blue-500' : ''}`}>Корзина</span>
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -201,24 +262,7 @@ export default function SurfPage() {
 
         {/* Текущий экран с анимацией перехода */}
         <div className={`h-full pt-12 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-          {currentScreen === 'home' && (
-            <HomeScreen onCategoryClick={goToCategories} onMenuClick={goToCategories} onCartClick={goToCart} />
-          )}
-          {currentScreen === 'categories' && (
-            <CategoriesScreen 
-              selectedCategory={selectedCategory} 
-              onProductClick={goToProduct} 
-              onHomeClick={goHome} 
-              onCartClick={goToCart} 
-            />
-          )}
-          {currentScreen === 'product' && (
-            <ProductScreen 
-              productName={selectedProduct} 
-              onBackClick={() => goToCategories(selectedCategory)} 
-              onCartClick={goToCart} 
-            />
-          )}
+          {renderScreen()}
         </div>
 
         {/* Индикатор внизу с улучшенным дизайном */}

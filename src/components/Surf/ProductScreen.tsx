@@ -1,5 +1,8 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useCart, CartItem } from './CartContext';
 
 interface ProductScreenProps {
   productName: string;
@@ -11,6 +14,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { addToCart } = useCart();
   
   // Анимация загрузки
   useEffect(() => {
@@ -112,6 +118,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
     };
     return (product.price * sizeMultipliers[selectedSize] * quantity).toFixed(2);
   };
+  
+  // Получение числовой цены для корзины
+  const getNumericPrice = () => {
+    const sizeMultipliers = {
+      small: 0.8,
+      medium: 1,
+      large: 1.2
+    };
+    return parseFloat((product.price * sizeMultipliers[selectedSize]).toFixed(2));
+  };
 
   // Увеличить количество
   const increaseQuantity = () => {
@@ -121,6 +137,34 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
   // Уменьшить количество
   const decreaseQuantity = () => {
     if (quantity > 1) setQuantity(prev => prev - 1);
+  };
+  
+  // Добавление товара в корзину
+  const handleAddToCart = () => {
+    setIsAddingToCart(true);
+    
+    // Добавляем товар в корзину
+    const cartItem: CartItem = {
+      id: `${productName}-${selectedSize}`,
+      name: product.name,
+      price: getNumericPrice(),
+      quantity: quantity,
+      image: product.image,
+      size: selectedSize
+    };
+    
+    addToCart(cartItem);
+    
+    // Показываем уведомление об успешном добавлении
+    setTimeout(() => {
+      setIsAddingToCart(false);
+      setShowSuccess(true);
+      
+      // Через 2 секунды скрываем уведомление
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
+    }, 500);
   };
 
   return (
@@ -242,19 +286,53 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
         {/* Кнопка добавления в корзину */}
         <div className={`mt-auto transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <button 
-            onClick={onCartClick}
-            className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white rounded-full font-bold text-lg transition-colors shadow-lg flex items-center justify-center group"
+            onClick={handleAddToCart}
+            disabled={isAddingToCart}
+            className={`w-full py-4 rounded-full font-bold text-lg transition-all shadow-lg flex items-center justify-center group ${
+              isAddingToCart 
+                ? 'bg-amber-800 cursor-not-allowed'
+                : showSuccess 
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800'
+            }`}
           >
-            <span className="mr-2">Add to Cart</span>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 transition-transform group-hover:translate-x-1" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
+            {isAddingToCart ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Adding...
+              </>
+            ) : showSuccess ? (
+              <>
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
+                </svg>
+                Added to Cart
+              </>
+            ) : (
+              <>
+                <span className="mr-2">Add to Cart</span>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </>
+            )}
+          </button>
+          
+          {/* Альтернативная кнопка перехода в корзину */}
+          <button 
+            onClick={onCartClick}
+            className="w-full py-3 text-amber-300 hover:text-amber-200 font-medium mt-3 transition-colors text-center"
+          >
+            Go to Cart
           </button>
         </div>
       </div>
