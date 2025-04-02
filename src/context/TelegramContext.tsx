@@ -34,6 +34,7 @@ interface TelegramWebApp {
   headerColor: string;
   backgroundColor: string;
   isClosingConfirmationEnabled: boolean;
+  isVerticalSwipesEnabled: boolean;
   BackButton: {
     isVisible: boolean;
     onClick: () => void;
@@ -63,6 +64,7 @@ interface TelegramWebApp {
     notificationOccurred: (type: string) => void;
     selectionChanged: () => void;
   };
+  ready: () => void;
   expand: () => void;
   close: () => void;
   readyToSend: (isReady: boolean) => void;
@@ -84,6 +86,10 @@ interface TelegramWebApp {
   showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
   enableClosingConfirmation: () => void;
   disableClosingConfirmation: () => void;
+  requestFullscreen: () => void;
+  disableVerticalSwipes: () => void;
+  setHeaderColor: (color: string) => void;
+  setBackgroundColor: (color: string) => void;
   onEvent: (eventType: string, eventHandler: () => void) => void;
   offEvent: (eventType: string, eventHandler: () => void) => void;
 }
@@ -93,6 +99,7 @@ interface TelegramContextType {
   webApp: TelegramWebApp | null;
   isFullScreenEnabled: boolean;
   enableFullScreen: () => void;
+  initializeTelegramApp: () => void;
 }
 
 // Создаем контекст
@@ -101,6 +108,7 @@ const TelegramContext = createContext<TelegramContextType>({
   webApp: null,
   isFullScreenEnabled: false,
   enableFullScreen: () => {},
+  initializeTelegramApp: () => {},
 });
 
 // Хук для использования контекста
@@ -146,12 +154,41 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     }
   };
 
+  // Функция для полной инициализации Telegram WebApp с необходимыми настройками
+  const initializeTelegramApp = () => {
+    if (webApp) {
+      try {
+        // Подготовка приложения
+        webApp.ready();
+        
+        // Расширение на весь экран
+        webApp.expand();
+        
+        // Запрос на полноэкранный режим
+        webApp.requestFullscreen();
+        
+        // Отключение вертикальных свайпов
+        webApp.isVerticalSwipesEnabled = false;
+        webApp.disableVerticalSwipes();
+        
+        // Установка цветов, соответствующих нашему приложению
+        webApp.setHeaderColor('#1D1816'); // Темно-коричневый
+        webApp.setBackgroundColor('#1D1816'); // Темно-коричневый
+        
+        setIsFullScreenEnabled(true);
+      } catch (error) {
+        console.error('Failed to initialize Telegram WebApp:', error);
+      }
+    }
+  };
+
   // Предоставляем контекст
   const value = {
     user,
     webApp,
     isFullScreenEnabled,
     enableFullScreen,
+    initializeTelegramApp,
   };
 
   return (

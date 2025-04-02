@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
 interface ProductScreenProps {
@@ -15,6 +15,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   const [quantity, setQuantity] = useState(1);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   // Анимация загрузки
   useEffect(() => {
@@ -24,6 +26,29 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Сворачивание изображения при скролле
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isImageExpanded && contentRef.current) {
+        // Если пользователь начал скроллить контент, сворачиваем изображение
+        if (contentRef.current.scrollTop > 20) {
+          setIsImageExpanded(false);
+        }
+      }
+    };
+
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      contentElement.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (contentElement) {
+        contentElement.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [isImageExpanded]);
   
   // Данные о продуктах (хардкод для демо) с ценами в рублях
   const products: Record<string, { name: string; price: number; image: string; description: string; allergens?: string[]; calories?: number; category?: string }> = {
@@ -205,6 +230,18 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     }, 800);
   };
 
+  const toggleImageExpansion = () => {
+    setIsImageExpanded(!isImageExpanded);
+    
+    // Если изображение разворачивается, скроллим страницу вверх
+    if (!isImageExpanded && contentRef.current) {
+      contentRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const colors = getProductColors();
 
   return (
@@ -217,7 +254,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
            }}></div>
             
       {/* Изображение продукта с эффектом затемнения и зума при загрузке */}
-      <div className="relative h-2/5 bg-black overflow-hidden z-10">
+      <div className={`relative bg-black overflow-hidden z-10 transition-all duration-500 ease-in-out ${
+        isImageExpanded ? 'h-3/4' : 'h-2/5'
+      }`}>
         <div 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
@@ -252,172 +291,187 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             src={product.image}
             alt={product.name}
             fill
-            className="object-cover"
+            className="object-cover object-center transform transition-transform duration-700 hover:scale-105"
             priority
           />
-          
-          {/* Пульсирующая точка */}
-          <div className={`absolute bottom-4 right-4 w-2 h-2 rounded-full ${colors.accent} z-20 animate-pulse`}></div>
         </div>
+        
+        {/* Кнопка расширения/сворачивания изображения */}
+        <button 
+          className={`absolute bottom-3 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 bg-black/40 backdrop-blur-sm rounded-full p-2 border border-white/10 hover:bg-black/60 ${
+            isImageExpanded ? 'rotate-180' : ''
+          }`}
+          onClick={toggleImageExpansion}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
       
-      {/* Информация о продукте с эффектом прозрачности при загрузке */}
-      <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
-        {/* Название и цена */}
-        <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="flex justify-between items-start">
-            <h1 className="text-4xl font-bold">{product.name}</h1>
-            <div className={`bg-gradient-to-r ${colors.gradient} px-3 py-1 rounded-full text-white font-medium shadow-lg ${colors.shadow}`}>
-              <p className="text-xl font-medium">{getPrice()} ₽</p>
+      {/* Контент продукта */}
+      <div 
+        ref={contentRef}
+        className="flex-1 overflow-auto pb-24"
+      >
+        {/* Информация о продукте с эффектом прозрачности при загрузке */}
+        <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
+          {/* Название и цена */}
+          <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className="flex justify-between items-start">
+              <h1 className="text-4xl font-bold">{product.name}</h1>
+              <div className={`bg-gradient-to-r ${colors.gradient} px-3 py-1 rounded-full text-white font-medium shadow-lg ${colors.shadow}`}>
+                <p className="text-xl font-medium">{getPrice()} ₽</p>
+              </div>
+            </div>
+            
+            {/* Аллергены если есть */}
+            {product.allergens && product.allergens.length > 0 && (
+              <div className="flex items-center mt-2 space-x-1">
+                <svg className={`w-4 h-4 ${colors.light} bg-clip-text text-transparent`} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="text-xs text-white/70">{product.allergens.join(', ')}</span>
+              </div>
+            )}
+          </div>
+          
+          {/* Выбор размера */}
+          <div className={`mb-5 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <h3 className="text-xl font-medium mb-3 flex items-center">
+              Размер
+              <div className={`ml-2 w-1.5 h-1.5 rounded-full ${colors.accent} animate-pulse`}></div>
+            </h3>
+            <div className="flex justify-between space-x-3">
+              <button 
+                className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'small' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
+                onClick={() => setSelectedSize('small')}
+              >
+                {sizeLabels.small}
+              </button>
+              <button 
+                className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'medium' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
+                onClick={() => setSelectedSize('medium')}
+              >
+                {sizeLabels.medium}
+              </button>
+              <button 
+                className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'large' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
+                onClick={() => setSelectedSize('large')}
+              >
+                {sizeLabels.large}
+              </button>
             </div>
           </div>
           
-          {/* Аллергены если есть */}
-          {product.allergens && product.allergens.length > 0 && (
-            <div className="flex items-center mt-2 space-x-1">
-              <svg className={`w-4 h-4 ${colors.light} bg-clip-text text-transparent`} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span className="text-xs text-white/70">{product.allergens.join(', ')}</span>
+          {/* Выбор количества */}
+          <div className={`mb-5 transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <h3 className="text-xl font-medium mb-3 flex items-center">
+              Количество
+              <div className={`ml-2 w-1.5 h-1.5 rounded-full ${colors.accent} animate-pulse`}></div>
+            </h3>
+            <div className="flex items-center w-full bg-white/5 rounded-full p-1 border border-white/10 backdrop-blur-sm">
+              <button 
+                onClick={decreaseQuantity}
+                className="h-10 w-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+              <div className="flex-1 text-center font-medium text-lg">{quantity}</div>
+              <button 
+                onClick={increaseQuantity}
+                className="h-10 w-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12M6 12h12" />
+                </svg>
+              </button>
             </div>
-          )}
-        </div>
-        
-        {/* Выбор размера */}
-        <div className={`mb-5 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-3 flex items-center">
-            Размер
-            <div className={`ml-2 w-1.5 h-1.5 rounded-full ${colors.accent} animate-pulse`}></div>
-          </h3>
-          <div className="flex justify-between space-x-3">
+          </div>
+          
+          {/* Декоративный разделитель */}
+          <div className="relative my-6">
+            <div className="absolute left-0 right-0 h-[1px] bg-white/10"></div>
+            <div className="absolute left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            <div className="flex justify-center">
+              <div className={`w-2 h-2 rounded-full ${colors.accent} relative top-[-4px] animate-pulse`}></div>
+            </div>
+          </div>
+          
+          {/* Описание */}
+          <div className={`mb-5 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <h3 className="text-xl font-medium mb-2">Описание</h3>
+            <p className="text-white/70 text-sm leading-relaxed">{product.description}</p>
+          </div>
+          
+          {/* Кнопка добавления в корзину */}
+          <div className={`mt-auto mb-20 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <button 
-              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'small' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
-              onClick={() => setSelectedSize('small')}
+              onClick={addToCart}
+              disabled={isAddingToCart}
+              className={`w-full py-4 bg-gradient-to-r ${colors.button} text-white rounded-full font-bold text-lg transition-all shadow-lg ${colors.shadow} flex items-center justify-center group backdrop-blur-sm border border-white/10 disabled:opacity-70 ${isAddingToCart ? 'animate-pulse' : ''}`}
             >
-              {sizeLabels.small}
-            </button>
-            <button 
-              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'medium' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
-              onClick={() => setSelectedSize('medium')}
-            >
-              {sizeLabels.medium}
-            </button>
-            <button 
-              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'large' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
-              onClick={() => setSelectedSize('large')}
-            >
-              {sizeLabels.large}
+              {isAddingToCart ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Добавляем...
+                </>
+              ) : (
+                <>
+                  <span className="mr-2">Добавить в корзину</span>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </>
+              )}
             </button>
           </div>
-        </div>
-        
-        {/* Выбор количества */}
-        <div className={`mb-5 transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-3 flex items-center">
-            Количество
-            <div className={`ml-2 w-1.5 h-1.5 rounded-full ${colors.accent} animate-pulse`}></div>
-          </h3>
-          <div className="flex items-center w-full bg-white/5 rounded-full p-1 border border-white/10 backdrop-blur-sm">
-            <button 
-              onClick={decreaseQuantity}
-              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-              </svg>
-            </button>
-            <div className="flex-1 text-center font-medium text-lg">{quantity}</div>
-            <button 
-              onClick={increaseQuantity}
-              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12M6 12h12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        {/* Декоративный разделитель */}
-        <div className="relative my-6">
-          <div className="absolute left-0 right-0 h-[1px] bg-white/10"></div>
-          <div className="absolute left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          <div className="flex justify-center">
-            <div className={`w-2 h-2 rounded-full ${colors.accent} relative top-[-4px] animate-pulse`}></div>
-          </div>
-        </div>
-        
-        {/* Описание */}
-        <div className={`mb-5 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-2">Описание</h3>
-          <p className="text-white/70 text-sm leading-relaxed">{product.description}</p>
-        </div>
-        
-        {/* Кнопка добавления в корзину */}
-        <div className={`mt-auto mb-20 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <button 
-            onClick={addToCart}
-            disabled={isAddingToCart}
-            className={`w-full py-4 bg-gradient-to-r ${colors.button} text-white rounded-full font-bold text-lg transition-all shadow-lg ${colors.shadow} flex items-center justify-center group backdrop-blur-sm border border-white/10 disabled:opacity-70 ${isAddingToCart ? 'animate-pulse' : ''}`}
-          >
-            {isAddingToCart ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Добавляем...
-              </>
-            ) : (
-              <>
-                <span className="mr-2">Добавить в корзину</span>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </>
-            )}
-          </button>
         </div>
       </div>
       
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-4 py-3 border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           {/* Кнопка назад */}
-          <button onClick={onBackClick} className="p-2 relative group">
+          <button onClick={onBackClick} className="p-3 relative group">
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           
           {/* Логотип */}
           <div className="cursor-pointer relative" onClick={onLogoClick}>
-            <div className="absolute -inset-2 bg-white/5 rounded-full blur-md"></div>
+            <div className="absolute -inset-3 bg-[#A67C52]/10 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
-              width={100} 
-              height={40} 
-              className="h-10 w-auto relative"
+              width={120} 
+              height={48} 
+              className="h-12 w-auto relative"
             />
           </div>
           
           {/* Корзина */}
-          <button onClick={onCartClick} className="relative p-2 group">
+          <button onClick={onCartClick} className="relative p-3 group">
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
               </div>
             )}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
           </button>

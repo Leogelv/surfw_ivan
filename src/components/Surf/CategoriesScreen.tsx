@@ -178,29 +178,13 @@ const CategoriesScreen = ({
               </svg>
               <div className={`ml-2 w-2 h-2 rounded-full animate-pulse ${colors.accent}`}></div>
             </button>
-            
-            {/* Выпадающее меню категорий */}
-            {showCategoryDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-[#2A2118]/95 backdrop-blur-md border border-white/10 rounded-lg shadow-lg z-50 w-40 py-1 overflow-hidden">
-                {Object.keys(products).map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => selectCategory(category)}
-                    className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors flex items-center ${selectedCategory === category ? 'text-[#A67C52]' : 'text-white'}`}
-                  >
-                    <span className="mr-2">{getCategoryEmoji(category)}</span>
-                    {getCategoryTitle(category)}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
           <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r ${colors.gradient}`}></div>
         </div>
       </div>
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
-      <div className="flex-1 relative overflow-hidden px-2 pb-24 z-10">
+      <div className={`flex-1 relative overflow-hidden px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20' : 'opacity-100'}`}>
         <div 
           ref={scrollContainerRef}
           className="flex overflow-x-auto py-4 px-2 hide-scrollbar snap-x snap-mandatory h-full"
@@ -219,6 +203,7 @@ const CategoriesScreen = ({
                 } ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
                 onClick={() => {
+                  if (showCategoryDropdown) return; // Игнорировать клики при открытом меню
                   scrollToCard(index);
                   if (index === activeProductIndex) {
                     onProductClick(product.id);
@@ -295,48 +280,87 @@ const CategoriesScreen = ({
         </div>
       </div>
       
-      {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-4 py-3 border-t border-white/10">
+      {/* Фиксированное нижнее меню с логотипом - увеличенное */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           {/* Мои заказы */}
-          <button className="relative p-2" onClick={onOrdersClick}>
+          <button className="relative p-3 group" onClick={onOrdersClick}>
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
               </div>
             )}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </button>
           
-          {/* Логотип */}
+          {/* Логотип - увеличенный */}
           <div className="cursor-pointer relative" onClick={onLogoClick}>
-            <div className="absolute -inset-2 bg-white/5 rounded-full blur-md"></div>
+            <div className="absolute -inset-3 bg-[#A67C52]/10 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
-              width={100} 
-              height={40} 
-              className="h-10 w-auto relative"
+              width={120} 
+              height={48} 
+              className="h-12 w-auto relative"
             />
           </div>
           
-          {/* Иконки справа */}
-          <div className="flex space-x-2">
-            <button onClick={onCartClick} className="p-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </button>
-            <button onClick={onProfileClick} className="p-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-          </div>
+          {/* Профиль */}
+          <button className="relative p-3 group" onClick={onProfileClick}>
+            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </button>
         </div>
       </div>
+      
+      {/* Полноэкранное выпадающее меню категорий */}
+      {showCategoryDropdown && (
+        <div className="fixed inset-0 bg-[#1D1816]/80 backdrop-blur-md z-50 flex items-center justify-center transition-opacity duration-300 animate-fadeIn">
+          <div className="bg-[#2A2118]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-4/5 max-w-xs overflow-hidden p-2">
+            <div className="flex justify-between items-center mb-3 px-3 pt-2">
+              <h3 className="text-xl font-bold text-white">Категории</h3>
+              <button 
+                onClick={() => setShowCategoryDropdown(false)}
+                className="text-white/70 hover:text-white p-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-1">
+              {Object.keys(products).map((category) => (
+                <button
+                  key={category}
+                  onClick={() => selectCategory(category)}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3 ${
+                    selectedCategory === category 
+                      ? 'bg-gradient-to-r from-[#A67C52]/20 to-transparent border-l-4 border-[#A67C52]' 
+                      : 'hover:bg-white/10'
+                  }`}
+                >
+                  <div className="bg-black/20 p-2 rounded-full">
+                    <span className="text-2xl">{getCategoryEmoji(category)}</span>
+                  </div>
+                  <div>
+                    <span className={`text-lg font-medium ${selectedCategory === category ? 'text-[#A67C52]' : 'text-white'}`}>
+                      {getCategoryTitle(category)}
+                    </span>
+                    <p className="text-xs text-white/50">
+                      {products[category as keyof typeof products].length} позиций
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Стили для скрытия полосы прокрутки */}
       <style jsx global>{`

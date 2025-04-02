@@ -18,11 +18,21 @@ function SurfApp() {
   const [showProfile, setShowProfile] = useState(false);
   const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
   
-  const { isFullScreenEnabled, webApp, enableFullScreen } = useTelegram();
+  const { isFullScreenEnabled, webApp, enableFullScreen, initializeTelegramApp } = useTelegram();
 
   useEffect(() => {
-    enableFullScreen();
-  }, [enableFullScreen]);
+    // Инициализация Telegram WebApp при загрузке компонента
+    if (webApp) {
+      initializeTelegramApp();
+    } else {
+      // Если WebApp еще не доступен, попробуем через небольшую задержку
+      const timer = setTimeout(() => {
+        initializeTelegramApp();
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [webApp, initializeTelegramApp]);
 
   const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart' | 'orders', callback?: () => void) => {
     setIsTransitioning(true);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import CheckoutScreen from './CheckoutScreen';
 
 interface CartItem {
   id: string;
@@ -16,6 +17,7 @@ interface CartScreenProps {
 
 const CartScreen = ({ onBackClick }: CartScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 'cappuccino-1',
@@ -62,8 +64,32 @@ const CartScreen = ({ onBackClick }: CartScreenProps) => {
 
   // Оформление заказа
   const checkout = () => {
-    alert('Заказ оформлен! В реальном приложении здесь будет интеграция с платежной системой Telegram.');
+    setShowCheckout(true);
   };
+
+  // Вернуться к корзине из оформления заказа
+  const backToCart = () => {
+    setShowCheckout(false);
+  };
+
+  // Вернуться на главную страницу
+  const goHome = () => {
+    // Сначала скрываем оформление заказа
+    setShowCheckout(false);
+    // Затем возвращаемся к предыдущему экрану
+    onBackClick();
+  };
+
+  if (showCheckout) {
+    return (
+      <CheckoutScreen 
+        onBackClick={backToCart} 
+        onHomeClick={goHome}
+        total={totalAmount}
+        items={cartItems}
+      />
+    );
+  }
 
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
@@ -178,18 +204,18 @@ const CartScreen = ({ onBackClick }: CartScreenProps) => {
             
             <div className={`transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <h3 className="text-lg font-medium mb-3">Ранее вы заказывали</h3>
-              <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/10 p-3 mb-4">
-                <div className="flex items-center justify-between">
+              <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/10 p-4 mb-4">
+                <div className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <div>
-                      <h4 className="font-medium text-white">Заказ #2548</h4>
-                      <p className="text-xs text-white/60">Получен 15 мая, 14:32</p>
-                    </div>
+                    <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <h4 className="font-bold">Заказ #2548</h4>
                   </div>
-                  <button className="text-[#A67C52] text-sm hover:text-[#B98D6F] transition-colors">Повторить</button>
+                  <button 
+                    className="text-[#A67C52] text-sm hover:text-[#B98D6F] transition-colors"
+                    onClick={checkout}
+                  >
+                    Повторить
+                  </button>
                 </div>
                 <div className="mt-2 text-sm text-white/70">
                   <div>Капучино (средний) x 1</div>
