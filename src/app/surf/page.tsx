@@ -22,7 +22,7 @@ export default function SurfPage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [isMobile, setIsMobile] = useState(false);
-  const { orderPlaced } = useCart();
+  const { orderPlaced, getTotalItems } = useCart();
 
   // Определяем мобильный или десктоп при загрузке и изменении размера окна
   useEffect(() => {
@@ -164,40 +164,77 @@ export default function SurfPage() {
         return null;
     }
   };
+
+  // Верхняя навигационная панель (общая для десктопа и мобильной версии)
+  const headerNav = (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md py-3 px-4 flex justify-between items-center border-b border-white/10">
+      {/* Левая часть - активный заказ (если есть) */}
+      <div className="flex items-center">
+        {orderPlaced ? (
+          <button 
+            onClick={goToOrder}
+            className="flex items-center bg-amber-600/70 rounded-full py-1 px-3 text-white text-sm"
+          >
+            <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Активный заказ</span>
+          </button>
+        ) : (
+          <div className="w-8"></div> {/* Пустой блок для соблюдения выравнивания */}
+        )}
+      </div>
+
+      {/* Центр - логотип */}
+      <div 
+        className="flex items-center cursor-pointer" 
+        onClick={goHome}
+      >
+        <Image 
+          src="/surf/logo.svg" 
+          alt="Surf Coffee" 
+          width={80} 
+          height={30} 
+          className="transition-transform hover:scale-105"
+        />
+      </div>
+
+      {/* Правая часть - корзина и профиль */}
+      <div className="flex items-center space-x-3">
+        <button 
+          onClick={goToCart} 
+          className="relative p-1"
+        >
+          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+          {getTotalItems() > 0 && (
+            <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+              {getTotalItems()}
+            </span>
+          )}
+        </button>
+        <button className="p-1">
+          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
   
   // Мобильная версия без эмуляции телефона
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-gradient-to-b from-[#0A0908] via-[#1E1B19] to-[#0A0908]">
+        {/* Верхняя навигация */}
+        {headerNav}
+        
         {/* Основной контент без эмуляции телефона */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto mt-14">
           {/* Текущий экран с анимацией перехода */}
-          <div className={`min-h-[calc(100vh-80px)] transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+          <div className={`min-h-[calc(100vh-56px)] transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
             {renderScreen()}
-          </div>
-
-          {/* Нижняя навигация (фиксированная) */}
-          <div className="fixed bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md py-4 px-6 flex justify-between items-center text-white z-50 border-t border-gray-800 h-20">
-            <button onClick={goHome} className="flex flex-col items-center">
-              <svg className={`w-6 h-6 ${currentScreen === 'home' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
-                <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
-              </svg>
-              <span className={`text-xs mt-1 ${currentScreen === 'home' ? 'text-blue-500' : ''}`}>Домой</span>
-            </button>
-
-            <button onClick={() => goToCategories()} className="flex flex-col items-center">
-              <svg className={`w-6 h-6 ${currentScreen === 'categories' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3,4H7V8H3V4M9,5V7H21V5H9M3,10H7V14H3V10M9,11V13H21V11H9M3,16H7V20H3V16M9,17V19H21V17H9" />
-              </svg>
-              <span className={`text-xs mt-1 ${currentScreen === 'categories' ? 'text-blue-500' : ''}`}>Меню</span>
-            </button>
-
-            <button onClick={goToCart} className="flex flex-col items-center">
-              <svg className={`w-6 h-6 ${currentScreen === 'cart' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M1,2V4H3L6.6,11.59L5.24,14.04C5.09,14.32 5,14.65 5,15A2,2 0 0,0 7,17H19V15H7.42A0.25,0.25 0 0,1 7.17,14.75C7.17,14.7 7.18,14.66 7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5C20.95,5.34 21,5.17 21,5A1,1 0 0,0 20,4H5.21L4.27,2M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18Z" />
-              </svg>
-              <span className={`text-xs mt-1 ${currentScreen === 'cart' ? 'text-blue-500' : ''}`}>Корзина</span>
-            </button>
           </div>
         </div>
       </div>
@@ -245,8 +282,13 @@ export default function SurfPage() {
           </div>
         </div>
 
+        {/* Верхняя навигация */}
+        <div className="absolute top-12 left-0 right-0 z-20">
+          {headerNav}
+        </div>
+
         {/* Текущий экран с анимацией перехода */}
-        <div className={`h-full pt-12 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`h-full pt-24 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
           {renderScreen()}
         </div>
 

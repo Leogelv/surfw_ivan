@@ -31,82 +31,82 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
   // Данные о продуктах (хардкод для демо)
   const products: Record<string, { name: string; price: number; image: string; description: string; allergens?: string[]; calories?: number }> = {
     'cappuccino': {
-      name: 'Cappuccino',
-      price: 4.50,
+      name: 'Капучино',
+      price: 350,
       image: '/surf/coffee_categ.png',
       description: 'Наш фирменный капучино с идеальным балансом эспрессо, молока и бархатистой пенки. Мягкий вкус с нотками карамели и шоколада.',
-      allergens: ['Milk'],
+      allergens: ['Молоко'],
       calories: 120
     },
     'iced-latte': {
-      name: 'Iced Latte',
-      price: 5.00,
+      name: 'Айс Латте',
+      price: 390,
       image: '/surf/coffee_categ.png',
       description: 'Охлаждающий латте со свежей обжаркой, льдом и нежным молоком. Идеальный выбор для жаркого дня с насыщенным кофейным вкусом.',
-      allergens: ['Milk'],
+      allergens: ['Молоко'],
       calories: 180
     },
     'espresso': {
-      name: 'Espresso',
-      price: 3.00,
+      name: 'Эспрессо',
+      price: 250,
       image: '/surf/coffee_categ.png',
       description: 'Насыщенный, крепкий эспрессо из отборных зерен с богатым ароматом и бархатистой пенкой.',
       calories: 5
     },
     'green-tea': {
-      name: 'Green Tea',
-      price: 3.50,
+      name: 'Зеленый чай',
+      price: 270,
       image: '/surf/tea_categ.png',
       description: 'Премиальный зеленый чай с мягким травяным ароматом и освежающим послевкусием. Богат антиоксидантами и заваривается при идеальной температуре.',
       calories: 0
     },
     'herbal-tea': {
-      name: 'Herbal Tea',
-      price: 4.00,
+      name: 'Травяной чай',
+      price: 290,
       image: '/surf/tea_categ.png',
       description: 'Ароматный травяной чай из целебных трав, который успокаивает и восстанавливает. Идеальный выбор для вечернего расслабления.',
       calories: 0
     },
     'black-tea': {
-      name: 'Black Tea',
-      price: 3.50,
+      name: 'Черный чай',
+      price: 270,
       image: '/surf/tea_categ.png',
       description: 'Крепкий черный чай с насыщенным вкусом и глубоким ароматом. Идеально подходит для бодрого начала дня.',
       calories: 0
     },
     'croissant': {
-      name: 'Croissant',
-      price: 3.00,
+      name: 'Круассан',
+      price: 220,
       image: '/surf/croissant.png',
       description: 'Свежеиспеченный круассан с хрустящей корочкой и нежным слоистым тестом внутри. Выпекается каждое утро по традиционному рецепту.',
-      allergens: ['Gluten', 'Milk', 'Eggs'],
+      allergens: ['Глютен', 'Молоко', 'Яйца'],
       calories: 240
     },
     'sandwich': {
-      name: 'Sandwich',
-      price: 5.50,
+      name: 'Сэндвич',
+      price: 420,
       image: '/surf/food_categ.png',
       description: 'Сытный сэндвич на артизанском хлебе с фермерскими ингредиентами. Комбинация свежих овощей, соусов и начинок на ваш выбор.',
-      allergens: ['Gluten'],
+      allergens: ['Глютен'],
       calories: 320
     },
     'avocado-toast': {
-      name: 'Avocado Toast',
-      price: 6.50,
+      name: 'Тост с авокадо',
+      price: 480,
       image: '/surf/food_categ.png',
       description: 'Хрустящий тост с авокадо, приправленный специями и зеленью. Питательный и полезный вариант для сытного завтрака или обеда.',
-      allergens: ['Gluten'],
+      allergens: ['Глютен'],
       calories: 280
     }
   };
   
   // Получение текущего продукта или использование дефолтного
   const product = products[productName] || {
-    name: 'Latte',
-    price: 4.50,
+    name: 'Латте',
+    price: 350,
     image: '/surf/coffee_categ.png',
     description: 'Нежный латте с бархатистой текстурой и идеальным балансом эспрессо и молока. Мы используем только свежеобжаренные зерна и локальное молоко.',
-    allergens: ['Milk'],
+    allergens: ['Молоко'],
     calories: 150
   };
   
@@ -117,7 +117,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
       medium: 1,
       large: 1.2
     };
-    return (product.price * sizeMultipliers[selectedSize] * quantity).toFixed(2);
+    return (product.price * sizeMultipliers[selectedSize] * quantity).toFixed(0) + ' ₽';
   };
   
   // Получение числовой цены для корзины
@@ -127,7 +127,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
       medium: 1,
       large: 1.2
     };
-    return parseFloat((product.price * sizeMultipliers[selectedSize]).toFixed(2));
+    return parseFloat((product.price * sizeMultipliers[selectedSize]).toFixed(0));
   };
 
   // Увеличить количество
@@ -214,7 +214,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
           <div className="flex justify-between items-start">
             <h1 className="text-4xl font-bold">{product.name}</h1>
             <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full">
-              <p className="text-xl font-medium">${getPrice()}</p>
+              <p className="text-xl font-medium">{getPrice()}</p>
             </div>
           </div>
           
@@ -231,110 +231,86 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
         
         {/* Выбор размера */}
         <div className={`mb-5 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-3">Size</h3>
+          <h3 className="text-xl font-medium mb-3">Размер</h3>
           <div className="flex justify-between space-x-3">
             <button 
               className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'small' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
               onClick={() => setSelectedSize('small')}
             >
-              Small
+              Маленький
             </button>
             <button 
               className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'medium' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
               onClick={() => setSelectedSize('medium')}
             >
-              Medium
+              Средний
             </button>
             <button 
               className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'large' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
               onClick={() => setSelectedSize('large')}
             >
-              Large
+              Большой
             </button>
           </div>
         </div>
         
         {/* Выбор количества */}
-        <div className={`mb-5 transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-3">Quantity</h3>
-          <div className="flex items-center w-full bg-white/10 rounded-full p-1">
+        <div className={`mb-4 flex items-center transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <h3 className="text-xl font-medium mr-4">Количество</h3>
+          <div className="flex items-center bg-white/10 rounded-full">
             <button 
               onClick={decreaseQuantity}
-              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
               </svg>
             </button>
-            <div className="flex-1 text-center font-medium text-lg">{quantity}</div>
+            <span className="w-8 text-center font-medium">{quantity}</span>
             <button 
               onClick={increaseQuantity}
-              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12M6 12h12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
             </button>
           </div>
         </div>
         
         {/* Описание */}
-        <div className={`mb-5 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-2">Description</h3>
-          <p className="text-gray-300 text-sm leading-relaxed">{product.description}</p>
+        <div className={`mb-4 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <h3 className="text-xl font-medium mb-2">Описание</h3>
+          <p className="text-white/80 leading-relaxed">{product.description}</p>
         </div>
         
         {/* Кнопка добавления в корзину */}
-        <div className={`mt-auto transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <button 
+        <div className="mt-auto">
+          <button
             onClick={handleAddToCart}
             disabled={isAddingToCart}
-            className={`w-full py-4 rounded-full font-bold text-lg transition-all shadow-lg flex items-center justify-center group ${
-              isAddingToCart 
-                ? 'bg-amber-800 cursor-not-allowed'
-                : showSuccess 
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800'
-            }`}
+            className={`w-full py-4 rounded-full text-lg font-medium transition-all relative overflow-hidden
+                      ${isAddingToCart ? 'bg-amber-700 text-transparent' : 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg'}`}
           >
-            {isAddingToCart ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Adding...
-              </>
-            ) : showSuccess ? (
-              <>
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" />
-                </svg>
-                Added to Cart
-              </>
-            ) : (
-              <>
-                <span className="mr-2">Add to Cart</span>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </>
+            <span className={`transition-opacity ${isAddingToCart ? 'opacity-0' : 'opacity-100'}`}>
+              Добавить в корзину - {getPrice()}
+            </span>
+            {isAddingToCart && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              </div>
             )}
           </button>
           
-          {/* Альтернативная кнопка перехода в корзину */}
-          <button 
-            onClick={onCartClick}
-            className="w-full py-3 text-amber-300 hover:text-amber-200 font-medium mt-3 transition-colors text-center"
+          {/* Уведомление об успешном добавлении */}
+          <div className={`absolute bottom-5 left-0 right-0 mx-auto max-w-xs bg-green-500/90 backdrop-blur-md text-white px-4 py-3 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center transform
+                          ${showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
           >
-            Go to Cart
-          </button>
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Добавлено в корзину</span>
+          </div>
         </div>
       </div>
     </div>
