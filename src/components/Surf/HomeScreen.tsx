@@ -159,13 +159,12 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
           
           {/* Логотип */}
           <div className="relative cursor-pointer" style={{ transform: `scale(${logoScale})`, transition: 'transform 0.8s ease-in-out' }} onClick={onLogoClick}>
-            <div className="absolute -inset-3 bg-[#A67C52]/10 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
-              width={140} 
-              height={60} 
-              className="h-12 w-auto relative"
+              width={150} 
+              height={65} 
+              className="h-14 w-auto relative"
             />
           </div>
           

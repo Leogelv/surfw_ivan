@@ -16,6 +16,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isImageExpanded, setIsImageExpanded] = useState(false);
+  const [selectedMilk, setSelectedMilk] = useState<string>('Обычное');
+  const [selectedSyrup, setSelectedSyrup] = useState<string[]>([]);
+  const [extraShot, setExtraShot] = useState(false);
+  const [selectedFoodOptions, setSelectedFoodOptions] = useState<string[]>([]);
   const contentRef = useRef<HTMLDivElement>(null);
   
   // Анимация загрузки
@@ -49,6 +53,49 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       }
     };
   }, [isImageExpanded]);
+  
+  // Получаем модификаторы для продукта
+  const getProductModifiers = () => {
+    const isCoffee = product.category === 'coffee';
+    const isFood = product.category === 'food';
+
+    const milkOptions = isCoffee ? ['Обычное', 'Растительное (+70₽)', 'Овсяное (+70₽)', 'Миндальное (+90₽)', 'Кокосовое (+90₽)', 'Без молока'] : [];
+    const syrupOptions = isCoffee ? ['Карамель (+50₽)', 'Ваниль (+50₽)', 'Лесной орех (+50₽)', 'Кокос (+50₽)', 'Шоколад (+50₽)'] : [];
+    
+    const foodOptions = isFood ? [
+      'Подогреть', 
+      'Без глютена (+70₽)', 
+      'Дополнительная порция (+100₽)', 
+      'Джем (+50₽)',
+      'Сливочное масло (+30₽)',
+      'Мед (+50₽)'
+    ] : [];
+
+    return {
+      milkOptions,
+      syrupOptions,
+      canAddExtraShot: isCoffee,
+      foodOptions
+    };
+  };
+
+  // Обработчик клика на сироп
+  const handleSyrupToggle = (syrup: string) => {
+    setSelectedSyrup(prev => 
+      prev.includes(syrup) 
+        ? prev.filter(s => s !== syrup) 
+        : [...prev, syrup]
+    );
+  };
+
+  // Обработчик клика на опцию еды
+  const handleFoodOptionToggle = (option: string) => {
+    setSelectedFoodOptions(prev => 
+      prev.includes(option) 
+        ? prev.filter(o => o !== option) 
+        : [...prev, option]
+    );
+  };
   
   // Данные о продуктах (хардкод для демо) с ценами в рублях
   const products: Record<string, { name: string; price: number; image: string; description: string; allergens?: string[]; calories?: number; category?: string }> = {
@@ -194,7 +241,33 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       medium: 1,
       large: 1.2
     };
-    return Math.round(product.price * sizeMultipliers[selectedSize] * quantity);
+    
+    let basePrice = Math.round(product.price * sizeMultipliers[selectedSize]);
+    
+    // Добавляем цену за выбранные сиропы
+    const syrupPrice = selectedSyrup.length * 50;
+    
+    // Добавляем цену за выбранное молоко
+    let milkPrice = 0;
+    if (selectedMilk.includes('Растительное') || selectedMilk.includes('Овсяное')) {
+      milkPrice = 70;
+    } else if (selectedMilk.includes('Миндальное') || selectedMilk.includes('Кокосовое')) {
+      milkPrice = 90;
+    }
+    
+    // Добавляем цену за дополнительный эспрессо
+    const extraShotPrice = extraShot ? 70 : 0;
+    
+    // Добавляем цену за дополнительные опции для еды
+    let foodOptionsPrice = 0;
+    if (selectedFoodOptions.includes('Без глютена (+70₽)')) foodOptionsPrice += 70;
+    if (selectedFoodOptions.includes('Дополнительная порция (+100₽)')) foodOptionsPrice += 100;
+    if (selectedFoodOptions.includes('Джем (+50₽)')) foodOptionsPrice += 50;
+    if (selectedFoodOptions.includes('Сливочное масло (+30₽)')) foodOptionsPrice += 30;
+    if (selectedFoodOptions.includes('Мед (+50₽)')) foodOptionsPrice += 50;
+    
+    const totalItemPrice = basePrice + syrupPrice + milkPrice + extraShotPrice + foodOptionsPrice;
+    return totalItemPrice * quantity;
   };
 
   // Увеличить количество
@@ -391,6 +464,112 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </div>
           </div>
           
+          {/* Модификаторы для напитков и еды */}
+          {isLoaded && (
+            <div className="mb-6">
+              {/* Модификаторы для кофе */}
+              {product.category === 'coffee' && (
+                <>
+                  {/* Выбор молока */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">Молоко</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {getProductModifiers().milkOptions.map((milk) => (
+                        <button
+                          key={milk}
+                          onClick={() => setSelectedMilk(milk)}
+                          className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                            selectedMilk === milk 
+                              ? 'bg-[#A67C52] text-white' 
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span>{milk}</span>
+                          {selectedMilk === milk && (
+                            <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Выбор сиропов */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">Сиропы</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {getProductModifiers().syrupOptions.map((syrup) => (
+                        <button
+                          key={syrup}
+                          onClick={() => handleSyrupToggle(syrup)}
+                          className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                            selectedSyrup.includes(syrup) 
+                              ? 'bg-[#A67C52] text-white' 
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <span>{syrup}</span>
+                          {selectedSyrup.includes(syrup) && (
+                            <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Дополнительный эспрессо */}
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setExtraShot(!extraShot)}
+                      className={`w-full py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                        extraShot 
+                          ? 'bg-[#A67C52] text-white' 
+                          : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <span>Дополнительный эспрессо (+70₽)</span>
+                      {extraShot && (
+                        <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Модификаторы для еды */}
+              {product.category === 'food' && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-2">Дополнительно</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {getProductModifiers().foodOptions.map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => handleFoodOptionToggle(option)}
+                        className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                          selectedFoodOptions.includes(option) 
+                            ? 'bg-[#A67C52] text-white' 
+                            : 'bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        <span>{option}</span>
+                        {selectedFoodOptions.includes(option) && (
+                          <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Декоративный разделитель */}
           <div className="relative my-6">
             <div className="absolute left-0 right-0 h-[1px] bg-white/10"></div>
@@ -453,13 +632,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           
           {/* Логотип */}
           <div className="cursor-pointer relative" onClick={onLogoClick}>
-            <div className="absolute -inset-3 bg-[#A67C52]/10 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
-              width={120} 
-              height={48} 
-              className="h-12 w-auto relative"
+              width={150} 
+              height={65} 
+              className="h-14 w-auto relative"
             />
           </div>
           

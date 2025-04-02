@@ -18,7 +18,7 @@ function SurfApp() {
   const [showProfile, setShowProfile] = useState(false);
   const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
   
-  const { isFullScreenEnabled, webApp, enableFullScreen, initializeTelegramApp } = useTelegram();
+  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp } = useTelegram();
 
   useEffect(() => {
     // Инициализация Telegram WebApp при загрузке компонента
@@ -33,6 +33,16 @@ function SurfApp() {
       return () => clearTimeout(timer);
     }
   }, [webApp, initializeTelegramApp]);
+
+  // Устанавливаем CSS-переменную для отступа в зависимости от режима фулскрин
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.setProperty(
+        '--telegram-header-padding', 
+        isFullScreenEnabled ? `${telegramHeaderPadding}px` : '0px'
+      );
+    }
+  }, [isFullScreenEnabled, telegramHeaderPadding]);
 
   const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart' | 'orders', callback?: () => void) => {
     setIsTransitioning(true);
@@ -85,14 +95,11 @@ function SurfApp() {
   };
 
   const toggleProfile = () => {
-    if (showProfile) {
-      enableFullScreen();
-    }
     setShowProfile(prev => !prev);
   };
 
   const contentStyle = {
-    paddingTop: isFullScreenEnabled ? '0' : '0',
+    paddingTop: 'var(--telegram-header-padding)',
     transition: 'padding-top 0.3s ease'
   };
 

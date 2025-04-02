@@ -298,13 +298,12 @@ const CategoriesScreen = ({
           
           {/* Логотип - увеличенный */}
           <div className="cursor-pointer relative" onClick={onLogoClick}>
-            <div className="absolute -inset-3 bg-[#A67C52]/10 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
-              width={120} 
-              height={48} 
-              className="h-12 w-auto relative"
+              width={150} 
+              height={65} 
+              className="h-14 w-auto relative"
             />
           </div>
           

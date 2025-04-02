@@ -19,10 +19,11 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState<'details' | 'payment' | 'success'>('details');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
-  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
-  const [selectedSpot, setSelectedSpot] = useState('Кофейня Surf на Ленина');
+  const [selectedSpot] = useState('Surf кофе на красной поляне');
   const [orderNumber, setOrderNumber] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [pickupTime, setPickupTime] = useState<'asap' | 'scheduled'>('asap');
+  const [scheduledTime, setScheduledTime] = useState('');
 
   const { user } = useTelegram();
 
@@ -53,6 +54,11 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
     }
   };
 
+  // Обработчик выбора времени
+  const handleScheduledTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setScheduledTime(e.target.value);
+  };
+
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
@@ -79,54 +85,14 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
       
       {/* Шаги заказа */}
       <div className="flex-1 overflow-auto pb-24 relative z-10">
-        {/* Шаг 1: Детали доставки */}
+        {/* Шаг 1: Детали заказа */}
         {currentStep === 'details' && (
           <div className={`px-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            {/* Выбор способа получения */}
+            {/* Информация о точке самовывоза */}
             <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">Способ получения</h3>
-              <div className="flex space-x-3">
-                <button 
-                  onClick={() => setDeliveryMethod('pickup')}
-                  className={`flex-1 py-3 px-4 rounded-xl transition-all ${
-                    deliveryMethod === 'pickup' 
-                      ? 'bg-[#A67C52] text-white' 
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Самовывоз</span>
-                  </div>
-                </button>
-                <button 
-                  onClick={() => setDeliveryMethod('delivery')}
-                  className={`flex-1 py-3 px-4 rounded-xl transition-all ${
-                    deliveryMethod === 'delivery' 
-                      ? 'bg-[#A67C52] text-white' 
-                      : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span>Доставка</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-            
-            {/* Карта и выбор точки самовывоза */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-3">
-                {deliveryMethod === 'pickup' ? 'Выберите кофейню' : 'Адрес доставки'}
-              </h3>
+              <h3 className="text-lg font-medium mb-3">Кофейня для самовывоза</h3>
               
-              {/* Карта (заглушка, в реальном приложении тут будет Google Maps) */}
+              {/* Карта точки самовывоза */}
               <div className="relative h-48 w-full mb-4 rounded-xl overflow-hidden border border-white/10">
                 <div className="absolute inset-0 bg-[#2A2118]/50"></div>
                 <Image
@@ -145,66 +111,69 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
                 </div>
               </div>
               
-              {/* Выбор точки самовывоза */}
-              {deliveryMethod === 'pickup' ? (
-                <div className="space-y-2">
-                  {['Кофейня Surf на Ленина', 'Кофейня Surf на Пушкина', 'Кофейня Surf в ТЦ "Галерея"'].map((spot) => (
+              {/* Информация о точке самовывоза */}
+              <div className="w-full py-3 px-4 text-left rounded-xl bg-[#A67C52]/20 border-[#A67C52] border flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{selectedSpot}</span>
+                </div>
+                <svg className="h-5 w-5 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            
+            {/* Выбор времени получения */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3">Время получения</h3>
+              <div className="space-y-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center mb-3">
+                    <svg className="h-5 w-5 mr-2 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="font-medium">Когда вам будет удобно забрать заказ?</span>
+                  </div>
+                  <div className="flex space-x-2 mb-3">
                     <button 
-                      key={spot}
-                      onClick={() => setSelectedSpot(spot)}
-                      className={`w-full py-3 px-4 text-left rounded-xl transition-all flex items-center justify-between ${
-                        selectedSpot === spot 
-                          ? 'bg-[#A67C52]/20 border-[#A67C52] border' 
-                          : 'bg-white/5 hover:bg-white/10 border border-transparent'
+                      onClick={() => setPickupTime('asap')} 
+                      className={`py-3 px-4 rounded-xl transition-all flex-1 ${
+                        pickupTime === 'asap' ? 'bg-[#A67C52] text-white' : 'bg-white/5 hover:bg-white/10'
                       }`}
                     >
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 mr-2 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span>{spot}</span>
-                      </div>
-                      {selectedSpot === spot && (
-                        <svg className="h-5 w-5 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
+                      Как можно скорее
                     </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center mb-2">
-                      <svg className="h-5 w-5 mr-2 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="font-medium">Ленина, 58, кв. 42</span>
-                    </div>
-                    <button className="text-[#A67C52] text-sm flex items-center">
-                      <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                      Изменить
+                    <button 
+                      onClick={() => setPickupTime('scheduled')} 
+                      className={`py-3 px-4 rounded-xl transition-all flex-1 ${
+                        pickupTime === 'scheduled' ? 'bg-[#A67C52] text-white' : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      Ко времени
                     </button>
                   </div>
                   
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center mb-2">
-                      <svg className="h-5 w-5 mr-2 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="font-medium">Время доставки</span>
+                  {pickupTime === 'scheduled' && (
+                    <div className="mt-3">
+                      <label className="text-sm text-white/70 block mb-2">Выберите время:</label>
+                      <input 
+                        type="time" 
+                        className="w-full py-2 px-3 bg-white/5 border border-white/10 rounded-lg text-white"
+                        value={scheduledTime}
+                        onChange={handleScheduledTimeChange}
+                        min="08:00"
+                        max="21:30"
+                      />
+                      <p className="mt-2 text-sm text-white/50">
+                        Время работы: 8:00 - 22:00
+                      </p>
                     </div>
-                    <div className="flex space-x-2">
-                      <button className="py-2 px-3 bg-[#A67C52] rounded-lg text-sm">Как можно скорее</button>
-                      <button className="py-2 px-3 bg-white/5 hover:bg-white/10 rounded-lg text-sm">Выбрать время</button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
             
             {/* Комментарий к заказу */}
@@ -409,6 +378,21 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
+              </div>
+            </div>
+            
+            <div className="flex items-start mb-4">
+              <svg className="h-5 w-5 text-[#A67C52] mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium">Время получения</p>
+                <p className="text-sm text-white/70">
+                  {pickupTime === 'asap' 
+                    ? 'Как можно скорее (примерно через 15 минут)' 
+                    : `К ${scheduledTime}`
+                  }
+                </p>
               </div>
             </div>
             

@@ -98,6 +98,7 @@ interface TelegramContextType {
   user: TelegramUser | null;
   webApp: TelegramWebApp | null;
   isFullScreenEnabled: boolean;
+  telegramHeaderPadding: number;
   enableFullScreen: () => void;
   initializeTelegramApp: () => void;
 }
@@ -107,6 +108,7 @@ const TelegramContext = createContext<TelegramContextType>({
   user: null,
   webApp: null,
   isFullScreenEnabled: false,
+  telegramHeaderPadding: 70,
   enableFullScreen: () => {},
   initializeTelegramApp: () => {},
 });
@@ -125,6 +127,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [isFullScreenEnabled, setIsFullScreenEnabled] = useState(false);
+  const [telegramHeaderPadding] = useState(70);
 
   // Инициализация Telegram WebApp
   useEffect(() => {
@@ -187,6 +190,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     user,
     webApp,
     isFullScreenEnabled,
+    telegramHeaderPadding,
     enableFullScreen,
     initializeTelegramApp,
   };
