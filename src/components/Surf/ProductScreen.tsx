@@ -36,19 +36,26 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   useEffect(() => {
     const handleScroll = () => {
       if (contentRef.current) {
+        // Если scrollTop < 0, это означает что пользователь тянет экран вниз
         const position = contentRef.current.scrollTop;
         setScrollPosition(position);
         
-        // Если пользователь начал скроллить контент, сворачиваем изображение
+        // Если пользователь начал скроллить контент вверх, сворачиваем изображение
         if (position > 20 && isImageExpanded) {
           setIsImageExpanded(false);
+        }
+        
+        // Если пользователь тянет экран вниз сильно когда уже в начале списка, 
+        // разворачиваем изображение
+        if (position <= 0 && !isImageExpanded && position < -30) {
+          setIsImageExpanded(true);
         }
       }
     };
 
     const contentElement = contentRef.current;
     if (contentElement) {
-      contentElement.addEventListener('scroll', handleScroll);
+      contentElement.addEventListener('scroll', handleScroll, { passive: true });
     }
 
     return () => {
@@ -363,7 +370,13 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     const minHeight = 25; // 25% высоты экрана
     const maxScroll = 150; // максимальное значение прокрутки для анимации
     
-    // Рассчитываем новую высоту в процентах
+    // Если скролл имеет отрицательное значение (тянут вниз), расширяем фото
+    if (scrollPosition < 0) {
+      const expandFactor = Math.min(Math.abs(scrollPosition) / 50, 1.5);
+      return `${Math.min(baseHeight + (baseHeight * expandFactor * 0.3), 75)}%`;
+    }
+    
+    // При скролле вверх уменьшаем фото
     const newHeight = Math.max(minHeight, baseHeight - (scrollPosition / maxScroll) * (baseHeight - minHeight));
     return `${newHeight}%`;
   };
@@ -414,35 +427,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
         
-        {/* Декоративный элемент на изображении */}
-        <div className={`absolute top-[100px] left-3 z-20 rounded-full transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <span className="flex items-center space-x-2 bg-black/40 backdrop-blur-sm rounded-full py-1 px-3 border border-white/10">
-            <span className="text-lg">{getProductEmoji()}</span>
-            <span className="text-xs font-medium">{product.category?.toUpperCase()}</span>
-          </span>
-        </div>
-        
-        <div className="absolute top-[100px] right-3 z-20 flex space-x-2 transition-all duration-500">
-          {/* Кнопка закрытия в правом верхнем углу */}
+        {/* Только кнопка закрытия над фоткой */}
+        <div className="absolute top-[100px] right-3 z-50">
           <button 
             onClick={onBackClick}
-            className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-all"
+            className="bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/80 transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          
-          {/* Калории */}
-          {product.calories !== undefined && (
-            <div className={`flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-              <svg className="w-4 h-4 text-[#B98D6F]" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
-                <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
-              </svg>
-              <span className="text-xs">{product.calories} кал</span>
-            </div>
-          )}
         </div>
         
         <div className={`relative h-full w-full transition-transform duration-1000 ${isLoaded ? 'scale-100' : 'scale-110'}`}>
