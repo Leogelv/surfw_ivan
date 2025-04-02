@@ -1,23 +1,17 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useCart, CartItem } from './CartContext';
 
 interface ProductScreenProps {
   productName: string;
   onBackClick: () => void;
   onCartClick: () => void;
-  isMobile?: boolean; // Опциональный параметр для мобильной версии
 }
 
-const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false }: ProductScreenProps) => {
+const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const { addToCart } = useCart();
+  const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   
   // Анимация загрузки
   useEffect(() => {
@@ -28,7 +22,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
     return () => clearTimeout(timer);
   }, []);
   
-  // Данные о продуктах (хардкод для демо)
+  // Данные о продуктах (хардкод для демо) с ценами в рублях
   const products: Record<string, { name: string; price: number; image: string; description: string; allergens?: string[]; calories?: number }> = {
     'cappuccino': {
       name: 'Капучино',
@@ -40,7 +34,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
     },
     'iced-latte': {
       name: 'Айс Латте',
-      price: 390,
+      price: 380,
       image: '/surf/coffee_categ.png',
       description: 'Охлаждающий латте со свежей обжаркой, льдом и нежным молоком. Идеальный выбор для жаркого дня с насыщенным кофейным вкусом.',
       allergens: ['Молоко'],
@@ -84,7 +78,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
     },
     'sandwich': {
       name: 'Сэндвич',
-      price: 420,
+      price: 380,
       image: '/surf/food_categ.png',
       description: 'Сытный сэндвич на артизанском хлебе с фермерскими ингредиентами. Комбинация свежих овощей, соусов и начинок на ваш выбор.',
       allergens: ['Глютен'],
@@ -92,7 +86,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
     },
     'avocado-toast': {
       name: 'Тост с авокадо',
-      price: 480,
+      price: 450,
       image: '/surf/food_categ.png',
       description: 'Хрустящий тост с авокадо, приправленный специями и зеленью. Питательный и полезный вариант для сытного завтрака или обеда.',
       allergens: ['Глютен'],
@@ -103,7 +97,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
   // Получение текущего продукта или использование дефолтного
   const product = products[productName] || {
     name: 'Латте',
-    price: 350,
+    price: 320,
     image: '/surf/coffee_categ.png',
     description: 'Нежный латте с бархатистой текстурой и идеальным балансом эспрессо и молока. Мы используем только свежеобжаренные зерна и локальное молоко.',
     allergens: ['Молоко'],
@@ -117,17 +111,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
       medium: 1,
       large: 1.2
     };
-    return (product.price * sizeMultipliers[selectedSize] * quantity).toFixed(0) + ' ₽';
-  };
-  
-  // Получение числовой цены для корзины
-  const getNumericPrice = () => {
-    const sizeMultipliers = {
-      small: 0.8,
-      medium: 1,
-      large: 1.2
-    };
-    return parseFloat((product.price * sizeMultipliers[selectedSize]).toFixed(0));
+    return Math.round(product.price * sizeMultipliers[selectedSize] * quantity);
   };
 
   // Увеличить количество
@@ -139,50 +123,61 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
   const decreaseQuantity = () => {
     if (quantity > 1) setQuantity(prev => prev - 1);
   };
-  
-  // Добавление товара в корзину
-  const handleAddToCart = () => {
-    setIsAddingToCart(true);
-    
-    // Добавляем товар в корзину
-    const cartItem: CartItem = {
-      id: `${productName}-${selectedSize}`,
-      name: product.name,
-      price: getNumericPrice(),
-      quantity: quantity,
-      image: product.image,
-      size: selectedSize
-    };
-    
-    addToCart(cartItem);
-    
-    // Показываем уведомление об успешном добавлении
-    setTimeout(() => {
-      setIsAddingToCart(false);
-      setShowSuccess(true);
-      
-      // Через 2 секунды скрываем уведомление
-      setTimeout(() => {
-        setShowSuccess(false);
-      }, 2000);
-    }, 500);
+
+  // Переводы размеров на русский
+  const sizeLabels = {
+    small: 'Маленький',
+    medium: 'Средний',
+    large: 'Большой'
   };
 
   return (
     <div className="h-full flex flex-col text-white">
+      {/* Фиксированный хедер с логотипом */}
+      <div className="fixed top-7 left-0 right-0 z-30 bg-black/50 backdrop-blur-md px-4 py-2">
+        <div className="flex items-center justify-between">
+          {/* Кнопка назад */}
+          <button 
+            onClick={onBackClick}
+            className="p-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          {/* Логотип */}
+          <div className="cursor-pointer" onClick={onBackClick}>
+            <Image 
+              src="/surf/logo.svg" 
+              alt="Surf Coffee" 
+              width={100} 
+              height={40} 
+              className="h-10 w-auto"
+            />
+          </div>
+          
+          {/* Иконки справа */}
+          <div className="flex space-x-2">
+            <button onClick={onCartClick} className="relative p-2">
+              {activeOrders > 0 && (
+                <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  {activeOrders}
+                </div>
+              )}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
       {/* Изображение продукта с эффектом затемнения и зума при загрузке */}
-      <div className="relative h-2/5 bg-black overflow-hidden">
+      <div className="relative h-2/5 bg-black overflow-hidden pt-14">
         <div 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
-        <button 
-          onClick={onBackClick}
-          className="absolute top-4 left-4 z-20 bg-black/40 backdrop-blur-md rounded-full p-2 transition-transform hover:scale-110"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
         <div 
           className={`absolute top-4 right-4 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
         >
@@ -192,7 +187,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
                 <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
                 <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
               </svg>
-              <span className="text-xs">{product.calories} cal</span>
+              <span className="text-xs">{product.calories} кал</span>
             </>
           )}
         </div>
@@ -214,7 +209,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
           <div className="flex justify-between items-start">
             <h1 className="text-4xl font-bold">{product.name}</h1>
             <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full">
-              <p className="text-xl font-medium">{getPrice()}</p>
+              <p className="text-xl font-medium">{getPrice()} ₽</p>
             </div>
           </div>
           
@@ -237,80 +232,70 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false
               className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'small' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
               onClick={() => setSelectedSize('small')}
             >
-              Маленький
+              {sizeLabels.small}
             </button>
             <button 
               className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'medium' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
               onClick={() => setSelectedSize('medium')}
             >
-              Средний
+              {sizeLabels.medium}
             </button>
             <button 
               className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'large' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
               onClick={() => setSelectedSize('large')}
             >
-              Большой
+              {sizeLabels.large}
             </button>
           </div>
         </div>
         
         {/* Выбор количества */}
-        <div className={`mb-4 flex items-center transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mr-4">Количество</h3>
-          <div className="flex items-center bg-white/10 rounded-full">
+        <div className={`mb-5 transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <h3 className="text-xl font-medium mb-3">Количество</h3>
+          <div className="flex items-center w-full bg-white/10 rounded-full p-1">
             <button 
               onClick={decreaseQuantity}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
               </svg>
             </button>
-            <span className="w-8 text-center font-medium">{quantity}</span>
+            <div className="flex-1 text-center font-medium text-lg">{quantity}</div>
             <button 
               onClick={increaseQuantity}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12M6 12h12" />
               </svg>
             </button>
           </div>
         </div>
         
         {/* Описание */}
-        <div className={`mb-4 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`mb-5 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <h3 className="text-xl font-medium mb-2">Описание</h3>
-          <p className="text-white/80 leading-relaxed">{product.description}</p>
+          <p className="text-gray-300 text-sm leading-relaxed">{product.description}</p>
         </div>
         
         {/* Кнопка добавления в корзину */}
-        <div className="mt-auto">
-          <button
-            onClick={handleAddToCart}
-            disabled={isAddingToCart}
-            className={`w-full py-4 rounded-full text-lg font-medium transition-all relative overflow-hidden
-                      ${isAddingToCart ? 'bg-amber-700 text-transparent' : 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg'}`}
+        <div className={`mt-auto transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <button 
+            onClick={onCartClick}
+            className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white rounded-full font-bold text-lg transition-colors shadow-lg flex items-center justify-center group"
           >
-            <span className={`transition-opacity ${isAddingToCart ? 'opacity-0' : 'opacity-100'}`}>
-              Добавить в корзину - {getPrice()}
-            </span>
-            {isAddingToCart && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
-          </button>
-          
-          {/* Уведомление об успешном добавлении */}
-          <div className={`absolute bottom-5 left-0 right-0 mx-auto max-w-xs bg-green-500/90 backdrop-blur-md text-white px-4 py-3 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center transform
-                          ${showSuccess ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-          >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <span className="mr-2">Добавить в корзину</span>
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
-            <span>Добавлено в корзину</span>
-          </div>
+          </button>
         </div>
       </div>
     </div>
