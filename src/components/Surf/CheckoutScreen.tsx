@@ -92,22 +92,17 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3">Кофейня для самовывоза</h3>
               
-              {/* Карта точки самовывоза */}
+              {/* Карта точки самовывоза (OpenStreetMap) */}
               <div className="relative h-48 w-full mb-4 rounded-xl overflow-hidden border border-white/10">
-                <div className="absolute inset-0 bg-[#2A2118]/50"></div>
-                <Image
-                  src="/surf/map.jpg"
-                  alt="Карта"
-                  fill
-                  className="object-cover opacity-80"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-[#A67C52] p-3 rounded-full animate-pulse">
-                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent z-10"></div>
+                <iframe 
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=40.2724%2C43.6727%2C40.2744%2C43.6747&amp;layer=mapnik&amp;marker=43.6737%2C40.2734" 
+                  className="w-full h-full border-0"
+                  title="Карта местоположения"
+                  loading="lazy"
+                ></iframe>
+                <div className="absolute bottom-2 right-2 z-20 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                  © OpenStreetMap
                 </div>
               </div>
               
@@ -118,7 +113,10 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span>{selectedSpot}</span>
+                  <div>
+                    <span>{selectedSpot}</span>
+                    <div className="text-white/60 text-xs mt-0.5">Эсто-Садок, ул. Горная Карусель, 5</div>
+                  </div>
                 </div>
                 <svg className="h-5 w-5 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -340,6 +338,7 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
                 <div>
                   <p className="text-sm font-medium">Место получения</p>
                   <p className="text-sm text-white/70">{selectedSpot}</p>
+                  <p className="text-xs text-white/60 mt-0.5">Эсто-Садок, ул. Горная Карусель, 5</p>
                 </div>
               </div>
               
@@ -364,20 +363,18 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
             </div>
             
             <div className="relative h-48 w-full mb-6 rounded-xl overflow-hidden border border-white/10">
-              <div className="absolute inset-0 bg-[#2A2118]/50"></div>
-              <Image
-                src="/surf/map.jpg"
-                alt="Карта"
-                fill
-                className="object-cover opacity-80"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-[#A67C52] p-3 rounded-full animate-pulse">
-                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent z-10"></div>
+              <iframe 
+                src="https://www.openstreetmap.org/export/embed.html?bbox=40.2724%2C43.6727%2C40.2744%2C43.6747&amp;layer=mapnik&amp;marker=43.6737%2C40.2734" 
+                className="w-full h-full border-0"
+                title="Карта местоположения"
+                loading="lazy"
+              ></iframe>
+              <div className="absolute bottom-2 right-2 z-20 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                © OpenStreetMap
+              </div>
+              <div className="absolute top-3 left-3 z-20 bg-[#A67C52] px-3 py-1 rounded-lg text-sm shadow-lg">
+                Surf Coffee
               </div>
             </div>
             
