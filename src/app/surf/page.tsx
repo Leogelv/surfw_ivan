@@ -165,70 +165,72 @@ export default function SurfPage() {
     }
   };
 
-  // Верхняя навигационная панель (общая для десктопа и мобильной версии)
-  const headerNav = () => (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md py-3 px-4 flex justify-between items-center border-b border-white/10">
-      {/* Левая часть - активный заказ (если есть) */}
-      <div className="flex items-center">
-        {orderPlaced ? (
-          <button 
-            onClick={goToOrder}
-            className="flex items-center bg-amber-600/70 rounded-full py-1 px-3 text-white text-sm"
-          >
-            <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Активный заказ</span>
-          </button>
-        ) : (
-          <div className="w-8"></div> {/* Пустой блок для соблюдения выравнивания */}
-        )}
-      </div>
-
-      {/* Центр - логотип */}
-      <div 
-        className="flex items-center cursor-pointer" 
-        onClick={goHome}
-      >
-        <Image 
-          src="/surf/logo.svg" 
-          alt="Surf Coffee" 
-          width={80} 
-          height={30} 
-          className="transition-transform hover:scale-105"
-        />
-      </div>
-
-      {/* Правая часть - корзина и профиль */}
-      <div className="flex items-center space-x-3">
-        <button 
-          onClick={goToCart} 
-          className="relative p-1"
-        >
-          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          {getTotalItems() > 0 && (
-            <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-              {getTotalItems()}
-            </span>
+  // Функция для рендеринга верхней навигационной панели
+  function renderHeaderNav() {
+    return (
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md py-3 px-4 flex justify-between items-center border-b border-white/10">
+        {/* Левая часть - активный заказ (если есть) */}
+        <div className="flex items-center">
+          {orderPlaced ? (
+            <button 
+              onClick={goToOrder}
+              className="flex items-center bg-amber-600/70 rounded-full py-1 px-3 text-white text-sm"
+            >
+              <svg className="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Активный заказ</span>
+            </button>
+          ) : (
+            <div className="w-8"></div>
           )}
-        </button>
-        <button className="p-1">
-          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </button>
+        </div>
+
+        {/* Центр - логотип */}
+        <div 
+          className="flex items-center cursor-pointer" 
+          onClick={goHome}
+        >
+          <Image 
+            src="/surf/logo.svg" 
+            alt="Surf Coffee" 
+            width={80} 
+            height={30} 
+            className="transition-transform hover:scale-105"
+          />
+        </div>
+
+        {/* Правая часть - корзина и профиль */}
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={goToCart} 
+            className="relative p-1"
+          >
+            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            {getTotalItems() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                {getTotalItems()}
+              </span>
+            )}
+          </button>
+          <button className="p-1">
+            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
   
   // Мобильная версия без эмуляции телефона
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-gradient-to-b from-[#0A0908] via-[#1E1B19] to-[#0A0908]">
         {/* Верхняя навигация */}
-        {headerNav()}
+        {renderHeaderNav()}
         
         {/* Основной контент без эмуляции телефона */}
         <div className="flex-1 overflow-auto mt-14">
@@ -284,7 +286,7 @@ export default function SurfPage() {
 
         {/* Верхняя навигация */}
         <div className="absolute top-12 left-0 right-0 z-20">
-          {headerNav()}
+          {renderHeaderNav()}
         </div>
 
         {/* Текущий экран с анимацией перехода */}
