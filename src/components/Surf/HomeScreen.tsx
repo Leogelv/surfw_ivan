@@ -5,9 +5,10 @@ interface HomeScreenProps {
   onCategoryClick: (category: string) => void;
   onMenuClick: () => void;
   onCartClick: () => void;
+  isMobile?: boolean; // Опциональный параметр для определения мобильной версии
 }
 
-const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick }: HomeScreenProps) => {
+const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, isMobile = false }: HomeScreenProps) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   
   // Эффект пульсации для логотипа
@@ -100,32 +101,34 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick }: HomeScreenPro
       </div>
       
       {/* Навигация */}
-      <div className="h-16 bg-black/40 backdrop-blur-md border-t border-white/10 flex justify-around items-center text-white rounded-b-3xl">
-        <button onClick={onMenuClick} className="flex flex-col items-center relative group">
-          <div className="absolute -inset-1 scale-0 group-hover:scale-100 rounded-full bg-white/10 transition-transform duration-300"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M3 6h18M3 18h18" />
-          </svg>
-          <span className="text-xs mt-1 opacity-80 group-hover:opacity-100">Menu</span>
-        </button>
-        
-        <button className="flex flex-col items-center relative group">
-          <div className="absolute -inset-3 scale-0 group-hover:scale-100 rounded-full bg-white/5 transition-transform duration-300"></div>
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="white">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      {!isMobile && (
+        <div className="h-16 bg-black/40 backdrop-blur-md border-t border-white/10 flex justify-around items-center text-white rounded-b-3xl">
+          <button onClick={onMenuClick} className="flex flex-col items-center relative group">
+            <div className="absolute -inset-1 scale-0 group-hover:scale-100 rounded-full bg-white/10 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M3 6h18M3 18h18" />
             </svg>
-          </div>
-        </button>
-        
-        <button onClick={onCartClick} className="flex flex-col items-center relative group">
-          <div className="absolute -inset-1 scale-0 group-hover:scale-100 rounded-full bg-white/10 transition-transform duration-300"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          <span className="text-xs mt-1 opacity-80 group-hover:opacity-100">Cart</span>
-        </button>
-      </div>
+            <span className="text-xs mt-1 opacity-80 group-hover:opacity-100">Menu</span>
+          </button>
+          
+          <button className="flex flex-col items-center relative group">
+            <div className="absolute -inset-3 scale-0 group-hover:scale-100 rounded-full bg-white/5 transition-transform duration-300"></div>
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="white">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+          </button>
+          
+          <button onClick={onCartClick} className="flex flex-col items-center relative group">
+            <div className="absolute -inset-1 scale-0 group-hover:scale-100 rounded-full bg-white/10 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span className="text-xs mt-1 opacity-80 group-hover:opacity-100">Cart</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

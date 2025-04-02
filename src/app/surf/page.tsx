@@ -118,6 +118,7 @@ export default function SurfPage() {
             onCategoryClick={goToCategories} 
             onMenuClick={goToCategories} 
             onCartClick={goToCart} 
+            isMobile={isMobile}
           />
         );
       case 'categories':
@@ -127,6 +128,7 @@ export default function SurfPage() {
             onProductClick={goToProduct} 
             onHomeClick={goHome} 
             onCartClick={goToCart} 
+            isMobile={isMobile}
           />
         );
       case 'product':
@@ -135,6 +137,7 @@ export default function SurfPage() {
             productName={selectedProduct} 
             onBackClick={() => goToCategories(selectedCategory)} 
             onCartClick={goToCart} 
+            isMobile={isMobile}
           />
         );
       case 'cart':
@@ -161,7 +164,7 @@ export default function SurfPage() {
         return null;
     }
   };
-
+  
   // Мобильная версия без эмуляции телефона
   if (isMobile) {
     return (
@@ -185,14 +188,18 @@ export default function SurfPage() {
           </div>
         </div>
 
-        {/* Текущий экран с анимацией перехода */}
-        <div className={`flex-1 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-          {renderScreen()}
-        </div>
+        {/* Главный контент с правильным позиционированием */}
+        <div className="flex-1 overflow-hidden">
+          {/* Контейнер для скроллинга с отступом внизу для навигационной панели */}
+          <div className="h-full overflow-y-auto pb-24">
+            {/* Текущий экран с анимацией перехода */}
+            <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+              {renderScreen()}
+            </div>
+          </div>
 
-        {/* Нижняя навигация для мобильной версии (показываем только на определенных экранах) */}
-        {['home', 'categories', 'product'].includes(currentScreen) && (
-          <div className="sticky bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md py-4 px-6 flex justify-between items-center text-white z-50">
+          {/* Фиксированная нижняя навигация */}
+          <div className="fixed bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md py-4 px-6 flex justify-between items-center text-white z-50 border-t border-gray-800">
             <button onClick={goHome} className="flex flex-col items-center">
               <svg className={`w-6 h-6 ${currentScreen === 'home' ? 'text-blue-500' : ''}`} fill="currentColor" viewBox="0 0 24 24">
                 <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
@@ -214,7 +221,7 @@ export default function SurfPage() {
               <span className={`text-xs mt-1 ${currentScreen === 'cart' ? 'text-blue-500' : ''}`}>Корзина</span>
             </button>
           </div>
-        )}
+        </div>
       </div>
     );
   }

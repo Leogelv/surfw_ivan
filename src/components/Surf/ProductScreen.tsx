@@ -8,9 +8,10 @@ interface ProductScreenProps {
   productName: string;
   onBackClick: () => void;
   onCartClick: () => void;
+  isMobile?: boolean; // Опциональный параметр для мобильной версии
 }
 
-const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenProps) => {
+const ProductScreen = ({ productName, onBackClick, onCartClick, isMobile = false }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);

@@ -6,9 +6,16 @@ interface CategoriesScreenProps {
   onProductClick: (product: string) => void;
   onHomeClick: () => void;
   onCartClick: () => void;
+  isMobile?: boolean; // Опциональный параметр для определения мобильной версии
 }
 
-const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCartClick }: CategoriesScreenProps) => {
+const CategoriesScreen = ({ 
+  selectedCategory, 
+  onProductClick, 
+  onHomeClick, 
+  onCartClick,
+  isMobile = false // По умолчанию - не мобильная версия
+}: CategoriesScreenProps) => {
   // Анимация для категорий
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
@@ -138,31 +145,33 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
       </div>
       
       {/* Навигация */}
-      <div className="h-16 bg-white border-t border-gray-200 flex justify-around items-center rounded-b-3xl shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
-        <button onClick={onHomeClick} className="flex flex-col items-center text-gray-700 relative group">
-          <div className="absolute -inset-4 rounded-full bg-gray-100 scale-0 group-hover:scale-100 transition-transform duration-300"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          <span className="text-xs mt-1 relative">Home</span>
-        </button>
-        
-        <button className="flex flex-col items-center relative">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="white">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      {!isMobile && (
+        <div className="h-16 bg-white border-t border-gray-200 flex justify-around items-center rounded-b-3xl shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+          <button onClick={onHomeClick} className="flex flex-col items-center text-gray-700 relative group">
+            <div className="absolute -inset-4 rounded-full bg-gray-100 scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-          </div>
-        </button>
-        
-        <button onClick={onCartClick} className="flex flex-col items-center text-gray-700 relative group">
-          <div className="absolute -inset-4 rounded-full bg-gray-100 scale-0 group-hover:scale-100 transition-transform duration-300"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          <span className="text-xs mt-1 relative">Cart</span>
-        </button>
-      </div>
+            <span className="text-xs mt-1 relative">Home</span>
+          </button>
+          
+          <button className="flex flex-col items-center relative">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="white">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+          </button>
+          
+          <button onClick={onCartClick} className="flex flex-col items-center text-gray-700 relative group">
+            <div className="absolute -inset-4 rounded-full bg-gray-100 scale-0 group-hover:scale-100 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span className="text-xs mt-1 relative">Cart</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
