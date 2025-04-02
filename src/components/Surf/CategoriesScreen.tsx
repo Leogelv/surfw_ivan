@@ -67,50 +67,8 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
       {/* Размытый фон наверху */}
       <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-amber-800/10 to-transparent z-0"></div>
       
-      {/* Фиксированный хедер с логотипом */}
-      <div className="fixed top-7 left-0 right-0 z-30 bg-white/80 backdrop-blur-md px-4 py-2">
-        <div className="flex items-center justify-between">
-          {/* Активные заказы */}
-          <button className="relative p-2">
-            {activeOrders > 0 && (
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {activeOrders}
-              </div>
-            )}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </button>
-          
-          {/* Логотип */}
-          <div className="cursor-pointer" onClick={onHomeClick}>
-            <Image 
-              src="/surf/logo.svg" 
-              alt="Surf Coffee" 
-              width={100} 
-              height={40} 
-              className="h-10 w-auto"
-            />
-          </div>
-          
-          {/* Иконки справа */}
-          <div className="flex space-x-2">
-            <button onClick={onCartClick} className="p-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </button>
-            <button className="p-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-      
       {/* Заголовок категории */}
-      <div className="px-6 pt-20 pb-2 relative z-10">
+      <div className="px-6 pb-2 relative z-10">
         <h2 className="text-3xl font-bold text-black/80">Категории</h2>
         <div className="flex items-center mt-4">
           <h3 className="text-2xl font-bold text-black mr-2">{getCategoryTitle(selectedCategory)}</h3>
@@ -119,7 +77,7 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
       </div>
 
       {/* Список продуктов */}
-      <div className="flex-1 overflow-auto px-6 pb-4 relative z-10">
+      <div className="flex-1 overflow-auto px-6 pb-24 relative z-10">
         <div className="flex flex-col space-y-4">
           {categoryProducts.map((product, index) => (
             <div 
@@ -166,6 +124,48 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
+        </div>
+      </div>
+      
+      {/* Фиксированное нижнее меню с логотипом */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md px-4 py-3 border-t border-gray-200">
+        <div className="flex items-center justify-between">
+          {/* Активные заказы */}
+          <button className="relative p-2">
+            {activeOrders > 0 && (
+              <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {activeOrders}
+              </div>
+            )}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </button>
+          
+          {/* Логотип */}
+          <div className="cursor-pointer" onClick={onHomeClick}>
+            <Image 
+              src="/surf/logo.svg" 
+              alt="Surf Coffee" 
+              width={100} 
+              height={40} 
+              className="h-10 w-auto"
+            />
+          </div>
+          
+          {/* Иконки справа */}
+          <div className="flex space-x-2">
+            <button onClick={onCartClick} className="p-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </button>
+            <button className="p-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
