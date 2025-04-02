@@ -1,154 +1,226 @@
-'use client';
-
-import React, { useState } from 'react';
-import { useCart, CartItem } from './CartContext';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size: string;
+  image: string;
+}
 
 interface CartScreenProps {
   onBackClick: () => void;
-  onCheckoutClick: () => void;
 }
 
-const CartScreen: React.FC<CartScreenProps> = ({ onBackClick, onCheckoutClick }) => {
-  const { items, removeFromCart, updateQuantity, getTotalPrice } = useCart();
-  const [isRemoving, setIsRemoving] = useState<string | null>(null);
+const CartScreen = ({ onBackClick }: CartScreenProps) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([
+    {
+      id: 'cappuccino-1',
+      name: 'Капучино',
+      price: 350,
+      quantity: 1,
+      size: 'Средний',
+      image: '/surf/coffee_categ.png'
+    },
+    {
+      id: 'croissant-1',
+      name: 'Круассан',
+      price: 220,
+      quantity: 2,
+      size: '-',
+      image: '/surf/croissant.png'
+    }
+  ]);
 
-  // Обработчик удаления товара с анимацией
-  const handleRemove = (itemId: string) => {
-    setIsRemoving(itemId);
+  // Анимация загрузки
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 100);
     
-    // Анимация перед удалением
-    setTimeout(() => {
-      removeFromCart(itemId);
-      setIsRemoving(null);
-    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Рассчитываем общую сумму
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  // Удаление товара из корзины
+  const removeItem = (id: string) => {
+    setCartItems(cartItems.filter(item => item.id !== id));
+  };
+
+  // Изменение количества товара
+  const updateQuantity = (id: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    setCartItems(cartItems.map(item => 
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    ));
+  };
+
+  // Оформление заказа
+  const checkout = () => {
+    alert('Заказ оформлен! В реальном приложении здесь будет интеграция с платежной системой Telegram.');
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white">
-      {/* Шапка */}
-      <div className="p-4 flex items-center justify-between bg-black/30 backdrop-blur-md sticky top-0 z-10">
-        <button onClick={onBackClick} className="flex items-center justify-center w-10 h-10">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
+    <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
+      {/* Верхний декоративный эффект */}
+      <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
+           style={{ 
+             backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C6D3E' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")", 
+             backgroundSize: "40px 40px"
+           }}></div>
+           
+      {/* Заголовок */}
+      <div className="px-6 pt-4 pb-2 relative z-10 flex items-center">
+        <button onClick={onBackClick} className="p-2 mr-2 bg-white/5 rounded-full">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-xl font-semibold">Корзина</h1>
-        <div className="w-10 h-10"></div> {/* Пустой элемент для выравнивания */}
+        <h2 className="text-2xl font-bold flex items-center">
+          Корзина
+          <div className="ml-2 w-2 h-2 rounded-full bg-[#A67C52] animate-pulse"></div>
+        </h2>
       </div>
-
-      {/* Содержимое корзины */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <svg className="w-16 h-16 mb-4 opacity-30" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19,20C19,21.11 18.11,22 17,22C15.89,22 15,21.11 15,20C15,18.89 15.89,18 17,18C18.11,18 19,18.89 19,20M7,18C5.89,18 5,18.89 5,20C5,21.11 5.89,22 7,22C8.11,22 9,21.11 9,20C9,18.89 8.11,18 7,18M7.2,14.63L7.17,14.75C7.17,14.89 7.28,15 7.42,15H19.58C19.72,15 19.83,14.89 19.83,14.75L19.8,14.63L18.5,11H8.5L7.2,14.63M17.31,10L19,13.07V10H17.31M1,10V12H7V10M9,6.5V10H11.07L9,6.5M13,10H15V6.5L13,10M17,10H19V6.5L17,10M9.28,4.48L11.78,9.5H16.22L18.72,4.48L15.37,7.31L13,4L10.63,7.31L7.28,4.48Z" />
-            </svg>
-            <p className="text-lg">Ваша корзина пуста</p>
-            <button 
-              onClick={onBackClick}
-              className="mt-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 rounded-full transition-colors"
-            >
-              Вернуться к меню
-            </button>
-          </div>
-        ) : (
-          <>
-            <ul className="space-y-4">
-              {items.map((item) => (
-                <li 
-                  key={item.id} 
-                  className={`bg-gray-800/50 backdrop-blur-md rounded-xl p-3 flex items-center transition-all duration-300 
-                    ${isRemoving === item.id ? 'opacity-0 scale-95 transform' : 'opacity-100'}`}
-                >
-                  {/* Изображение товара */}
-                  <div className="w-16 h-16 relative bg-gray-700 rounded-lg overflow-hidden">
-                    {item.image ? (
-                      <Image 
-                        src={item.image} 
-                        alt={item.name} 
-                        fill 
-                        className="object-cover"
-                        sizes="(max-width: 64px) 100vw, 64px"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M2,17H22V19H2V17M6.25,7H9V6H6V3H14V6H11V7H17.8C18.8,7 19.8,8 20,9L20.5,16H3.5L4.05,9C4.05,8 5.05,7 6.25,7M13,9V11H18V9H13M6,9V10H8V9H6M9,9V10H11V9H9M6,11V12H8V11H6M9,11V12H11V11H9M6,13V14H8V13H6M9,13V14H11V13H9M7,4V5H13V4H7Z" />
-                        </svg>
-                      </div>
-                    )}
+      
+      {/* Товары в корзине */}
+      <div className="flex-1 overflow-auto px-6 pb-24 relative z-10">
+        {cartItems.length > 0 ? (
+          <div className="flex flex-col space-y-4 mt-4">
+            {cartItems.map((item, index) => (
+              <div 
+                key={item.id} 
+                className={`transform transition-all duration-500 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'}`}
+                style={{ transitionDelay: `${index * 100}ms` }}
+              >
+                <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden cursor-pointer border border-white/5 shadow-[#A67C52]/30 flex p-3">
+                  <div className="relative h-16 w-16 rounded-lg overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#8B5A2B] to-[#3E2723] mix-blend-overlay opacity-60 z-10"></div>
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
                   </div>
                   
-                  {/* Информация о товаре */}
-                  <div className="ml-4 flex-1">
-                    <div className="flex justify-between">
-                      <h3 className="font-medium">{item.name}</h3>
+                  <div className="px-3 flex flex-col justify-center flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-bold text-white">{item.name}</h4>
+                        <p className="text-xs text-white/60">{item.size}</p>
+                      </div>
+                      <div className="bg-gradient-to-r from-[#8B5A2B] to-[#3E2723] px-2 py-1 rounded-full text-white font-medium text-sm">
+                        {item.price} ₽
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="flex items-center space-x-3 bg-white/5 rounded-full px-2">
+                        <button 
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)} 
+                          className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-white/10"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                          </svg>
+                        </button>
+                        <span className="text-sm">{item.quantity}</span>
+                        <button 
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-white/10"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12M6 12h12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
                       <button 
-                        onClick={() => handleRemove(item.id)}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        onClick={() => removeItem(item.id)}
+                        className="text-white/60 hover:text-white/90 transition-colors p-1"
                       >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </div>
-                    
-                    {item.size && (
-                      <p className="text-sm text-gray-400">Размер: {item.size}</p>
-                    )}
-                    
-                    {item.options && item.options.length > 0 && (
-                      <p className="text-sm text-gray-400">
-                        {item.options.join(', ')}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center bg-gray-700 rounded-full">
-                        <button 
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-white"
-                          disabled={item.quantity <= 1}
-                        >
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M19,13H5V11H19V13Z" />
-                          </svg>
-                        </button>
-                        <span className="w-6 text-center">{item.quantity}</span>
-                        <button 
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-white"
-                        >
-                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="font-bold">{(item.price * item.quantity).toFixed(0)} ₽</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={`flex flex-col items-center justify-center h-48 text-center transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <h3 className="text-xl font-medium text-white/80 mb-2">Корзина пуста</h3>
+            <p className="text-sm text-white/60">Добавьте что-нибудь из меню</p>
+          </div>
+        )}
+        
+        {/* История заказов */}
+        {cartItems.length > 0 && (
+          <>
+            <div className="relative my-6">
+              <div className="absolute left-0 right-0 h-[1px] bg-white/10"></div>
+              <div className="absolute left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+              <div className="flex justify-center">
+                <div className="w-2 h-2 rounded-full bg-[#A67C52] relative top-[-4px] animate-pulse"></div>
+              </div>
+            </div>
+            
+            <div className={`transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <h3 className="text-lg font-medium mb-3">Ранее вы заказывали</h3>
+              <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/10 p-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <div>
+                      <h4 className="font-medium text-white">Заказ #2548</h4>
+                      <p className="text-xs text-white/60">Получен 15 мая, 14:32</p>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
+                  <button className="text-[#A67C52] text-sm hover:text-[#B98D6F] transition-colors">Повторить</button>
+                </div>
+                <div className="mt-2 text-sm text-white/70">
+                  <div>Капучино (средний) x 1</div>
+                  <div>Эспрессо x 2</div>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
-
-      {/* Нижняя панель с итогами и кнопкой */}
-      {items.length > 0 && (
-        <div className="sticky bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-md p-4 border-t border-gray-800">
-          <div className="flex justify-between mb-3">
-            <span className="text-gray-400">Итого:</span>
-            <span className="font-bold text-xl">{getTotalPrice().toFixed(0)} ₽</span>
+      
+      {/* Итоговая сумма и кнопка оформления заказа */}
+      {cartItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-6 py-4 border-t border-white/10">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-white/80">Итого:</span>
+            <div className="text-xl font-bold">{totalAmount} ₽</div>
           </div>
           <button 
-            onClick={onCheckoutClick}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center"
+            onClick={checkout}
+            className="w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-full font-bold text-lg transition-all shadow-lg shadow-[#A67C52]/30 flex items-center justify-center group backdrop-blur-sm border border-white/10"
           >
-            Оформить заказ
-            <svg className="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+            <span className="mr-2">Оформить заказ</span>
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </button>
         </div>

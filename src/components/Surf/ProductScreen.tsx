@@ -5,13 +5,16 @@ interface ProductScreenProps {
   productName: string;
   onBackClick: () => void;
   onCartClick: () => void;
+  onProfileClick: () => void;
+  onLogoClick: () => void;
 }
 
-const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenProps) => {
+const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   
   // Анимация загрузки
   useEffect(() => {
@@ -119,25 +122,25 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
     const category = product.category || 'coffee';
     const colors: Record<string, { gradient: string, accent: string, shadow: string, light: string, button: string }> = {
       coffee: { 
-        gradient: 'from-amber-700 to-amber-950', 
-        accent: 'bg-amber-500',
-        shadow: 'shadow-amber-500/30',
-        light: 'bg-amber-400',
-        button: 'from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800'
+        gradient: 'from-[#8B5A2B] to-[#3E2723]', 
+        accent: 'bg-[#A67C52]',
+        shadow: 'shadow-[#A67C52]/30',
+        light: 'bg-[#B98D6F]',
+        button: 'from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41]'
       },
       tea: { 
-        gradient: 'from-green-700 to-green-950', 
-        accent: 'bg-green-500',
-        shadow: 'shadow-green-500/30',
-        light: 'bg-green-400',
-        button: 'from-green-500 to-green-700 hover:from-green-600 hover:to-green-800'
+        gradient: 'from-[#6B4226] to-[#3E2723]', 
+        accent: 'bg-[#8D6E63]',
+        shadow: 'shadow-[#8D6E63]/30',
+        light: 'bg-[#A1887F]',
+        button: 'from-[#8D6E63] to-[#5D4037] hover:from-[#A1887F] hover:to-[#6D4C41]'
       },
       food: { 
-        gradient: 'from-orange-700 to-orange-950', 
-        accent: 'bg-orange-500',
-        shadow: 'shadow-orange-500/30',
-        light: 'bg-orange-400',
-        button: 'from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800'
+        gradient: 'from-[#6D4C41] to-[#3E2723]', 
+        accent: 'bg-[#A1887F]',
+        shadow: 'shadow-[#A1887F]/30',
+        light: 'bg-[#BCAAA4]',
+        button: 'from-[#A1887F] to-[#5D4037] hover:from-[#BCAAA4] hover:to-[#6D4C41]'
       },
     };
     return colors[category] || colors.coffee;
@@ -145,11 +148,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
 
   // Получаем соответствующий фон для категории
   const getBgPattern = () => {
-    const category = product.category || 'coffee';
-    if (category === 'coffee') return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C6D3E' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
-    if (category === 'tea') return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23248D46' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
-    if (category === 'food') return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D97706' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
-    return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23808080' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+    return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C6D3E' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
   };
 
   // Получаем эмодзи для категории
@@ -190,10 +189,26 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
     large: 'Большой'
   };
 
+  // Добавление товара в корзину
+  const addToCart = () => {
+    setIsAddingToCart(true); // Начинаем анимацию
+    
+    // Имитация добавления в корзину
+    setTimeout(() => {
+      setActiveOrders(prev => prev + 1);
+      setIsAddingToCart(false);
+      
+      // После успешного добавления переходим в корзину
+      setTimeout(() => {
+        onCartClick();
+      }, 300);
+    }, 800);
+  };
+
   const colors = getProductColors();
 
   return (
-    <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#0A0908] via-[#1E1B19] to-[#0A0908]">
+    <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
       <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
            style={{ 
@@ -220,7 +235,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
         >
           {product.calories !== undefined && (
             <>
-              <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-4 h-4 text-[#B98D6F]" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
                 <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
               </svg>
@@ -247,7 +262,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
       </div>
       
       {/* Информация о продукте с эффектом прозрачности при загрузке */}
-      <div className="flex-1 bg-gradient-to-b from-[#1A1513] to-[#0A0908] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
+      <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
         {/* Название и цена */}
         <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="flex justify-between items-start">
@@ -341,25 +356,38 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
         {/* Кнопка добавления в корзину */}
         <div className={`mt-auto mb-20 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <button 
-            onClick={onCartClick}
-            className={`w-full py-4 bg-gradient-to-r ${colors.button} text-white rounded-full font-bold text-lg transition-colors shadow-lg ${colors.shadow} flex items-center justify-center group backdrop-blur-sm border border-white/10`}
+            onClick={addToCart}
+            disabled={isAddingToCart}
+            className={`w-full py-4 bg-gradient-to-r ${colors.button} text-white rounded-full font-bold text-lg transition-all shadow-lg ${colors.shadow} flex items-center justify-center group backdrop-blur-sm border border-white/10 disabled:opacity-70 ${isAddingToCart ? 'animate-pulse' : ''}`}
           >
-            <span className="mr-2">Добавить в корзину</span>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
+            {isAddingToCart ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Добавляем...
+              </>
+            ) : (
+              <>
+                <span className="mr-2">Добавить в корзину</span>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </>
+            )}
           </button>
         </div>
       </div>
       
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-md px-4 py-3 border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-4 py-3 border-t border-white/10">
         <div className="flex items-center justify-between">
           {/* Кнопка назад */}
           <button onClick={onBackClick} className="p-2 relative group">
@@ -370,7 +398,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
           </button>
           
           {/* Логотип */}
-          <div className="cursor-pointer relative">
+          <div className="cursor-pointer relative" onClick={onLogoClick}>
             <div className="absolute -inset-2 bg-white/5 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
@@ -385,7 +413,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
           <button onClick={onCartClick} className="relative p-2 group">
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
             {activeOrders > 0 && (
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+              <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
               </div>
             )}
