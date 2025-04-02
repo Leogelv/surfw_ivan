@@ -39,10 +39,10 @@ function SurfApp() {
     if (typeof document !== 'undefined') {
       document.documentElement.style.setProperty(
         '--telegram-header-padding', 
-        isFullScreenEnabled ? `${telegramHeaderPadding}px` : '0px'
+        isFullScreenEnabled && currentScreen !== 'home' ? `${telegramHeaderPadding}px` : '0px'
       );
       // Добавляем стиль для верхнего градиента в Telegram
-      if (isFullScreenEnabled) {
+      if (isFullScreenEnabled && currentScreen !== 'home') {
         document.documentElement.style.setProperty(
           '--telegram-header-gradient',
           'linear-gradient(to bottom, #1D1816 90%, #1D1816 95%)'
@@ -54,7 +54,7 @@ function SurfApp() {
         );
       }
     }
-  }, [isFullScreenEnabled, telegramHeaderPadding]);
+  }, [isFullScreenEnabled, telegramHeaderPadding, currentScreen]);
 
   const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart' | 'orders', callback?: () => void) => {
     setIsTransitioning(true);

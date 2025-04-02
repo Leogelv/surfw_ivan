@@ -377,18 +377,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
              backgroundSize: "40px 40px"
            }}></div>
       
-      {/* Кнопка закрытия */}
-      <button 
-        onClick={onBackClick}
-        className="absolute top-4 left-4 z-50 bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-all"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-            
       {/* Изображение продукта с эффектом затемнения и зума при загрузке */}
-      <div className="relative z-10 transition-all duration-500 ease-in-out"
+      <div className="absolute top-0 left-0 right-0 z-10 transition-all duration-500 ease-in-out"
            style={{ height: getImageHeight() }}>
         <div 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -402,17 +392,26 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           </span>
         </div>
         
-        <div 
-          className={`absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
-        >
+        <div className="absolute top-3 right-3 z-20 flex space-x-2 transition-all duration-500">
+          {/* Кнопка закрытия в правом верхнем углу */}
+          <button 
+            onClick={onBackClick}
+            className="bg-black/40 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/60 transition-all"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          
+          {/* Калории */}
           {product.calories !== undefined && (
-            <>
+            <div className={`flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
               <svg className="w-4 h-4 text-[#B98D6F]" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
                 <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
               </svg>
               <span className="text-xs">{product.calories} кал</span>
-            </>
+            </div>
           )}
         </div>
         
@@ -431,7 +430,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         
         {/* Кнопка расширения/сворачивания изображения */}
         <button 
-          className={`absolute bottom-3 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 bg-black/40 backdrop-blur-sm rounded-full p-2 border border-white/10 hover:bg-black/60 ${
+          className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 bg-black/40 backdrop-blur-sm rounded-full p-2 border border-white/10 hover:bg-black/60 ${
             isImageExpanded ? 'rotate-180' : ''
           }`}
           onClick={toggleImageExpansion}
@@ -445,7 +444,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Контент продукта */}
       <div 
         ref={contentRef}
-        className="flex-1 overflow-auto pb-32"
+        className="flex-1 overflow-auto pb-32 mt-[calc(var(--telegram-header-padding))] relative z-20"
+        style={{ 
+          paddingTop: getImageHeight(),
+          transition: 'padding-top 0.5s ease-in-out'
+        }}
       >
         {/* Информация о продукте с эффектом наезжающей шапки */}
         <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-10 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
