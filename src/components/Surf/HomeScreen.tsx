@@ -7,9 +7,10 @@ interface HomeScreenProps {
   onCartClick: () => void;
   onProfileClick: () => void;
   onLogoClick: () => void;
+  onOrdersClick?: () => void; // Добавляем обработчик для экрана заказов
 }
 
-const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick, onLogoClick }: HomeScreenProps) => {
+const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick, onLogoClick, onOrdersClick = onCartClick }: HomeScreenProps) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isLoaded, setIsLoaded] = useState(false);
@@ -54,23 +55,8 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
       {/* Круговой градиент по центру верха */}
       <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/30 to-transparent z-0"></div>
       
-      {/* Заголовок */}
-      <div className={`px-6 pt-4 pb-2 relative z-10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-        <div className="text-white flex items-center space-x-2 opacity-80">
-          <div className="text-xl">✨</div>
-          <h2 className="text-2xl font-bold">Surf Coffee</h2>
-        </div>
-        <div className="flex items-center mt-4">
-          <h3 className="text-3xl font-bold text-white mr-2 flex items-center">
-            Меню
-            <div className="ml-2 w-2 h-2 rounded-full bg-[#A67C52] animate-pulse"></div>
-          </h3>
-          <div className="h-[2px] flex-grow rounded-full bg-gradient-to-r from-[#8B5A2B] to-[#3E2723]"></div>
-        </div>
-      </div>
-      
       {/* Категории */}
-      <div className="flex-1 flex flex-col space-y-2 p-2 relative z-10">
+      <div className="flex-1 flex flex-col space-y-1 p-1 relative z-10">
         {/* Кофе */}
         <div 
           className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
@@ -158,8 +144,8 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
       <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-4 py-3 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
           style={{ transitionDelay: '400ms' }}>
         <div className="flex items-center justify-between">
-          {/* Активные заказы */}
-          <button className="relative p-2" onClick={onCartClick}>
+          {/* Мои заказы */}
+          <button className="relative p-2" onClick={onOrdersClick}>
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}

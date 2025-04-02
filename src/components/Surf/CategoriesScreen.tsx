@@ -8,9 +8,18 @@ interface CategoriesScreenProps {
   onCartClick: () => void;
   onProfileClick: () => void;
   onLogoClick: () => void;
+  onOrdersClick?: () => void;
 }
 
-const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCartClick, onProfileClick, onLogoClick }: CategoriesScreenProps) => {
+const CategoriesScreen = ({ 
+  selectedCategory, 
+  onProductClick, 
+  onHomeClick, 
+  onCartClick, 
+  onProfileClick, 
+  onLogoClick,
+  onOrdersClick = onCartClick
+}: CategoriesScreenProps) => {
   // Анимация для категорий
   const [isLoaded, setIsLoaded] = useState(false);
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
@@ -28,23 +37,23 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
   // Данные о продуктах для каждой категории (цены в рублях)
   const products = {
     coffee: [
-      { id: 'cappuccino', name: 'Капучино', price: 350, image: '/surf/coffee_categ.png', description: 'Насыщенный эспрессо с нежной молочной пенкой' },
-      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/coffee_categ.png', description: 'Освежающий холодный кофе с молоком' },
-      { id: 'espresso', name: 'Эспрессо', price: 250, image: '/surf/coffee_categ.png', description: 'Крепкий концентрированный кофе' },
-      { id: 'mocha', name: 'Мокко', price: 420, image: '/surf/coffee_categ.png', description: 'Кофе с шоколадным сиропом и молоком' },
-      { id: 'americano', name: 'Американо', price: 280, image: '/surf/coffee_categ.png', description: 'Эспрессо с добавлением горячей воды' },
+      { id: 'cappuccino', name: 'Капучино', price: 350, image: '/surf/coffee_categ.png', description: 'Насыщенный эспрессо с нежной молочной пенкой', calories: 120 },
+      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/coffee_categ.png', description: 'Освежающий холодный кофе с молоком', calories: 180 },
+      { id: 'espresso', name: 'Эспрессо', price: 250, image: '/surf/coffee_categ.png', description: 'Крепкий концентрированный кофе', calories: 5 },
+      { id: 'mocha', name: 'Мокко', price: 420, image: '/surf/coffee_categ.png', description: 'Кофе с шоколадным сиропом и молоком', calories: 220 },
+      { id: 'americano', name: 'Американо', price: 280, image: '/surf/coffee_categ.png', description: 'Эспрессо с добавлением горячей воды', calories: 10 },
     ],
     tea: [
-      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Легкий, освежающий чай, богатый антиоксидантами' },
-      { id: 'black-tea', name: 'Черный чай', price: 270, image: '/surf/tea_categ.png', description: 'Классический насыщенный чай' },
-      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Успокаивающий чай без кофеина' },
-      { id: 'fruit-tea', name: 'Фруктовый чай', price: 310, image: '/surf/tea_categ.png', description: 'Ароматный чай с кусочками фруктов' },
+      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Легкий, освежающий чай, богатый антиоксидантами', calories: 0 },
+      { id: 'black-tea', name: 'Черный чай', price: 270, image: '/surf/tea_categ.png', description: 'Классический насыщенный чай', calories: 0 },
+      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Успокаивающий чай без кофеина', calories: 0 },
+      { id: 'fruit-tea', name: 'Фруктовый чай', price: 310, image: '/surf/tea_categ.png', description: 'Ароматный чай с кусочками фруктов', calories: 5 },
     ],
     food: [
-      { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Хрустящий масляный французский круассан' },
-      { id: 'sandwich', name: 'Сэндвич', price: 380, image: '/surf/food_categ.png', description: 'Свежие ингредиенты на ремесленном хлебе' },
-      { id: 'avocado-toast', name: 'Тост с авокадо', price: 450, image: '/surf/food_categ.png', description: 'Авокадо на тосте из цельнозернового хлеба' },
-      { id: 'brownie', name: 'Брауни', price: 260, image: '/surf/food_categ.png', description: 'Шоколадный десерт с орехами' },
+      { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Хрустящий масляный французский круассан', calories: 240 },
+      { id: 'sandwich', name: 'Сэндвич', price: 380, image: '/surf/food_categ.png', description: 'Свежие ингредиенты на ремесленном хлебе', calories: 320 },
+      { id: 'avocado-toast', name: 'Тост с авокадо', price: 450, image: '/surf/food_categ.png', description: 'Авокадо на тосте из цельнозернового хлеба', calories: 280 },
+      { id: 'brownie', name: 'Брауни', price: 260, image: '/surf/food_categ.png', description: 'Шоколадный десерт с орехами', calories: 310 },
     ],
   };
 
@@ -108,7 +117,7 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, clientWidth } = scrollContainerRef.current;
-      const cardWidth = clientWidth * 0.65; // Примерная ширина карточки
+      const cardWidth = clientWidth * 0.9; // Примерная ширина карточки
       const index = Math.round(scrollLeft / cardWidth);
       setActiveProductIndex(Math.min(index, categoryProducts.length - 1));
     }
@@ -117,7 +126,7 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
   // Плавный скролл к выбранной карточке
   const scrollToCard = (index: number) => {
     if (scrollContainerRef.current) {
-      const cardWidth = scrollContainerRef.current.clientWidth * 0.65;
+      const cardWidth = scrollContainerRef.current.clientWidth * 0.9;
       scrollContainerRef.current.scrollTo({
         left: index * cardWidth,
         behavior: 'smooth'
@@ -191,69 +200,87 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
       </div>
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
-      <div className="flex-1 relative overflow-hidden px-4 pb-24 z-10">
+      <div className="flex-1 relative overflow-hidden px-2 pb-24 z-10">
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto py-8 px-4 hide-scrollbar snap-x snap-mandatory h-full"
+          className="flex overflow-x-auto py-4 px-2 hide-scrollbar snap-x snap-mandatory h-full"
           onScroll={handleScroll}
         >
-          {categoryProducts.map((product, index) => (
-            <div 
-              key={product.id} 
-              className={`flex-shrink-0 w-[65%] snap-center mx-2 transition-all duration-300 ${
-                index === activeProductIndex 
-                  ? 'scale-110 opacity-100 z-20' 
-                  : 'scale-95 opacity-80 z-10'
-              } ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-              style={{ transitionDelay: `${index * 100}ms` }}
-              onClick={() => {
-                scrollToCard(index);
-                if (index === activeProductIndex) {
-                  onProductClick(product.id);
-                }
-              }}
-            >
-              <div className={`bg-[#2A2118]/85 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer h-full
-                border border-white/5 ${colors.shadow} transition-all duration-300 hover:shadow-lg`}>
-                <div className="relative h-48 w-full">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} mix-blend-overlay opacity-60 z-10`}></div>
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
-                  {/* Маленький индикатор в углу */}
-                  <div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${colors.accent} z-20 animate-pulse`}></div>
-                </div>
-                
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-bold text-xl text-white">{product.name}</h4>
-                    <div className={`bg-gradient-to-r ${colors.gradient} text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner`}>
-                      {product.price} ₽
-                    </div>
-                  </div>
-                  <p className="text-sm text-white/80 line-clamp-2 leading-snug mb-4">{product.description}</p>
+          {categoryProducts.map((product, index) => {
+            const isActive = index === activeProductIndex;
+            
+            return (
+              <div 
+                key={product.id} 
+                className={`flex-shrink-0 w-[90%] snap-center mx-1 transition-all duration-300 ${
+                  isActive 
+                    ? 'scale-105 opacity-100 z-20' 
+                    : 'scale-90 opacity-80 z-10'
+                } ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
+                style={{ transitionDelay: `${index * 100}ms` }}
+                onClick={() => {
+                  scrollToCard(index);
+                  if (index === activeProductIndex) {
+                    onProductClick(product.id);
+                  }
+                }}
+              >
+                <div className={`bg-[#2A2118]/85 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer h-auto
+                  border border-white/5 ${colors.shadow} transition-all duration-300 hover:shadow-lg`}>
                   
-                  {/* Кнопка для выбора продукта */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onProductClick(product.id);
-                    }} 
-                    className={`w-full py-2.5 rounded-full bg-gradient-to-r ${colors.gradient} text-white font-medium transition-transform hover:scale-105 flex items-center justify-center space-x-2`}
-                  >
-                    <span>Выбрать</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7-7 7" />
-                    </svg>
-                  </button>
+                  {/* Изображение продукта (на весь экран при активности) */}
+                  <div className={`relative ${isActive ? 'h-72' : 'h-56'} w-full transition-all duration-300`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} mix-blend-overlay opacity-60 z-10`}></div>
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
+                    
+                    {/* Калории в верхнем правом углу */}
+                    {product.calories !== undefined && (
+                      <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10">
+                        <svg className="w-4 h-4 text-[#B98D6F]" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
+                          <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
+                        </svg>
+                        <span className="text-xs">{product.calories} кал</span>
+                      </div>
+                    )}
+                    
+                    {/* Маленький индикатор в углу */}
+                    <div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${colors.accent} z-20 animate-pulse`}></div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-bold text-xl text-white">{product.name}</h4>
+                      <div className={`bg-gradient-to-r ${colors.gradient} text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner`}>
+                        {product.price} ₽
+                      </div>
+                    </div>
+                    <p className="text-sm text-white/80 line-clamp-2 leading-relaxed mb-4">{product.description}</p>
+                    
+                    {/* Кнопка для выбора продукта */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onProductClick(product.id);
+                      }} 
+                      className={`w-full py-3 rounded-full bg-gradient-to-r ${colors.gradient} text-white font-medium transition-transform hover:scale-105 flex items-center justify-center space-x-2`}
+                    >
+                      <span>Выбрать</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Индикаторы карточек */}
@@ -271,8 +298,8 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
       {/* Фиксированное нижнее меню с логотипом */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-4 py-3 border-t border-white/10">
         <div className="flex items-center justify-between">
-          {/* Активные заказы */}
-          <button className="relative p-2">
+          {/* Мои заказы */}
+          <button className="relative p-2" onClick={onOrdersClick}>
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
@@ -284,7 +311,7 @@ const CategoriesScreen = ({ selectedCategory, onProductClick, onHomeClick, onCar
           </button>
           
           {/* Логотип */}
-          <div className="cursor-pointer relative" onClick={onHomeClick}>
+          <div className="cursor-pointer relative" onClick={onLogoClick}>
             <div className="absolute -inset-2 bg-white/5 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 

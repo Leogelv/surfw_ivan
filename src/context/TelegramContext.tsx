@@ -12,145 +12,160 @@ interface TelegramUser {
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
-    query_id?: string;
-    user?: TelegramUser;
+    query_id: string;
+    user: TelegramUser;
     auth_date: string;
     hash: string;
   };
-  MainButton: {
-    text: string;
-    isVisible: boolean;
-    show: () => void;
-    hide: () => void;
-    setText: (text: string) => void;
-    onClick: (callback: () => void) => void;
-    offClick: (callback: () => void) => void;
-    enable: () => void;
-    disable: () => void;
+  version: string;
+  platform: string;
+  colorScheme: string;
+  themeParams: {
+    bg_color: string;
+    text_color: string;
+    hint_color: string;
+    link_color: string;
+    button_color: string;
+    button_text_color: string;
   };
+  isExpanded: boolean;
+  viewportHeight: number;
+  viewportStableHeight: number;
+  headerColor: string;
+  backgroundColor: string;
+  isClosingConfirmationEnabled: boolean;
   BackButton: {
     isVisible: boolean;
+    onClick: () => void;
+    offClick: () => void;
     show: () => void;
     hide: () => void;
+  };
+  MainButton: {
+    text: string;
+    color: string;
+    textColor: string;
+    isVisible: boolean;
+    isActive: boolean;
+    isProgressVisible: boolean;
     onClick: (callback: () => void) => void;
     offClick: (callback: () => void) => void;
+    show: () => void;
+    hide: () => void;
+    enable: () => void;
+    disable: () => void;
+    showProgress: (leaveActive: boolean) => void;
+    hideProgress: () => void;
+    setText: (text: string) => void;
   };
-  ready: () => void;
+  HapticFeedback: {
+    impactOccurred: (style: string) => void;
+    notificationOccurred: (type: string) => void;
+    selectionChanged: () => void;
+  };
   expand: () => void;
   close: () => void;
-  isExpanded: boolean;
+  readyToSend: (isReady: boolean) => void;
+  sendData: (data: string) => void;
+  switchInlineQuery: (query: string, choose_chat_types?: string[]) => void;
+  openLink: (url: string, options?: {try_instant_view?: boolean}) => void;
+  openTelegramLink: (url: string) => void;
+  openInvoice: (url: string, callback?: (status: string) => void) => void;
+  showPopup: (params: {
+    title?: string;
+    message: string;
+    buttons?: {
+      text: string;
+      type?: string;
+      id?: string;
+    }[];
+  }, callback?: (id: string) => void) => void;
+  showAlert: (message: string, callback?: () => void) => void;
+  showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
   enableClosingConfirmation: () => void;
   disableClosingConfirmation: () => void;
-  onEvent: (eventType: string, callback: () => void) => void;
-  offEvent: (eventType: string, callback: () => void) => void;
-  setHeaderColor: (color: string) => void;
-  setBackgroundColor: (color: string) => void;
-  platform: string;
+  onEvent: (eventType: string, eventHandler: () => void) => void;
+  offEvent: (eventType: string, eventHandler: () => void) => void;
 }
 
 interface TelegramContextType {
-  webApp: TelegramWebApp | null;
   user: TelegramUser | null;
-  isReady: boolean;
+  webApp: TelegramWebApp | null;
   isFullScreenEnabled: boolean;
   enableFullScreen: () => void;
-  disableFullScreen: () => void;
 }
 
-// Создаем контекст с дефолтными значениями
+// Создаем контекст
 const TelegramContext = createContext<TelegramContextType>({
-  webApp: null,
   user: null,
-  isReady: false,
+  webApp: null,
   isFullScreenEnabled: false,
   enableFullScreen: () => {},
-  disableFullScreen: () => {},
 });
 
 // Хук для использования контекста
-export const useTelegram = () => useContext(TelegramContext);
+export const useTelegram = () => {
+  return useContext(TelegramContext);
+};
+
+interface TelegramProviderProps {
+  children: ReactNode;
+}
 
 // Провайдер контекста
-export const TelegramProvider = ({ children }: { children: ReactNode }) => {
-  const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
+export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   const [user, setUser] = useState<TelegramUser | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [isFullScreenEnabled, setIsFullScreenEnabled] = useState(false);
 
   // Инициализация Telegram WebApp
   useEffect(() => {
-    // Проверяем, запущено ли приложение внутри Telegram WebApp
-    const telegramApp = window.Telegram?.WebApp as TelegramWebApp;
-    
-    if (telegramApp) {
-      setWebApp(telegramApp);
+    // Проверяем, доступен ли Telegram WebApp
+    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+      const tgWebApp = window.Telegram.WebApp;
       
-      // Получаем данные о пользователе
-      if (telegramApp.initDataUnsafe.user) {
-        setUser(telegramApp.initDataUnsafe.user);
-      } else {
-        // Демо пользователь, если приложение открыто не в Telegram
-        setUser({
-          id: 123456789,
-          first_name: 'Гость',
-          username: 'guest',
-          photo_url: 'https://t.me/i/userpic/320/9Og0qVZFdIf1TYlE25bJ7WJc__peiXnPaZrQ2LNTw88.jpg'
-        });
+      // Устанавливаем данные WebApp и пользователя
+      setWebApp(tgWebApp as unknown as TelegramWebApp);
+      
+      // Если в инициализационных данных есть пользователь, используем его
+      if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+        setUser(tgWebApp.initDataUnsafe.user);
       }
-      
-      // Сообщаем Telegram, что приложение готово
-      telegramApp.ready();
-      setIsReady(true);
-      
-      // Устанавливаем цвета для хедера и фона
-      telegramApp.setHeaderColor('#0A0908');
-      telegramApp.setBackgroundColor('#1E1B19');
-    } else {
-      // Если приложение открыто не в Telegram, создаем демо-пользователя
-      console.log('Telegram WebApp не обнаружен, используем демо-режим');
-      setUser({
-        id: 123456789,
-        first_name: 'Гость',
-        username: 'guest',
-        photo_url: 'https://t.me/i/userpic/320/9Og0qVZFdIf1TYlE25bJ7WJc__peiXnPaZrQ2LNTw88.jpg'
-      });
-      setIsReady(true);
     }
   }, []);
 
-  // Функции для управления полноэкранным режимом
+  // Функция для включения полноэкранного режима
   const enableFullScreen = () => {
-    if (webApp) {
-      webApp.expand();
-      setIsFullScreenEnabled(true);
+    if (webApp && !isFullScreenEnabled) {
+      try {
+        webApp.expand();
+        setIsFullScreenEnabled(true);
+      } catch (error) {
+        console.error('Failed to enable fullscreen mode:', error);
+      }
     }
   };
 
-  const disableFullScreen = () => {
-    setIsFullScreenEnabled(false);
+  // Предоставляем контекст
+  const value = {
+    user,
+    webApp,
+    isFullScreenEnabled,
+    enableFullScreen,
   };
 
   return (
-    <TelegramContext.Provider 
-      value={{ 
-        webApp, 
-        user, 
-        isReady,
-        isFullScreenEnabled,
-        enableFullScreen,
-        disableFullScreen 
-      }}
-    >
+    <TelegramContext.Provider value={value}>
       {children}
     </TelegramContext.Provider>
   );
 };
 
-// Объявляем интерфейс для Telegram WebApp в глобальном window
+// Добавляем глобальное объявление типа для window.Telegram
 declare global {
   interface Window {
-    Telegram?: {
-      WebApp: TelegramWebApp;
+    Telegram: {
+      WebApp: any;
     };
   }
 } 

@@ -7,23 +7,26 @@ import CategoriesScreen from '../../components/Surf/CategoriesScreen';
 import ProductScreen from '../../components/Surf/ProductScreen';
 import CartScreen from '../../components/Surf/CartScreen';
 import ProfileScreen from '../../components/Surf/ProfileScreen';
+import OrdersScreen from '../../components/Surf/OrdersScreen';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
 
 function SurfApp() {
-  const [currentScreen, setCurrentScreen] = useState<'home' | 'categories' | 'product' | 'cart'>('home');
+  const [currentScreen, setCurrentScreen] = useState<'home' | 'categories' | 'product' | 'cart' | 'orders'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product'>('home');
+  const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
   
-  const { isFullScreenEnabled } = useTelegram();
+  const { isFullScreenEnabled, webApp, enableFullScreen } = useTelegram();
 
-  // Функция для анимированного перехода между экранами
-  const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart', callback?: () => void) => {
+  useEffect(() => {
+    enableFullScreen();
+  }, [enableFullScreen]);
+
+  const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart' | 'orders', callback?: () => void) => {
     setIsTransitioning(true);
-    // Сохраняем предыдущий экран для возврата из корзины
-    if (screen === 'cart' && currentScreen !== 'cart') {
+    if ((screen === 'cart' || screen === 'orders') && currentScreen !== 'cart' && currentScreen !== 'orders') {
       setPreviousScreen(currentScreen);
     }
     setTimeout(() => {
@@ -35,7 +38,6 @@ function SurfApp() {
     }, 300);
   };
 
-  // Обработчики переходов между экранами
   const goToCategories = (category?: string) => {
     transitionTo('categories', () => {
       setSelectedCategory(category || '');
@@ -56,9 +58,12 @@ function SurfApp() {
     transitionTo('cart');
   };
 
+  const goToOrders = () => {
+    transitionTo('orders');
+  };
+
   const goBack = () => {
-    // Возвращаемся к предыдущему экрану из корзины
-    if (currentScreen === 'cart') {
+    if (currentScreen === 'cart' || currentScreen === 'orders') {
       if (previousScreen === 'product') {
         goToProduct(selectedProduct);
       } else if (previousScreen === 'categories') {
@@ -70,18 +75,19 @@ function SurfApp() {
   };
 
   const toggleProfile = () => {
+    if (showProfile) {
+      enableFullScreen();
+    }
     setShowProfile(prev => !prev);
   };
 
-  // Кастомный стиль для padding-top в зависимости от полноэкранного режима
   const contentStyle = {
-    paddingTop: isFullScreenEnabled ? '50px' : '0',
+    paddingTop: isFullScreenEnabled ? '0' : '0',
     transition: 'padding-top 0.3s ease'
   };
 
   return (
     <div style={contentStyle} className="h-screen bg-black">
-      {/* Текущий экран с анимацией перехода */}
       <div className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {currentScreen === 'home' && (
           <HomeScreen 
@@ -90,6 +96,7 @@ function SurfApp() {
             onCartClick={goToCart} 
             onProfileClick={toggleProfile}
             onLogoClick={goHome}
+            onOrdersClick={goToOrders}
           />
         )}
         {currentScreen === 'categories' && (
@@ -100,6 +107,7 @@ function SurfApp() {
             onCartClick={goToCart}
             onProfileClick={toggleProfile}
             onLogoClick={goHome}
+            onOrdersClick={goToOrders}
           />
         )}
         {currentScreen === 'product' && (
@@ -116,15 +124,25 @@ function SurfApp() {
             onBackClick={goBack}
           />
         )}
+        {currentScreen === 'orders' && (
+          <OrdersScreen 
+            onBackClick={goBack}
+          />
+        )}
       </div>
 
-      {/* Профиль (сайдбар) */}
-      {showProfile && <ProfileScreen onClose={toggleProfile} />}
+      {showProfile && (
+        <ProfileScreen 
+          onClose={toggleProfile} 
+          onHomeClick={goHome}
+          onCartClick={goToCart}
+          onOrdersClick={goToOrders}
+        />
+      )}
     </div>
   );
 }
 
-// Оборачиваем приложение в TelegramProvider
 export default function SurfPage() {
   return (
     <TelegramProvider>

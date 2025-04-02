@@ -4,11 +4,15 @@ import { useTelegram } from '@/context/TelegramContext';
 
 interface ProfileScreenProps {
   onClose: () => void;
+  onHomeClick: () => void;
+  onCartClick: () => void;
+  onOrdersClick: () => void;
 }
 
-const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
+const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: ProfileScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const { user, webApp, enableFullScreen } = useTelegram();
+  const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
+  const { user, webApp } = useTelegram();
 
   // Демо-данные для заказов
   const orders = [
@@ -43,11 +47,6 @@ const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Включаем полноэкранный режим при открытии профиля
-  useEffect(() => {
-    enableFullScreen();
-  }, [enableFullScreen]);
-
   return (
     <div className="fixed inset-0 bg-[#1D1816]/95 backdrop-blur-md z-50 flex flex-col text-white">
       {/* Верхняя часть с данными пользователя */}
@@ -72,13 +71,13 @@ const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
               />
             ) : (
               <div className="w-full h-full rounded-full bg-gradient-to-r from-[#A67C52] to-[#5D4037] flex items-center justify-center text-2xl font-bold">
-                {user?.first_name.charAt(0) || 'G'}
+                {user?.first_name?.charAt(0) || 'G'}
               </div>
             )}
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#1D1816]"></div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold">{user?.first_name} {user?.last_name || ''}</h2>
+            <h2 className="text-2xl font-bold">{user?.first_name || 'Гость'} {user?.last_name || ''}</h2>
             <p className="text-white/60 text-sm">
               {user?.username ? `@${user.username}` : 'Пользователь Telegram'}
             </p>
@@ -87,7 +86,7 @@ const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
       </div>
 
       {/* Информация о пользователе */}
-      <div className="flex-1 overflow-auto px-6 pb-6">
+      <div className="flex-1 overflow-auto px-6 pb-24">
         {/* Бонусная система */}
         <div className={`mb-6 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 p-4">
@@ -142,7 +141,10 @@ const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors">
+              <button 
+                className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors"
+                onClick={onOrdersClick}
+              >
                 Повторить заказ
               </button>
             </div>
@@ -188,6 +190,49 @@ const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
         <div className="mt-8 text-center text-white/40 text-xs">
           <p>Версия 1.0.0</p>
           <p className="mt-1">© 2024 Surf Coffee. Все права защищены.</p>
+        </div>
+      </div>
+
+      {/* Фиксированное нижнее меню с логотипом */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-4 py-3 border-t border-white/10">
+        <div className="flex items-center justify-between">
+          {/* Мои заказы */}
+          <button className="relative p-2" onClick={() => { onOrdersClick(); onClose(); }}>
+            {activeOrders > 0 && (
+              <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                {activeOrders}
+              </div>
+            )}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </button>
+          
+          {/* Логотип */}
+          <div className="cursor-pointer relative" onClick={() => { onHomeClick(); onClose(); }}>
+            <div className="absolute -inset-2 bg-[#A67C52]/10 rounded-full blur-md"></div>
+            <Image 
+              src="/surf/logo.svg" 
+              alt="Surf Coffee" 
+              width={100} 
+              height={40} 
+              className="h-10 w-auto relative"
+            />
+          </div>
+          
+          {/* Иконки справа */}
+          <div className="flex space-x-2">
+            <button onClick={() => { onCartClick(); onClose(); }} className="p-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </button>
+            <button className="p-2 bg-white/10 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
