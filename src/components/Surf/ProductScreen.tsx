@@ -23,14 +23,15 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
   }, []);
   
   // Данные о продуктах (хардкод для демо) с ценами в рублях
-  const products: Record<string, { name: string; price: number; image: string; description: string; allergens?: string[]; calories?: number }> = {
+  const products: Record<string, { name: string; price: number; image: string; description: string; allergens?: string[]; calories?: number; category?: string }> = {
     'cappuccino': {
       name: 'Капучино',
       price: 350,
       image: '/surf/coffee_categ.png',
       description: 'Наш фирменный капучино с идеальным балансом эспрессо, молока и бархатистой пенки. Мягкий вкус с нотками карамели и шоколада.',
       allergens: ['Молоко'],
-      calories: 120
+      calories: 120,
+      category: 'coffee'
     },
     'iced-latte': {
       name: 'Айс Латте',
@@ -38,35 +39,40 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
       image: '/surf/coffee_categ.png',
       description: 'Охлаждающий латте со свежей обжаркой, льдом и нежным молоком. Идеальный выбор для жаркого дня с насыщенным кофейным вкусом.',
       allergens: ['Молоко'],
-      calories: 180
+      calories: 180,
+      category: 'coffee'
     },
     'espresso': {
       name: 'Эспрессо',
       price: 250,
       image: '/surf/coffee_categ.png',
       description: 'Насыщенный, крепкий эспрессо из отборных зерен с богатым ароматом и бархатистой пенкой.',
-      calories: 5
+      calories: 5,
+      category: 'coffee'
     },
     'green-tea': {
       name: 'Зеленый чай',
       price: 270,
       image: '/surf/tea_categ.png',
       description: 'Премиальный зеленый чай с мягким травяным ароматом и освежающим послевкусием. Богат антиоксидантами и заваривается при идеальной температуре.',
-      calories: 0
+      calories: 0,
+      category: 'tea'
     },
     'herbal-tea': {
       name: 'Травяной чай',
       price: 290,
       image: '/surf/tea_categ.png',
       description: 'Ароматный травяной чай из целебных трав, который успокаивает и восстанавливает. Идеальный выбор для вечернего расслабления.',
-      calories: 0
+      calories: 0,
+      category: 'tea'
     },
     'black-tea': {
       name: 'Черный чай',
       price: 270,
       image: '/surf/tea_categ.png',
       description: 'Крепкий черный чай с насыщенным вкусом и глубоким ароматом. Идеально подходит для бодрого начала дня.',
-      calories: 0
+      calories: 0,
+      category: 'tea'
     },
     'croissant': {
       name: 'Круассан',
@@ -74,7 +80,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
       image: '/surf/croissant.png',
       description: 'Свежеиспеченный круассан с хрустящей корочкой и нежным слоистым тестом внутри. Выпекается каждое утро по традиционному рецепту.',
       allergens: ['Глютен', 'Молоко', 'Яйца'],
-      calories: 240
+      calories: 240,
+      category: 'food'
     },
     'sandwich': {
       name: 'Сэндвич',
@@ -82,7 +89,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
       image: '/surf/food_categ.png',
       description: 'Сытный сэндвич на артизанском хлебе с фермерскими ингредиентами. Комбинация свежих овощей, соусов и начинок на ваш выбор.',
       allergens: ['Глютен'],
-      calories: 320
+      calories: 320,
+      category: 'food'
     },
     'avocado-toast': {
       name: 'Тост с авокадо',
@@ -90,7 +98,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
       image: '/surf/food_categ.png',
       description: 'Хрустящий тост с авокадо, приправленный специями и зеленью. Питательный и полезный вариант для сытного завтрака или обеда.',
       allergens: ['Глютен'],
-      calories: 280
+      calories: 280,
+      category: 'food'
     }
   };
   
@@ -101,7 +110,57 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
     image: '/surf/coffee_categ.png',
     description: 'Нежный латте с бархатистой текстурой и идеальным балансом эспрессо и молока. Мы используем только свежеобжаренные зерна и локальное молоко.',
     allergens: ['Молоко'],
-    calories: 150
+    calories: 150,
+    category: 'coffee'
+  };
+  
+  // Получаем цвет акцента для категории продукта
+  const getProductColors = () => {
+    const category = product.category || 'coffee';
+    const colors: Record<string, { gradient: string, accent: string, shadow: string, light: string, button: string }> = {
+      coffee: { 
+        gradient: 'from-amber-700 to-amber-950', 
+        accent: 'bg-amber-500',
+        shadow: 'shadow-amber-500/30',
+        light: 'bg-amber-400',
+        button: 'from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800'
+      },
+      tea: { 
+        gradient: 'from-green-700 to-green-950', 
+        accent: 'bg-green-500',
+        shadow: 'shadow-green-500/30',
+        light: 'bg-green-400',
+        button: 'from-green-500 to-green-700 hover:from-green-600 hover:to-green-800'
+      },
+      food: { 
+        gradient: 'from-orange-700 to-orange-950', 
+        accent: 'bg-orange-500',
+        shadow: 'shadow-orange-500/30',
+        light: 'bg-orange-400',
+        button: 'from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800'
+      },
+    };
+    return colors[category] || colors.coffee;
+  };
+
+  // Получаем соответствующий фон для категории
+  const getBgPattern = () => {
+    const category = product.category || 'coffee';
+    if (category === 'coffee') return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C6D3E' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+    if (category === 'tea') return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23248D46' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+    if (category === 'food') return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D97706' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+    return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23808080' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+  };
+
+  // Получаем эмодзи для категории
+  const getProductEmoji = () => {
+    const category = product.category || 'coffee';
+    const emojis: Record<string, string> = {
+      coffee: '☕',
+      tea: '🍵',
+      food: '🥐',
+    };
+    return emojis[category] || '✨';
   };
   
   // Расчет цены в зависимости от размера и количества
@@ -131,15 +190,33 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
     large: 'Большой'
   };
 
+  const colors = getProductColors();
+
   return (
-    <div className="h-full flex flex-col text-white">
+    <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#0A0908] via-[#1E1B19] to-[#0A0908]">
+      {/* Верхний декоративный эффект */}
+      <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
+           style={{ 
+             backgroundImage: getBgPattern(), 
+             backgroundSize: "40px 40px"
+           }}></div>
+            
       {/* Изображение продукта с эффектом затемнения и зума при загрузке */}
-      <div className="relative h-2/5 bg-black overflow-hidden">
+      <div className="relative h-2/5 bg-black overflow-hidden z-10">
         <div 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
+        
+        {/* Декоративный элемент на изображении */}
+        <div className={`absolute top-3 left-3 z-20 rounded-full transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <span className="flex items-center space-x-2 bg-black/40 backdrop-blur-sm rounded-full py-1 px-3 border border-white/10">
+            <span className="text-lg">{getProductEmoji()}</span>
+            <span className="text-xs font-medium">{product.category?.toUpperCase()}</span>
+          </span>
+        </div>
+        
         <div 
-          className={`absolute top-4 right-4 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
+          className={`absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
         >
           {product.calories !== undefined && (
             <>
@@ -151,7 +228,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
             </>
           )}
         </div>
+        
         <div className={`relative h-full w-full transition-transform duration-1000 ${isLoaded ? 'scale-100' : 'scale-110'}`}>
+          {/* Оверлей для изображения с цветами категории */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} mix-blend-overlay opacity-20 z-10`}></div>
+          
           <Image
             src={product.image}
             alt={product.name}
@@ -159,16 +240,19 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
             className="object-cover"
             priority
           />
+          
+          {/* Пульсирующая точка */}
+          <div className={`absolute bottom-4 right-4 w-2 h-2 rounded-full ${colors.accent} z-20 animate-pulse`}></div>
         </div>
       </div>
       
       {/* Информация о продукте с эффектом прозрачности при загрузке */}
-      <div className="flex-1 bg-gradient-to-b from-[#3D322B] to-[#2A201A] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10">
+      <div className="flex-1 bg-gradient-to-b from-[#1A1513] to-[#0A0908] px-6 py-5 -mt-5 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
         {/* Название и цена */}
         <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="flex justify-between items-start">
             <h1 className="text-4xl font-bold">{product.name}</h1>
-            <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full">
+            <div className={`bg-gradient-to-r ${colors.gradient} px-3 py-1 rounded-full text-white font-medium shadow-lg ${colors.shadow}`}>
               <p className="text-xl font-medium">{getPrice()} ₽</p>
             </div>
           </div>
@@ -176,32 +260,35 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
           {/* Аллергены если есть */}
           {product.allergens && product.allergens.length > 0 && (
             <div className="flex items-center mt-2 space-x-1">
-              <svg className="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg className={`w-4 h-4 ${colors.light} bg-clip-text text-transparent`} viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span className="text-xs text-amber-200">{product.allergens.join(', ')}</span>
+              <span className="text-xs text-white/70">{product.allergens.join(', ')}</span>
             </div>
           )}
         </div>
         
         {/* Выбор размера */}
         <div className={`mb-5 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-3">Размер</h3>
+          <h3 className="text-xl font-medium mb-3 flex items-center">
+            Размер
+            <div className={`ml-2 w-1.5 h-1.5 rounded-full ${colors.accent} animate-pulse`}></div>
+          </h3>
           <div className="flex justify-between space-x-3">
             <button 
-              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'small' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'small' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
               onClick={() => setSelectedSize('small')}
             >
               {sizeLabels.small}
             </button>
             <button 
-              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'medium' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'medium' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
               onClick={() => setSelectedSize('medium')}
             >
               {sizeLabels.medium}
             </button>
             <button 
-              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'large' ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg' : 'bg-white/10 hover:bg-white/20'}`}
+              className={`flex-1 py-3 rounded-full transition-all duration-300 ${selectedSize === 'large' ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow}` : 'bg-white/5 hover:bg-white/10 border border-white/5'}`}
               onClick={() => setSelectedSize('large')}
             >
               {sizeLabels.large}
@@ -211,11 +298,14 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
         
         {/* Выбор количества */}
         <div className={`mb-5 transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-xl font-medium mb-3">Количество</h3>
-          <div className="flex items-center w-full bg-white/10 rounded-full p-1">
+          <h3 className="text-xl font-medium mb-3 flex items-center">
+            Количество
+            <div className={`ml-2 w-1.5 h-1.5 rounded-full ${colors.accent} animate-pulse`}></div>
+          </h3>
+          <div className="flex items-center w-full bg-white/5 rounded-full p-1 border border-white/10 backdrop-blur-sm">
             <button 
               onClick={decreaseQuantity}
-              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -224,7 +314,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
             <div className="flex-1 text-center font-medium text-lg">{quantity}</div>
             <button 
               onClick={increaseQuantity}
-              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+              className="h-10 w-10 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12M6 12h12" />
@@ -233,17 +323,26 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
           </div>
         </div>
         
+        {/* Декоративный разделитель */}
+        <div className="relative my-6">
+          <div className="absolute left-0 right-0 h-[1px] bg-white/10"></div>
+          <div className="absolute left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          <div className="flex justify-center">
+            <div className={`w-2 h-2 rounded-full ${colors.accent} relative top-[-4px] animate-pulse`}></div>
+          </div>
+        </div>
+        
         {/* Описание */}
         <div className={`mb-5 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <h3 className="text-xl font-medium mb-2">Описание</h3>
-          <p className="text-gray-300 text-sm leading-relaxed">{product.description}</p>
+          <p className="text-white/70 text-sm leading-relaxed">{product.description}</p>
         </div>
         
         {/* Кнопка добавления в корзину */}
         <div className={`mt-auto mb-20 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <button 
             onClick={onCartClick}
-            className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white rounded-full font-bold text-lg transition-colors shadow-lg flex items-center justify-center group"
+            className={`w-full py-4 bg-gradient-to-r ${colors.button} text-white rounded-full font-bold text-lg transition-colors shadow-lg ${colors.shadow} flex items-center justify-center group backdrop-blur-sm border border-white/10`}
           >
             <span className="mr-2">Добавить в корзину</span>
             <svg 
@@ -260,34 +359,37 @@ const ProductScreen = ({ productName, onBackClick, onCartClick }: ProductScreenP
       </div>
       
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#2A201A]/90 backdrop-blur-md px-4 py-3 border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-black/80 backdrop-blur-md px-4 py-3 border-t border-white/10">
         <div className="flex items-center justify-between">
           {/* Кнопка назад */}
-          <button onClick={onBackClick} className="p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={onBackClick} className="p-2 relative group">
+            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           
           {/* Логотип */}
-          <div className="cursor-pointer">
+          <div className="cursor-pointer relative">
+            <div className="absolute -inset-2 bg-white/5 rounded-full blur-md"></div>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
               width={100} 
               height={40} 
-              className="h-10 w-auto"
+              className="h-10 w-auto relative"
             />
           </div>
           
           {/* Корзина */}
-          <button onClick={onCartClick} className="relative p-2">
+          <button onClick={onCartClick} className="relative p-2 group">
+            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
               </div>
             )}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
           </button>
