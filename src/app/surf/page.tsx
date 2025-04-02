@@ -166,7 +166,7 @@ export default function SurfPage() {
   };
 
   // Верхняя навигационная панель (общая для десктопа и мобильной версии)
-  const headerNav = (
+  const headerNav = () => (
     <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md py-3 px-4 flex justify-between items-center border-b border-white/10">
       {/* Левая часть - активный заказ (если есть) */}
       <div className="flex items-center">
@@ -228,7 +228,7 @@ export default function SurfPage() {
     return (
       <div className="flex flex-col h-screen bg-gradient-to-b from-[#0A0908] via-[#1E1B19] to-[#0A0908]">
         {/* Верхняя навигация */}
-        {headerNav}
+        {headerNav()}
         
         {/* Основной контент без эмуляции телефона */}
         <div className="flex-1 overflow-auto mt-14">
@@ -284,7 +284,7 @@ export default function SurfPage() {
 
         {/* Верхняя навигация */}
         <div className="absolute top-12 left-0 right-0 z-20">
-          {headerNav}
+          {headerNav()}
         </div>
 
         {/* Текущий экран с анимацией перехода */}
