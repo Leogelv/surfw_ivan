@@ -43,8 +43,8 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, isMobile = fals
         </div>
       </div>
       
-      {/* Категории */}
-      <div className="flex-1 flex flex-col space-y-2 p-2">
+      {/* Категории с улучшенным отображением для мобильных */}
+      <div className="flex-1 flex flex-col space-y-2 p-2 min-h-[60vh]">
         {/* Кофе */}
         <div 
           className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-300 ${activeCategory === 'coffee' ? 'scale-[1.02] shadow-lg shadow-amber-900/20' : activeCategory ? 'opacity-80 scale-[0.99]' : ''}`}
@@ -52,14 +52,16 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, isMobile = fals
           onMouseEnter={() => handleCategoryHover('coffee')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
-          <Image
-            src="/surf/coffee_categ.png"
-            alt="Coffee"
-            fill
-            className="object-cover transition-transform duration-700 hover:scale-110"
-          />
+          <div className="absolute inset-0">
+            <Image
+              src="/surf/coffee_categ.png"
+              alt="Coffee"
+              fill
+              className="object-cover transition-transform duration-700 hover:scale-110"
+            />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <h2 className="text-white text-6xl font-bold drop-shadow-lg tracking-wider">COFFEE</h2>
+            <h2 className="text-white text-5xl font-bold drop-shadow-lg tracking-wider">COFFEE</h2>
           </div>
         </div>
         
@@ -70,14 +72,16 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, isMobile = fals
           onMouseEnter={() => handleCategoryHover('tea')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
-          <Image
-            src="/surf/tea_categ.png"
-            alt="Tea"
-            fill
-            className="object-cover transition-transform duration-700 hover:scale-110"
-          />
+          <div className="absolute inset-0">
+            <Image
+              src="/surf/tea_categ.png"
+              alt="Tea"
+              fill
+              className="object-cover transition-transform duration-700 hover:scale-110"
+            />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <h2 className="text-white text-6xl font-bold drop-shadow-lg tracking-wider">TEA</h2>
+            <h2 className="text-white text-5xl font-bold drop-shadow-lg tracking-wider">TEA</h2>
           </div>
         </div>
         
@@ -88,14 +92,16 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, isMobile = fals
           onMouseEnter={() => handleCategoryHover('food')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
-          <Image
-            src="/surf/food_categ.png"
-            alt="Food"
-            fill
-            className="object-cover transition-transform duration-700 hover:scale-110"
-          />
+          <div className="absolute inset-0">
+            <Image
+              src="/surf/food_categ.png"
+              alt="Food"
+              fill
+              className="object-cover transition-transform duration-700 hover:scale-110"
+            />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <h2 className="text-white text-6xl font-bold drop-shadow-lg tracking-wider">FOOD</h2>
+            <h2 className="text-white text-5xl font-bold drop-shadow-lg tracking-wider">FOOD</h2>
           </div>
         </div>
       </div>
