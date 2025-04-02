@@ -12,6 +12,23 @@ export default function SurfPage() {
   const [selectedProduct, setSelectedProduct] = useState<string>('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Определяем мобильный или десктоп при загрузке и изменении размера окна
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Проверяем при загрузке
+    checkIsMobile();
+    
+    // Добавляем слушатель изменения размера окна
+    window.addEventListener('resize', checkIsMobile);
+    
+    // Удаляем слушатель при размонтировании
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Обновляем время каждую минуту
   useEffect(() => {
@@ -69,6 +86,79 @@ export default function SurfPage() {
     }, 100);
   };
 
+  // Мобильная версия без эмуляции телефона
+  if (isMobile) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+        {/* Статус бар для мобильной версии */}
+        <div className="sticky top-0 left-0 right-0 w-full bg-black py-3 px-4 flex justify-between items-center text-white z-50">
+          <span>{currentTime || '9:41'}</span>
+          <div className="flex items-center space-x-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12S7.59 4 12 4 20 7.59 20 12 16.41 20 12 20M16.59 7.58L10 14.17L7.41 11.59L6 13L10 17L18 9L16.59 7.58Z" />
+            </svg>
+            <div className="relative w-6">
+              <div className="absolute inset-0 flex items-end">
+                <div className="w-1 h-1 bg-white rounded-sm mr-[2px]"></div>
+                <div className="w-1 h-2 bg-white rounded-sm mr-[2px]"></div>
+                <div className="w-1 h-3 bg-white rounded-sm mr-[2px]"></div>
+                <div className="w-1 h-4 bg-white rounded-sm"></div>
+              </div>
+            </div>
+            <div className="text-xs font-bold">100%</div>
+          </div>
+        </div>
+
+        {/* Текущий экран с анимацией перехода */}
+        <div className={`flex-1 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+          {currentScreen === 'home' && (
+            <HomeScreen onCategoryClick={goToCategories} onMenuClick={goToCategories} onCartClick={goToCart} />
+          )}
+          {currentScreen === 'categories' && (
+            <CategoriesScreen 
+              selectedCategory={selectedCategory} 
+              onProductClick={goToProduct} 
+              onHomeClick={goHome} 
+              onCartClick={goToCart} 
+            />
+          )}
+          {currentScreen === 'product' && (
+            <ProductScreen 
+              productName={selectedProduct} 
+              onBackClick={() => goToCategories(selectedCategory)} 
+              onCartClick={goToCart} 
+            />
+          )}
+        </div>
+
+        {/* Нижняя навигация для мобильной версии */}
+        <div className="sticky bottom-0 left-0 right-0 w-full bg-black/90 backdrop-blur-md py-4 px-6 flex justify-between items-center text-white z-50">
+          <button onClick={goHome} className="flex flex-col items-center">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+            </svg>
+            <span className="text-xs mt-1">Домой</span>
+          </button>
+
+          <button onClick={() => goToCategories()} className="flex flex-col items-center">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M3,4H7V8H3V4M9,5V7H21V5H9M3,10H7V14H3V10M9,11V13H21V11H9M3,16H7V20H3V16M9,17V19H21V17H9" />
+            </svg>
+            <span className="text-xs mt-1">Меню</span>
+          </button>
+
+          <button onClick={goToCart} className="flex flex-col items-center">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M1,2V4H3L6.6,11.59L5.24,14.04C5.09,14.32 5,14.65 5,15A2,2 0 0,0 7,17H19V15H7.42A0.25,0.25 0 0,1 7.17,14.75C7.17,14.7 7.18,14.66 7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5C20.95,5.34 21,5.17 21,5A1,1 0 0,0 20,4H5.21L4.27,2M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18Z" />
+            </svg>
+            <span className="text-xs mt-1">Корзина</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Десктопная версия с эмуляцией телефона
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-4">
       {/* Контейнер для телефона */}
