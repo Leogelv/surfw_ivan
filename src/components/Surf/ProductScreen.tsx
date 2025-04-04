@@ -967,61 +967,86 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         </button>
         
         {/* Иконки размера/количества под кнопкой с proper анимацией */}
-        <div className="mt-3 flex justify-center">
+        <div className="mt-3 flex justify-between">
           {product.category === 'coffee' || product.category === 'tea' ? (
-            <div className="flex items-center space-x-6">
-              <div className="text-center">
-                <div className="text-xs text-white/60 mb-1">Размер</div>
-                <div className="flex justify-center">
-                  {/* Иконка чашки с анимацией размера */}
-                  <div 
-                    className="transition-all duration-800 ease-in-out transform animate-overshoot"
-                    style={{ 
-                      height: selectedSize === 'small' ? '35px' : selectedSize === 'medium' ? '55px' : '80px',
-                      width: 'auto',
-                    }}
-                  >
-                    <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor" style={{color: '#A67C52'}}>
-                      <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                    </svg>
-                  </div>
+            <div className="flex items-center justify-between w-full">
+              {/* Размер - просто иконка нужного размера без подписи */}
+              <div className="flex items-center justify-center">
+                <div 
+                  className="transition-all duration-500 ease-out transform animate-overshoot"
+                  style={{ 
+                    height: selectedSize === 'small' ? '35px' : selectedSize === 'medium' ? '55px' : '80px',
+                    width: 'auto',
+                  }}
+                >
+                  <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor" style={{color: '#A67C52'}}>
+                    <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                  </svg>
                 </div>
               </div>
               
-              <div className="text-center">
-                <div className="text-xs text-white/60 mb-1">Количество</div>
-                <div className="flex justify-center space-x-1">
-                  {/* Отображение количества иконок согласно выбранному количеству */}
+              {/* Количество - ряд иконок без подписи */}
+              <div className="flex justify-end items-center">
+                <div className="flex items-end space-x-1">
                   {Array.from({ length: Math.min(quantity, 7) }).map((_, index) => (
-                    <svg 
+                    <div 
                       key={index} 
-                      style={{color: '#A67C52', height: '20px', width: 'auto', opacity: 0.7 + (index * 0.3 / quantity)}}
-                      viewBox="0 0 24 24" 
-                      fill="currentColor"
+                      className="transition-all"
+                      style={{
+                        transform: `translateY(${Math.sin(index * 0.8) * 5}px)`, 
+                        animationDelay: `${index * 0.1}s`
+                      }}
                     >
-                      <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                    </svg>
+                      <svg 
+                        className={`animate-float-${index % 3}`}
+                        style={{
+                          color: '#A67C52', 
+                          height: '24px', 
+                          width: 'auto',
+                          animationDuration: `${1 + index * 0.2}s`,
+                          animationDelay: `${index * 0.1}s`
+                        }}
+                        viewBox="0 0 24 24" 
+                        fill="currentColor"
+                      >
+                        <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                      </svg>
+                    </div>
                   ))}
-                  {quantity > 7 && <span className="text-[#A67C52] text-xs ml-1">+{quantity - 7}</span>}
+                  {quantity > 7 && <span className="text-[#A67C52] text-sm font-medium ml-1">+{quantity - 7}</span>}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="text-center">
-              <div className="text-xs text-white/60 mb-1">Количество</div>
-              <div className="flex justify-center space-x-1">
-                {/* Иконки еды согласно количеству */}
+            <div className="flex justify-center w-full">
+              {/* Иконки еды согласно количеству - сразу без подписи */}
+              <div className="flex items-end space-x-1">
                 {Array.from({ length: Math.min(quantity, 7) }).map((_, index) => (
-                  <svg 
+                  <div 
                     key={index} 
-                    style={{color: '#A67C52', height: '20px', width: 'auto', opacity: 0.7 + (index * 0.3 / quantity)}}
-                    viewBox="0 0 24 24" 
-                    fill="currentColor"
+                    className="transition-all"
+                    style={{
+                      transform: `translateY(${Math.sin(index * 0.8) * 5}px)`, 
+                      animationDelay: `${index * 0.1}s`
+                    }}
                   >
-                    <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
-                  </svg>
+                    <svg 
+                      className={`animate-float-${index % 3}`}
+                      style={{
+                        color: '#A67C52', 
+                        height: '24px', 
+                        width: 'auto',
+                        animationDuration: `${1 + index * 0.2}s`,
+                        animationDelay: `${index * 0.1}s`
+                      }}
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                    >
+                      <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
+                    </svg>
+                  </div>
                 ))}
-                {quantity > 7 && <span className="text-[#A67C52] text-xs ml-1">+{quantity - 7}</span>}
+                {quantity > 7 && <span className="text-[#A67C52] text-sm font-medium ml-1">+{quantity - 7}</span>}
               </div>
             </div>
           )}
@@ -1061,6 +1086,27 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         }
         .animate-floating {
           animation: floating 5s ease-in-out infinite;
+        }
+        @keyframes float-0 {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        @keyframes float-1 {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        @keyframes float-2 {
+          0%, 100% { transform: translateY(0); }
+          66% { transform: translateY(-4px); }
+        }
+        .animate-float-0 {
+          animation: float-0 1.2s ease-in-out infinite;
+        }
+        .animate-float-1 {
+          animation: float-1 1.6s ease-in-out infinite;
+        }
+        .animate-float-2 {
+          animation: float-2 1.4s ease-in-out infinite;
         }
         @keyframes overshoot {
           0% {
