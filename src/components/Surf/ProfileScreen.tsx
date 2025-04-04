@@ -23,8 +23,8 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       date: '15 мая, 14:32',
       status: 'Выполнен',
       items: [
-        { name: 'Капучино (средний)', quantity: 1 },
-        { name: 'Эспрессо', quantity: 2 }
+        { name: 'Капучино (средний)', quantity: 1, image: '/surf/coffee_categ.png' },
+        { name: 'Эспрессо', quantity: 2, image: '/surf/coffee_categ.png' }
       ],
       total: 810
     },
@@ -33,8 +33,8 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       date: '10 мая, 11:15',
       status: 'Выполнен',
       items: [
-        { name: 'Латте (большой)', quantity: 1 },
-        { name: 'Круассан', quantity: 1 }
+        { name: 'Латте (большой)', quantity: 1, image: '/surf/coffee_categ.png' },
+        { name: 'Круассан', quantity: 1, image: '/surf/croissant.png' }
       ],
       total: 600
     }
@@ -161,15 +161,27 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-white/10">
-                {order.items.map((item, i) => (
-                  <div key={i} className="text-sm text-white/70 flex justify-between">
-                    <span>{item.name}</span>
-                    <span>x{item.quantity}</span>
-                  </div>
-                ))}
+                <div className="space-y-2">
+                  {order.items.map((item, i) => (
+                    <div key={i} className="flex items-center py-2 px-2 bg-white/5 rounded-lg hover:bg-white/10 transition-all">
+                      <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/10 mr-3 flex-shrink-0">
+                        <Image
+                          src={item.image || '/surf/coffee_categ.png'}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 flex justify-between items-center">
+                        <span className="text-sm text-white/80">{item.name}</span>
+                        <span className="text-xs text-white/60">x{item.quantity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
               <button 
-                className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors"
+                className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors active:scale-95"
                 onClick={() => { 
                   haptic.buttonClick(); // Haptic feedback при нажатии
                   onOrdersClick(); 
