@@ -472,17 +472,48 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Верхний декоративный эффект */}
       <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
            style={{ 
-             backgroundImage: getBgPattern()
-           }}>
+             backgroundImage: getBgPattern(), 
+             backgroundSize: "40px 40px"
+           }}></div>
+           
+      {/* Декоративные иконки серф-тематики */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[30%] left-[5%] opacity-5 animate-pulse text-white">
+          <svg className="w-24 h-24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21,9L21,15L12,21L3,15L3,9L12,3L21,9M5,10.5V13.5L12,18L19,13.5V10.5L12,6L5,10.5Z"/>
+          </svg>
+        </div>
+        <div className="absolute top-[60%] right-[8%] opacity-5 animate-pulse" style={{animationDelay: '1.5s'}}>
+          <svg className="w-32 h-32" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22,16A5,5 0 0,1 17,21H7A5,5 0 0,1 2,16V8A5,5 0 0,1 7,3H17A5,5 0 0,1 22,8V16M9.5,9A1.5,1.5 0 0,0 8,10.5A1.5,1.5 0 0,0 9.5,12A1.5,1.5 0 0,0 11,10.5A1.5,1.5 0 0,0 9.5,9M14.5,9A1.5,1.5 0 0,0 13,10.5A1.5,1.5 0 0,0 14.5,12A1.5,1.5 0 0,0 16,10.5A1.5,1.5 0 0,0 14.5,9M9.5,13.5A1.5,1.5 0 0,0 8,15A1.5,1.5 0 0,0 9.5,16.5A1.5,1.5 0 0,0 11,15A1.5,1.5 0 0,0 9.5,13.5M14.5,13.5A1.5,1.5 0 0,0 13,15A1.5,1.5 0 0,0 14.5,16.5A1.5,1.5 0 0,0 16,15A1.5,1.5 0 0,0 14.5,13.5Z"/>
+          </svg>
+        </div>
+        <div className="absolute bottom-[20%] left-[15%] opacity-5 animate-pulse" style={{animationDelay: '2.5s'}}>
+          <svg className="w-20 h-20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z"/>
+          </svg>
+        </div>
       </div>
       
-      {/* Изображение заголовка продукта с вуалью */}
-      <div 
-        className={`relative h-[${getImageHeight()}] w-full overflow-hidden transition-all duration-700 ease-in-out ${
-          hasScrolled ? 'rounded-b-2xl shadow-2xl shadow-black/30' : ''
-        }`}
-        style={{ height: getImageHeight() }}
-      >
+      {/* Серф-волны фоновые */}
+      <div className="absolute top-40 left-0 right-0 z-0 opacity-30 pointer-events-none">
+        <div className="relative w-full overflow-hidden h-32">
+          <svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" className="w-full h-24 text-[#A67C52] animate-wave">
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".1" fill="currentColor"></path>
+            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".25" fill="currentColor"></path>
+            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" opacity=".3" fill="currentColor"></path>
+          </svg>
+        </div>
+      </div>
+      
+      {/* Изображение продукта с эффектом затемнения и зума при загрузке */}
+      <div className="absolute top-0 left-0 right-0 z-10 transition-all duration-500 ease-in-out"
+           style={{ height: getImageHeight() }}>
+        <div 
+          className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        ></div>
+        
+        {/* Кнопка закрытия над фоткой - делаем меньше и с отступом 100px сверху */}
         <div className="absolute top-[100px] right-3 z-50">
           <button 
             onClick={() => {
@@ -912,13 +943,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         </div>
       </div>
       
-      {/* Кнопка добавления в корзину */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 z-50">
-        <button
+      {/* Фиксированная кнопка добавления в корзину */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10">
+        <button 
           onClick={addToCart}
           disabled={isAddingToCart}
-          className={`w-full py-3.5 rounded-xl bg-gradient-to-r ${colors.button} text-white font-medium shadow-lg ${colors.shadow} relative overflow-hidden group transition-all active:scale-95 flex items-center justify-center`}
+          className={`w-full py-4 bg-[#A67C52] hover:bg-[#B98D6F] text-white rounded-xl font-bold text-lg shadow-md shadow-[#A67C52]/20 flex items-center justify-center transition-all relative overflow-hidden group ${
+            isAddingToCart ? 'opacity-80' : ''
+          }`}
         >
+          {/* Новый, более стильный эффект на кнопке */}
           <div className="absolute inset-0 overflow-hidden opacity-20">
             <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20 transform -skew-y-6"></div>
           </div>
