@@ -470,15 +470,14 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
-      <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
-           style={{ 
-             backgroundImage: getBgPattern()
-           }}>
-      </div>
+      <div 
+        className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
+        style={{ backgroundImage: getBgPattern() }}
+      ></div>
       
       {/* Изображение заголовка продукта с вуалью */}
       <div 
-        className={`relative h-[${getImageHeight()}] w-full overflow-hidden transition-all duration-700 ease-in-out ${
+        className={`relative w-full overflow-hidden transition-all duration-700 ease-in-out ${
           hasScrolled ? 'rounded-b-2xl shadow-2xl shadow-black/30' : ''
         }`}
         style={{ height: getImageHeight() }}
@@ -621,185 +620,224 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               )}
             </div>
             
-            {/* Информация и модификаторы продукта */}
-            <div className={`px-6 py-6 pb-40 ${hasScrolled ? 'opacity-100' : 'opacity-90'} transition-opacity duration-500`}>
-              {/* Информация о продукте */}
+            {/* Размер и количество */}
+            <div className="pb-40">
+              {/* Выбор размера - только для кофе и напитков */}
+              {(product.category === 'coffee' || product.category === 'drinks') && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2 flex items-center">
+                    Размер
+                    <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                  {(['small', 'medium', 'large'] as const).map((size) => {
+                    // Определяем иконку в зависимости от категории продукта
+                    const isCoffee = product.category === 'coffee';
+                    const isDrinks = product.category === 'drinks';
+                    
+                    // Класс для размера иконки
+                    const iconSizeClass = size === 'small' ? 'h-4 w-4' : 
+                                       size === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
+                    
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => {
+                          setSelectedSize(size);
+                          triggerHapticFeedback();
+                        }}
+                        className={`py-3 rounded-xl transition-all flex flex-col items-center justify-center relative overflow-hidden group ${
+                          selectedSize === size
+                            ? 'bg-gradient-to-r from-[#A67C52] to-[#5D4037] text-white' 
+                            : 'bg-white/5 hover:bg-white/10'
+                        }`}
+                      >
+                        {/* Декоративная волна для серф-эстетики */}
+                        <div className={`absolute inset-x-0 bottom-0 h-1 opacity-50 ${selectedSize === size ? 'bg-white' : 'bg-[#A67C52]'}`}>
+                          <svg viewBox="0 0 120 20" xmlns="http://www.w3.org/2000/svg" className={`h-4 w-full animate-wave fill-current ${selectedSize === size ? 'text-white' : 'text-[#A67C52]'}`}>
+                            <path d="M0,10 C30,20 30,0 60,10 C90,20 90,0 120,10 V30 H0 Z"/>
+                          </svg>
+                        </div>
+                        
+                        {/* Иконка в зависимости от категории продукта */}
+                        <div className={`mb-1 ${iconSizeClass} transition-transform group-hover:scale-110`}>
+                          {isCoffee && (
+                            <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                            </svg>
+                          )}
+                          {isDrinks && (
+                            <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M3,2H21L17,22H7L3,2M7,4L6.4,7H17.6L17,4H7M15.5,16H8.5L8.1,19H15.9L15.5,16M9.4,13H14.6L14.2,10H9.8L9.4,13Z" />
+                            </svg>
+                          )}
+                          {!isCoffee && !isDrinks && (
+                            <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-sm">{sizeLabels[size]}</span>
+                      </button>
+                    );
+                  })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Выбор количества */}
               <div className="mb-6">
-                {/* Выбор размера - только для кофе и напитков */}
-                {(product.category === 'coffee' || product.category === 'drinks') && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2 flex items-center">
-                      Размер
-                      <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
-                    </h3>
-                    <div className="grid grid-cols-3 gap-2">
-                    {(['small', 'medium', 'large'] as const).map((size) => {
-                      // Определяем иконку в зависимости от категории продукта
-                      const isCoffee = product.category === 'coffee';
-                      const isDrinks = product.category === 'drinks';
-                      
-                      // Класс для размера иконки
-                      const iconSizeClass = size === 'small' ? 'h-4 w-4' : 
-                                         size === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
-                      
-                      return (
+                <h3 className="text-lg font-medium mb-2 flex items-center">
+                  Количество
+                  <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
+                </h3>
+                <div className="flex items-center space-x-2 bg-white/5 rounded-xl p-1">
+                  <button 
+                    onClick={decreaseQuantity}
+                    disabled={quantity <= 1}
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
+                      quantity <= 1 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                  </button>
+                  <span className="flex-1 text-center font-medium text-lg">{quantity}</span>
+                  <button 
+                    onClick={increaseQuantity}
+                    disabled={quantity >= 10}
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
+                      quantity >= 10 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            
+              {/* Модификаторы для напитков и еды */}
+              {isLoaded && (
+                <div>
+                  {/* Модификаторы для кофе */}
+                  {product.category === 'coffee' && (
+                    <>
+                      {/* Выбор молока */}
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium mb-2">Молоко</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {getProductModifiers().milkOptions.map((milk) => (
+                            <button
+                              key={milk}
+                              onClick={() => {
+                                setSelectedMilk(milk);
+                                triggerHapticFeedback();
+                              }}
+                              className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                                selectedMilk === milk 
+                                  ? 'bg-[#A67C52] text-white' 
+                                  : 'bg-white/5 hover:bg-white/10'
+                              }`}
+                            >
+                              <span>{milk}</span>
+                              {selectedMilk === milk && (
+                                <div className="flex items-center">
+                                  {getModifierPrice(milk) > 0 && (
+                                    <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+{getModifierPrice(milk)}₽</span>
+                                  )}
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Выбор сиропов */}
+                      <div className="mb-4">
+                        <h3 className="text-lg font-medium mb-2">Сиропы</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {getProductModifiers().syrupOptions.map((syrup) => (
+                            <button
+                              key={syrup}
+                              onClick={() => {
+                                handleSyrupToggle(syrup);
+                                triggerHapticFeedback();
+                              }}
+                              className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                                selectedSyrup.includes(syrup) 
+                                  ? 'bg-[#A67C52] text-white' 
+                                  : 'bg-white/5 hover:bg-white/10'
+                              }`}
+                            >
+                              <span>{syrup}</span>
+                              {selectedSyrup.includes(syrup) && (
+                                <div className="flex items-center">
+                                  <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+50₽</span>
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Дополнительный эспрессо */}
+                      <div className="mb-4">
                         <button
-                          key={size}
                           onClick={() => {
-                            setSelectedSize(size);
+                            setExtraShot(!extraShot);
                             triggerHapticFeedback();
                           }}
-                          className={`py-3 rounded-xl transition-all flex flex-col items-center justify-center relative overflow-hidden group ${
-                            selectedSize === size
-                              ? 'bg-gradient-to-r from-[#A67C52] to-[#5D4037] text-white' 
+                          className={`w-full py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
+                            extraShot 
+                              ? 'bg-[#A67C52] text-white' 
                               : 'bg-white/5 hover:bg-white/10'
                           }`}
                         >
-                          {/* Декоративная волна для серф-эстетики */}
-                          <div className={`absolute inset-x-0 bottom-0 h-1 opacity-50 ${selectedSize === size ? 'bg-white' : 'bg-[#A67C52]'}`}>
-                            <svg viewBox="0 0 120 20" xmlns="http://www.w3.org/2000/svg" className={`h-4 w-full animate-wave fill-current ${selectedSize === size ? 'text-white' : 'text-[#A67C52]'}`}>
-                              <path d="M0,10 C30,20 30,0 60,10 C90,20 90,0 120,10 V30 H0 Z"/>
-                            </svg>
-                          </div>
-                          
-                          {/* Иконка в зависимости от категории продукта */}
-                          <div className={`mb-1 ${iconSizeClass} transition-transform group-hover:scale-110`}>
-                            {isCoffee && (
-                              <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                          <span>Дополнительный эспрессо</span>
+                          {extraShot && (
+                            <div className="flex items-center">
+                              <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+70₽</span>
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
-                            )}
-                            {isDrinks && (
-                              <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M3,2H21L17,22H7L3,2M7,4L6.4,7H17.6L17,4H7M15.5,16H8.5L8.1,19H15.9L15.5,16M9.4,13H14.6L14.2,10H9.8L9.4,13Z" />
-                              </svg>
-                            )}
-                            {!isCoffee && !isDrinks && (
-                              <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
-                              </svg>
-                            )}
-                          </div>
-                          <span className="text-sm">{sizeLabels[size]}</span>
-                        </button>
-                      );
-                    })}
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Модификаторы продукта */}
-              <div className="space-y-6">
-                {/* Выбор количества - более интерактивный */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium mb-2 flex items-center">
-                    Количество
-                    <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
-                  </h3>
-                  <div className="flex flex-col space-y-3">
-                    <div className="flex items-center space-x-2 bg-white/5 rounded-xl p-1">
-                      <button 
-                        onClick={decreaseQuantity}
-                        disabled={quantity <= 1}
-                        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
-                          quantity <= 1 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                        </svg>
-                      </button>
-                      <span className="flex-1 text-center font-medium text-lg">{quantity}</span>
-                      <button 
-                        onClick={increaseQuantity}
-                        disabled={quantity >= 10}
-                        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
-                          quantity >= 10 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    {/* Визуализация количества через иконки - скрыта */}
-                    <div className="hidden">
-                      <div className="flex space-x-1 py-2 px-4 bg-[#232019]/60 backdrop-blur-sm rounded-full overflow-x-auto hide-scrollbar">
-                        {Array.from({ length: Math.min(quantity, 10) }).map((_, index) => {
-                          const isCoffee = product.category === 'coffee';
-                          const isDrinks = product.category === 'drinks';
-                          const iconSize = selectedSize === 'small' ? 'h-4 w-4' :
-                                         selectedSize === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
-                          
-                          return (
-                            <div 
-                              key={index} 
-                              className={`${iconSize} text-[#A67C52] ${index === 0 ? '' : '-ml-1'} transform ${
-                                index % 2 === 0 ? 'rotate-3' : '-rotate-3'
-                              }`}
-                              style={{ 
-                                animationDelay: `${index * 0.1}s`,
-                                transform: `rotate(${index % 2 === 0 ? '3deg' : '-3deg'}) translateY(${Math.sin(index) * 2}px)`
-                              }}
-                            >
-                              {isCoffee && (
-                                <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
-                                  <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                                </svg>
-                              )}
-                              {isDrinks && (
-                                <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
-                                  <path d="M3,2H21L17,22H7L3,2M7,4L6.4,7H17.6L17,4H7M15.5,16H8.5L8.1,19H15.9L15.5,16M9.4,13H14.6L14.2,10H9.8L9.4,13Z" />
-                                </svg>
-                              )}
-                              {!isCoffee && !isDrinks && (
-                                <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
-                                  <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
-                                </svg>
-                              )}
                             </div>
-                          );
-                        })}
-                        {quantity > 10 && (
-                          <div className="text-xs text-[#A67C52] opacity-80 px-1">+{quantity - 10}</div>
-                        )}
+                          )}
+                        </button>
                       </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Модификаторы для напитков и еды */}
-            {isLoaded && (
-              <div className="mb-6">
-                {/* Модификаторы для кофе */}
-                {product.category === 'coffee' && (
-                  <>
-                    {/* Выбор молока */}
+                    </>
+                  )}
+
+                  {/* Модификаторы для еды */}
+                  {product.category === 'food' && (
                     <div className="mb-4">
-                      <h3 className="text-lg font-medium mb-2">Молоко</h3>
+                      <h3 className="text-lg font-medium mb-2">Дополнительно</h3>
                       <div className="grid grid-cols-2 gap-2">
-                        {getProductModifiers().milkOptions.map((milk) => (
+                        {getProductModifiers().foodOptions.map((option) => (
                           <button
-                            key={milk}
+                            key={option}
                             onClick={() => {
-                              setSelectedMilk(milk);
+                              handleFoodOptionToggle(option);
                               triggerHapticFeedback();
                             }}
                             className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
-                              selectedMilk === milk 
+                              selectedFoodOptions.includes(option) 
                                 ? 'bg-[#A67C52] text-white' 
                                 : 'bg-white/5 hover:bg-white/10'
                             }`}
                           >
-                            <span>{milk}</span>
-                            {selectedMilk === milk && (
+                            <span>{option}</span>
+                            {selectedFoodOptions.includes(option) && (
                               <div className="flex items-center">
-                                {getModifierPrice(milk) > 0 && (
-                                  <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+{getModifierPrice(milk)}₽</span>
+                                {getModifierPrice(option) > 0 && (
+                                  <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+{getModifierPrice(option)}₽</span>
                                 )}
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -810,104 +848,13 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                         ))}
                       </div>
                     </div>
-
-                    {/* Выбор сиропов */}
-                    <div className="mb-4">
-                      <h3 className="text-lg font-medium mb-2">Сиропы</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {getProductModifiers().syrupOptions.map((syrup) => (
-                          <button
-                            key={syrup}
-                            onClick={() => {
-                              handleSyrupToggle(syrup);
-                              triggerHapticFeedback();
-                            }}
-                            className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
-                              selectedSyrup.includes(syrup) 
-                                ? 'bg-[#A67C52] text-white' 
-                                : 'bg-white/5 hover:bg-white/10'
-                            }`}
-                          >
-                            <span>{syrup}</span>
-                            {selectedSyrup.includes(syrup) && (
-                              <div className="flex items-center">
-                                <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+50₽</span>
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Дополнительный эспрессо */}
-                    <div className="mb-4">
-                      <button
-                        onClick={() => {
-                          setExtraShot(!extraShot);
-                          triggerHapticFeedback();
-                        }}
-                        className={`w-full py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
-                          extraShot 
-                            ? 'bg-[#A67C52] text-white' 
-                            : 'bg-white/5 hover:bg-white/10'
-                        }`}
-                      >
-                        <span>Дополнительный эспрессо</span>
-                        {extraShot && (
-                          <div className="flex items-center">
-                            <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+70₽</span>
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {/* Модификаторы для еды */}
-                {product.category === 'food' && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-medium mb-2">Дополнительно</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {getProductModifiers().foodOptions.map((option) => (
-                        <button
-                          key={option}
-                          onClick={() => {
-                            handleFoodOptionToggle(option);
-                            triggerHapticFeedback();
-                          }}
-                          className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
-                            selectedFoodOptions.includes(option) 
-                              ? 'bg-[#A67C52] text-white' 
-                              : 'bg-white/5 hover:bg-white/10'
-                          }`}
-                        >
-                          <span>{option}</span>
-                          {selectedFoodOptions.includes(option) && (
-                            <div className="flex items-center">
-                              {getModifierPrice(option) > 0 && (
-                                <span className="text-xs bg-white/20 px-1.5 rounded mr-1.5">+{getModifierPrice(option)}₽</span>
-                              )}
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Декоративный разделитель */}
-            <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent mb-8"></div>
+                  )}
+                </div>
+              )}
+              
+              {/* Декоративный разделитель */}
+              <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent mb-8"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -929,14 +876,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           ) : (
-            <>
-              <span className="z-10 flex items-center">
-                <span className="mr-2">Добавить в корзину за {getPrice()} ₽</span>
-                <svg className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19,7V11H5.83L9.41,7.41L8,6L2,12L8,18L9.41,16.58L5.83,13H21V7H19Z" transform="rotate(180 12 12)"/>
-                </svg>
-              </span>
-            </>
+            <span className="z-10 flex items-center">
+              <span className="mr-2">Добавить в корзину за {getPrice()} ₽</span>
+              <svg className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19,7V11H5.83L9.41,7.41L8,6L2,12L8,18L9.41,16.58L5.83,13H21V7H19Z" transform="rotate(180 12 12)"/>
+              </svg>
+            </span>
           )}
         </button>
       </div>
