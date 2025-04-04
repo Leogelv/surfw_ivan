@@ -467,59 +467,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     return '';
   };
 
-  // Преобразование визуализации размера в анимированные иконки
-  const getSizeIcons = (size: 'small' | 'medium' | 'large') => {
-    const sizes: Record<string, {icon: string, size: string}> = {
-      'small': {icon: '🥤', size: 'маленький'},
-      'medium': {icon: '🥤', size: 'средний'},
-      'large': {icon: '🥤', size: 'большой'}
-    };
-    
-    if (sizes[size]) {
-      return (
-        <div className="flex justify-center mt-1">
-          <span 
-            className="transform transition-all duration-800 ease-in-out animate-overshoot" 
-            style={{ 
-              fontSize: size === 'small' ? '18px' : size === 'medium' ? '22px' : '26px',
-              transform: selectedSize === size ? 'scale(1.1)' : 'scale(1)'
-            }}
-          >
-            {sizes[size].icon}
-          </span>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Визуализация количества через дублирующиеся иконки
-  const getQuantityIcons = () => {
-    const icons = [];
-    const icon = product.category === 'food' ? '🍽️' : '☕';
-    
-    for (let i = 0; i < quantity; i++) {
-      icons.push(
-        <span 
-          key={i} 
-          className="transform transition-all duration-800 ease-in-out animate-overshoot-delayed"
-          style={{ 
-            animationDelay: `${i * 50}ms`,
-            opacity: 0.7 + (i * 0.3 / quantity)
-          }}
-        >
-          {icon}
-        </span>
-      );
-    }
-    
-    return (
-      <div className="flex justify-center mt-2 space-x-1">
-        {icons}
-      </div>
-    );
-  };
-
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
@@ -720,9 +667,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                   const isCoffee = product.category === 'coffee';
                   const isTea = product.category === 'tea';
                   
-                  // Класс для размера иконки
-                  const iconSizeClass = size === 'small' ? 'h-4 w-4' : 
-                                     size === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
+                  // Размеры иконок в пикселях
+                  const sizeHeight = size === 'small' ? 35 : size === 'medium' ? 55 : 80;
                   
                   return (
                     <button 
@@ -745,19 +691,27 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                       </div>
                       
                       {/* Иконка в зависимости от категории продукта */}
-                      <div className={`mb-1 ${iconSizeClass} transition-transform group-hover:scale-110`}>
+                      <div 
+                        className={`mb-1 transition-all duration-800 ease-in-out transform ${
+                          selectedSize === size ? 'scale-110' : 'scale-100'
+                        } ${selectedSize === size ? 'animate-overshoot' : ''}`}
+                        style={{ 
+                          height: `${sizeHeight}px`,
+                          width: 'auto',
+                        }}
+                      >
                         {isCoffee && (
-                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
                           </svg>
                         )}
                         {isTea && (
-                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M4,19H20V21H4V19M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
                           </svg>
                         )}
                         {!isCoffee && !isTea && (
-                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
                           </svg>
                         )}
@@ -1018,32 +972,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </>
           )}
         </button>
-        
-        {/* Иконки размера/количества под кнопкой */}
-        <div className="mt-3 flex justify-center">
-          {product.category === 'coffee' ? (
-            <div className="flex items-center space-x-6">
-              {['small', 'medium', 'large'].includes(selectedSize) && (
-                <div className="text-center">
-                  <div className="text-xs text-white/60 mb-1">Размер</div>
-                  <div className={`flex justify-center ${selectedSize === 'small' ? 'animate-overshoot' : ''}`}>
-                    {getSizeIcons(selectedSize)}
-                  </div>
-                </div>
-              )}
-              
-              <div className="text-center">
-                <div className="text-xs text-white/60 mb-1">Количество</div>
-                {getQuantityIcons()}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center">
-              <div className="text-xs text-white/60 mb-1">Количество</div>
-              {getQuantityIcons()}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Стили для скрытия полосы прокрутки и анимации волны */}

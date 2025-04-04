@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface HomeScreenProps {
   onCategoryClick: (category: string) => void;
@@ -26,6 +26,15 @@ const HomeScreen = ({
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isLoaded, setIsLoaded] = useState(false);
   
+  // Новое состояние для анимации при клике
+  const [clickedCategory, setClickedCategory] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Рефы для контейнеров категорий
+  const coffeeRef = useRef<HTMLDivElement>(null);
+  const teaRef = useRef<HTMLDivElement>(null);
+  const foodRef = useRef<HTMLDivElement>(null);
+  
   // Эффект пульсации для логотипа
   const [logoScale, setLogoScale] = useState(1);
   
@@ -51,7 +60,30 @@ const HomeScreen = ({
 
   // Обработчик наведения на категорию
   const handleCategoryHover = (category: string | null) => {
-    setActiveCategory(category);
+    if (!isTransitioning) {
+      setActiveCategory(category);
+    }
+  };
+  
+  // Новый обработчик клика по категории с анимацией
+  const handleCategoryClick = (category: string) => {
+    if (isTransitioning) return;
+    
+    setClickedCategory(category);
+    setIsTransitioning(true);
+    
+    // Запускаем анимацию перехода
+    setTimeout(() => {
+      onCategoryClick(category);
+    }, 800); // Время анимации такое же, как в CSS (800ms)
+  };
+  
+  // Получение рефа для выбранной категории
+  const getCategoryRef = (category: string) => {
+    if (category === 'coffee') return coffeeRef;
+    if (category === 'tea') return teaRef;
+    if (category === 'food') return foodRef;
+    return null;
   };
   
   return (
@@ -70,12 +102,21 @@ const HomeScreen = ({
       <div className="flex-1 flex flex-col space-y-1 p-1 relative z-10">
         {/* Кофе */}
         <div 
+          ref={coffeeRef}
           className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
             activeCategory === 'coffee' ? 'scale-[1.02] shadow-lg shadow-[#8B5A2B]/20' : 
             activeCategory ? 'opacity-80 scale-[0.99]' : ''
-          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ transitionDelay: '100ms' }}
-          onClick={() => onCategoryClick('coffee')}
+          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+            ${clickedCategory === 'coffee' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+            ${clickedCategory && clickedCategory !== 'coffee' ? 'opacity-0' : ''}
+          `}
+          style={{ 
+            transitionDelay: '100ms',
+            transitionProperty: clickedCategory ? 'all' : undefined,
+            transitionDuration: clickedCategory ? '800ms' : undefined,
+            transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
+          }}
+          onClick={() => handleCategoryClick('coffee')}
           onMouseEnter={() => handleCategoryHover('coffee')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
@@ -83,7 +124,8 @@ const HomeScreen = ({
             src="/surf/coffee_categ.png"
             alt="Кофе"
             fill
-            className="object-cover transition-transform duration-700 hover:scale-110"
+            className={`object-cover transition-transform duration-700 
+              ${clickedCategory === 'coffee' ? 'scale-110' : 'hover:scale-110'}`}
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
@@ -92,7 +134,8 @@ const HomeScreen = ({
               alt="Кофе"
               width={180}
               height={100}
-              className="w-auto h-24"
+              className={`w-auto h-24 transition-all duration-800 
+                ${clickedCategory === 'coffee' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
             />
           </div>
           {/* Декоративная накладка */}
@@ -104,12 +147,21 @@ const HomeScreen = ({
         
         {/* Чай */}
         <div 
+          ref={teaRef}
           className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
             activeCategory === 'tea' ? 'scale-[1.02] shadow-lg shadow-[#6B4226]/20' : 
             activeCategory ? 'opacity-80 scale-[0.99]' : ''
-          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ transitionDelay: '200ms' }}
-          onClick={() => onCategoryClick('tea')}
+          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+            ${clickedCategory === 'tea' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+            ${clickedCategory && clickedCategory !== 'tea' ? 'opacity-0' : ''}
+          `}
+          style={{ 
+            transitionDelay: '200ms',
+            transitionProperty: clickedCategory ? 'all' : undefined,
+            transitionDuration: clickedCategory ? '800ms' : undefined,
+            transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
+          }}
+          onClick={() => handleCategoryClick('tea')}
           onMouseEnter={() => handleCategoryHover('tea')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
@@ -117,7 +169,8 @@ const HomeScreen = ({
             src="/surf/tea_categ.png"
             alt="Чай"
             fill
-            className="object-cover transition-transform duration-700 hover:scale-110"
+            className={`object-cover transition-transform duration-700 
+              ${clickedCategory === 'tea' ? 'scale-110' : 'hover:scale-110'}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
             <Image
@@ -125,7 +178,8 @@ const HomeScreen = ({
               alt="Чай"
               width={180}
               height={100}
-              className="w-auto h-24"
+              className={`w-auto h-24 transition-all duration-800 
+                ${clickedCategory === 'tea' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
             />
           </div>
           {/* Декоративная накладка */}
@@ -137,12 +191,21 @@ const HomeScreen = ({
         
         {/* Еда */}
         <div 
+          ref={foodRef}
           className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
             activeCategory === 'food' ? 'scale-[1.02] shadow-lg shadow-[#6D4C41]/20' : 
             activeCategory ? 'opacity-80 scale-[0.99]' : ''
-          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ transitionDelay: '300ms' }}
-          onClick={() => onCategoryClick('food')}
+          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+            ${clickedCategory === 'food' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+            ${clickedCategory && clickedCategory !== 'food' ? 'opacity-0' : ''}
+          `}
+          style={{ 
+            transitionDelay: '300ms',
+            transitionProperty: clickedCategory ? 'all' : undefined,
+            transitionDuration: clickedCategory ? '800ms' : undefined,
+            transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
+          }}
+          onClick={() => handleCategoryClick('food')}
           onMouseEnter={() => handleCategoryHover('food')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
@@ -150,7 +213,8 @@ const HomeScreen = ({
             src="/surf/food_categ.png"
             alt="Еда"
             fill
-            className="object-cover transition-transform duration-700 hover:scale-110"
+            className={`object-cover transition-transform duration-700 
+              ${clickedCategory === 'food' ? 'scale-110' : 'hover:scale-110'}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
             <Image
@@ -158,7 +222,8 @@ const HomeScreen = ({
               alt="Еда"
               width={180}
               height={100}
-              className="w-auto h-24"
+              className={`w-auto h-24 transition-all duration-800 
+                ${clickedCategory === 'food' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
             />
           </div>
           {/* Декоративная накладка */}
@@ -170,7 +235,9 @@ const HomeScreen = ({
       </div>
       
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 
+        ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+        ${clickedCategory ? 'opacity-0 translate-y-10' : ''}`}
           style={{ transitionDelay: '400ms' }}>
         <div className="flex items-center justify-between">
           {/* Мои заказы */}

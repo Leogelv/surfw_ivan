@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useTelegram } from '@/context/TelegramContext';
+import useHapticFeedback from '@/hooks/useHapticFeedback';
 
 interface ProfileScreenProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const { user, webApp, isFullScreenEnabled, telegramHeaderPadding } = useTelegram();
+  const haptic = useHapticFeedback();
 
   // Демо-данные для заказов
   const orders = [
@@ -49,7 +51,15 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
 
   // Функция для закрытия профиля и возврата на главную
   const handleCloseAndGoHome = () => {
+    haptic.buttonClick(); // Haptic feedback при нажатии
     onHomeClick();
+    onClose();
+  };
+
+  // Функция для перехода к заказам
+  const handleOrdersClick = () => {
+    haptic.buttonClick(); // Haptic feedback при нажатии
+    onOrdersClick();
     onClose();
   };
 
@@ -63,11 +73,11 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       {/* Верхняя часть с данными пользователя */}
       <div className="p-6 relative">
         <button 
-          onClick={handleCloseAndGoHome}
-          className="absolute top-6 right-6 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+          onClick={onHomeClick}
+          className="absolute top-6 right-6 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 shadow-lg hover:shadow-xl transition-all z-50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
@@ -154,7 +164,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
               </div>
               <button 
                 className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors"
-                onClick={() => { onOrdersClick(); onClose(); }}
+                onClick={() => { 
+                  haptic.buttonClick(); // Haptic feedback при нажатии
+                  handleOrdersClick(); 
+                }}
               >
                 Повторить заказ
               </button>
@@ -166,7 +179,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         <div className={`mt-6 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <h3 className="text-lg font-medium mb-3">Настройки</h3>
           <div className="space-y-2">
-            <button className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+            <button 
+              className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+              onClick={() => haptic.buttonClick()}
+            >
               <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
@@ -175,7 +191,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
                 <div className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
               </div>
             </button>
-            <button className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+            <button 
+              className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+              onClick={() => haptic.buttonClick()}
+            >
               <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
@@ -184,7 +203,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <button className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+            <button 
+              className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+              onClick={() => haptic.buttonClick()}
+            >
               <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -208,7 +230,13 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           {/* Мои заказы */}
-          <button className="relative p-3 group" onClick={() => { onOrdersClick(); onClose(); }}>
+          <button 
+            className="relative p-3 group" 
+            onClick={() => { 
+              haptic.buttonClick(); // Haptic feedback при нажатии
+              handleOrdersClick(); 
+            }}
+          >
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
@@ -221,7 +249,13 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           </button>
           
           {/* Логотип */}
-          <div className="cursor-pointer relative" onClick={() => { onHomeClick(); onClose(); }}>
+          <div 
+            className="cursor-pointer relative" 
+            onClick={() => { 
+              haptic.buttonClick(); // Haptic feedback при нажатии
+              handleCloseAndGoHome(); 
+            }}
+          >
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
@@ -232,10 +266,13 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           </div>
           
           {/* Закрыть профиль */}
-          <button onClick={handleCloseAndGoHome} className="p-3 relative group">
+          <button 
+            onClick={onHomeClick} 
+            className="p-3 relative group bg-black/40 hover:bg-black/60 rounded-full active:scale-95 transition-all shadow-lg border border-white/20"
+          >
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
