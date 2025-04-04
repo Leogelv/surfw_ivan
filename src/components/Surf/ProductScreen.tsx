@@ -1,6 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
+// Использую интерфейс без глобального определения
+interface TelegramWebApp {
+  HapticFeedback?: {
+    impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+    notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+    selectionChanged: () => void;
+  };
+}
+
+// Вспомогательная функция для haptic feedback
+const triggerHapticFeedback = (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
+  try {
+    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred(style);
+    }
+  } catch (error) {
+    console.error('Haptic feedback error:', error);
+  }
+};
+
 interface ProductScreenProps {
   productName: string;
   onBackClick: () => void;
@@ -318,12 +338,18 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   
   // Увеличить количество
   const increaseQuantity = () => {
-    if (quantity < 10) setQuantity(prev => prev + 1);
+    if (quantity < 10) {
+      setQuantity(prev => prev + 1);
+      triggerHapticFeedback('light');
+    }
   };
 
   // Уменьшить количество
   const decreaseQuantity = () => {
-    if (quantity > 1) setQuantity(prev => prev - 1);
+    if (quantity > 1) {
+      setQuantity(prev => prev - 1);
+      triggerHapticFeedback('light');
+    }
   };
 
   // Переводы размеров на русский
@@ -335,6 +361,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
 
   // Добавление товара в корзину
   const addToCart = () => {
+    // Добавляем тактильный отклик
+    triggerHapticFeedback('medium');
+    
     setIsAddingToCart(true); // Начинаем анимацию
     
     // Имитация добавления в корзину
@@ -354,39 +383,59 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     }, 800);
   };
 
-  const toggleImageExpansion = () => {
-    setIsImageExpanded(!isImageExpanded);
-    
-    // Если изображение разворачивается, скроллим страницу вверх
-    if (!isImageExpanded && contentRef.current) {
-      contentRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   const colors = getProductColors();
 
   // Расчет высоты фото в зависимости от прокрутки
   const getImageHeight = () => {
-    if (isImageExpanded) return '80%';
+    if (isImageExpanded) return '100vw'; // Квадратное фото при развернутом состоянии
     
     // Определяем базовую высоту и максимальную прокрутку для эффекта
-    const baseHeight = 45; // 45% высоты экрана
-    const minHeight = 25; // 25% высоты экрана
-    const maxScroll = 150; // максимальное значение прокрутки для анимации
+    const baseHeight = 'calc(100vw * 0.8)'; // 80% ширины экрана = квадрат с учетом отступов
+    const minHeight = 'calc(100vw * 0.5)'; // 50% ширины экрана при максимальном скролле
     
     // Если скролл имеет отрицательное значение (тянут вниз), расширяем фото
-    if (scrollPosition < 0) {
-      const expandFactor = Math.min(Math.abs(scrollPosition) / 50, 1.5);
-      return `${Math.min(baseHeight + (baseHeight * expandFactor * 0.3), 80)}%`;
+    if (scrollPosition < -50) {
+      return '100vw'; // Полностью квадратное изображение при свайпе вниз
     }
     
-    // При скролле вверх уменьшаем фото
-    const newHeight = Math.max(minHeight, baseHeight - (scrollPosition / maxScroll) * (baseHeight - minHeight));
-    return `${newHeight}%`;
+    return baseHeight; // Базовая высота в квадратной пропорции
   };
+
+  // Обработчики для свайпа изображения
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (contentRef.current) {
+      startTouchY.current = e.touches[0].clientY;
+      startScrollTop.current = contentRef.current.scrollTop;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (contentRef.current && startTouchY.current !== null) {
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startTouchY.current;
+      
+      // Если мы в начале списка и тянем вниз - разворачиваем изображение
+      if (contentRef.current.scrollTop <= 0 && diff > 50 && !isImageExpanded) {
+        setIsImageExpanded(true);
+        triggerHapticFeedback('light');
+        e.preventDefault(); // Предотвращаем стандартный скролл
+      }
+      
+      // Если изображение развернуто и тянем вверх - сворачиваем его
+      if (isImageExpanded && diff < -50) {
+        setIsImageExpanded(false);
+        triggerHapticFeedback('light');
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    startTouchY.current = null;
+  };
+
+  // Refs для свайпов
+  const startTouchY = useRef<number | null>(null);
+  const startScrollTop = useRef<number>(0);
 
   // Получение состава продукта
   const getProductIngredients = () => {
@@ -464,14 +513,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
         
-        {/* Только кнопка закрытия над фоткой */}
-        <div className="absolute top-[100px] right-3 z-50">
+        {/* Кнопка закрытия над фоткой - делаем более заметной и кликабельной */}
+        <div className="absolute top-3 right-3 z-50">
           <button 
-            onClick={onBackClick}
-            className="bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/80 transition-all active:scale-95"
+            onClick={() => {
+              triggerHapticFeedback('medium');
+              onBackClick();
+            }}
+            className="bg-black/70 backdrop-blur-md p-3 rounded-full border border-white/20 hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-black/30"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -497,7 +549,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         </div>
       </div>
       
-      {/* Контент продукта */}
+      {/* Контент продукта - начинается ниже за счет уменьшения текстовой плашки */}
       <div 
         ref={contentRef}
         className="flex-1 overflow-auto pb-32 relative z-20"
@@ -505,23 +557,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           paddingTop: getImageHeight(),
           transition: 'padding-top 0.5s ease-in-out'
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Информация о продукте с эффектом наезжающей шапки */}
-        <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-10 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">
-          {/* Кнопка расширения/сворачивания изображения над названием */}
-          <div className="flex justify-center mb-3">
-            <button 
-              className={`transition-all duration-300 bg-black/20 backdrop-blur-sm rounded-full p-2 border border-white/10 hover:bg-black/40 ${
-                isImageExpanded ? 'rotate-180' : ''
-              }`}
-              onClick={toggleImageExpansion}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-          
+        <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-10 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">          
           {/* Название и цена */}
           <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <div className="flex justify-between items-start">
@@ -633,7 +674,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                   return (
                     <button 
                       key={size} 
-                      onClick={() => setSelectedSize(size)}
+                      onClick={() => {
+                        setSelectedSize(size);
+                        triggerHapticFeedback();
+                      }}
                       className={`py-3 rounded-xl transition-all flex flex-col items-center justify-center relative overflow-hidden group ${
                         selectedSize === size 
                           ? 'bg-gradient-to-r from-[#A67C52] to-[#5D4037] text-white' 
@@ -764,7 +808,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                         {getProductModifiers().milkOptions.map((milk) => (
                           <button
                             key={milk}
-                            onClick={() => setSelectedMilk(milk)}
+                            onClick={() => {
+                              setSelectedMilk(milk);
+                              triggerHapticFeedback();
+                            }}
                             className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
                               selectedMilk === milk 
                                 ? 'bg-[#A67C52] text-white' 
@@ -794,7 +841,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                         {getProductModifiers().syrupOptions.map((syrup) => (
                           <button
                             key={syrup}
-                            onClick={() => handleSyrupToggle(syrup)}
+                            onClick={() => {
+                              handleSyrupToggle(syrup);
+                              triggerHapticFeedback();
+                            }}
                             className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
                               selectedSyrup.includes(syrup) 
                                 ? 'bg-[#A67C52] text-white' 
@@ -818,7 +868,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                     {/* Дополнительный эспрессо */}
                     <div className="mb-4">
                       <button
-                        onClick={() => setExtraShot(!extraShot)}
+                        onClick={() => {
+                          setExtraShot(!extraShot);
+                          triggerHapticFeedback();
+                        }}
                         className={`w-full py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
                           extraShot 
                             ? 'bg-[#A67C52] text-white' 
@@ -847,7 +900,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                       {getProductModifiers().foodOptions.map((option) => (
                         <button
                           key={option}
-                          onClick={() => handleFoodOptionToggle(option)}
+                          onClick={() => {
+                            handleFoodOptionToggle(option);
+                            triggerHapticFeedback();
+                          }}
                           className={`py-2 px-3 rounded-lg text-sm flex items-center justify-between transition-all ${
                             selectedFoodOptions.includes(option) 
                               ? 'bg-[#A67C52] text-white' 
@@ -912,49 +968,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </>
           )}
         </button>
-      </div>
-
-      {/* Фиксированное нижнее меню с логотипом */}
-      <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ transitionDelay: '400ms' }}>
-        <div className="flex items-center justify-between">
-          {/* Кнопка назад */}
-          <button className="p-3 relative group" onClick={onBackClick}>
-            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          
-          {/* Логотип */}
-          <div className="cursor-pointer" onClick={onLogoClick}>
-            <Image 
-              src="/surf/logo.svg" 
-              alt="Surf Coffee" 
-              width={150} 
-              height={65} 
-              className="h-14 w-auto relative"
-            />
-          </div>
-          
-          {/* Иконки справа */}
-          <div className="flex space-x-3">
-            {showCart && (
-              <button onClick={onCartClick} className="p-3 relative group">
-                <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </button>
-            )}
-            <button onClick={onProfileClick} className="p-3 relative group">
-              <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Стили для скрытия полосы прокрутки и анимации волны */}
