@@ -467,6 +467,59 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     return '';
   };
 
+  // Преобразование визуализации размера в анимированные иконки
+  const getSizeIcons = (size: 'small' | 'medium' | 'large') => {
+    const sizes: Record<string, {icon: string, size: string}> = {
+      'small': {icon: '🥤', size: 'маленький'},
+      'medium': {icon: '🥤', size: 'средний'},
+      'large': {icon: '🥤', size: 'большой'}
+    };
+    
+    if (sizes[size]) {
+      return (
+        <div className="flex justify-center mt-1">
+          <span 
+            className="transform transition-all duration-800 ease-in-out animate-overshoot" 
+            style={{ 
+              fontSize: size === 'small' ? '18px' : size === 'medium' ? '22px' : '26px',
+              transform: selectedSize === size ? 'scale(1.1)' : 'scale(1)'
+            }}
+          >
+            {sizes[size].icon}
+          </span>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Визуализация количества через дублирующиеся иконки
+  const getQuantityIcons = () => {
+    const icons = [];
+    const icon = product.category === 'food' ? '🍽️' : '☕';
+    
+    for (let i = 0; i < quantity; i++) {
+      icons.push(
+        <span 
+          key={i} 
+          className="transform transition-all duration-800 ease-in-out animate-overshoot-delayed"
+          style={{ 
+            animationDelay: `${i * 50}ms`,
+            opacity: 0.7 + (i * 0.3 / quantity)
+          }}
+        >
+          {icon}
+        </span>
+      );
+    }
+    
+    return (
+      <div className="flex justify-center mt-2 space-x-1">
+        {icons}
+      </div>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
@@ -513,16 +566,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
         
-        {/* Кнопка закрытия над фоткой - делаем более заметной и кликабельной */}
-        <div className="absolute top-3 right-3 z-50">
+        {/* Кнопка закрытия над фоткой - делаем меньше и с отступом 100px сверху */}
+        <div className="absolute top-[100px] right-3 z-50">
           <button 
             onClick={() => {
               triggerHapticFeedback('medium');
               onBackClick();
             }}
-            className="bg-black/70 backdrop-blur-md p-3 rounded-full border border-white/20 hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-black/30"
+            className="bg-black/70 backdrop-blur-md p-1.5 rounded-full border border-white/20 hover:bg-black/90 transition-all active:scale-95 shadow-lg shadow-black/30"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -936,19 +989,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       </div>
       
       {/* Фиксированная кнопка добавления в корзину */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-4 border-t border-white/10">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10">
         <button 
           onClick={addToCart}
           disabled={isAddingToCart}
-          className={`w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#A67C52]/30 flex items-center justify-center transition-all relative overflow-hidden group ${
+          className={`w-full py-4 bg-[#A67C52] hover:bg-[#B98D6F] text-white rounded-xl font-bold text-lg shadow-md shadow-[#A67C52]/20 flex items-center justify-center transition-all relative overflow-hidden group ${
             isAddingToCart ? 'opacity-80' : ''
           }`}
         >
-          {/* Серф-волна эффект на кнопке */}
-          <div className="absolute inset-x-0 -bottom-3 opacity-20">
-            <svg viewBox="0 0 120 20" xmlns="http://www.w3.org/2000/svg" className="w-full h-10 animate-wave fill-current text-white">
-              <path d="M0,10 C30,20 30,0 60,10 C90,20 90,0 120,10 V30 H0 Z"/>
-            </svg>
+          {/* Новый, более стильный эффект на кнопке */}
+          <div className="absolute inset-0 overflow-hidden opacity-20">
+            <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20 transform -skew-y-6"></div>
           </div>
           
           {isAddingToCart ? (
@@ -960,14 +1011,39 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             <>
               <span className="z-10 flex items-center">
                 <span className="mr-2">Добавить в корзину за {getPrice()} ₽</span>
-                {/* Добавляем иконку серфера или кофе */}
                 <svg className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7,15L11.5,9L15,13.5L17.5,10.5L21,15M22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4H20A2,2 0 0,1 22,6M4,6V18H20V6H4Z" />
+                  <path d="M19,7V11H5.83L9.41,7.41L8,6L2,12L8,18L9.41,16.58L5.83,13H21V7H19Z" transform="rotate(180 12 12)"/>
                 </svg>
               </span>
             </>
           )}
         </button>
+        
+        {/* Иконки размера/количества под кнопкой */}
+        <div className="mt-3 flex justify-center">
+          {product.category === 'coffee' ? (
+            <div className="flex items-center space-x-6">
+              {['small', 'medium', 'large'].includes(selectedSize) && (
+                <div className="text-center">
+                  <div className="text-xs text-white/60 mb-1">Размер</div>
+                  <div className={`flex justify-center ${selectedSize === 'small' ? 'animate-overshoot' : ''}`}>
+                    {getSizeIcons(selectedSize)}
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-center">
+                <div className="text-xs text-white/60 mb-1">Количество</div>
+                {getQuantityIcons()}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="text-xs text-white/60 mb-1">Количество</div>
+              {getQuantityIcons()}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Стили для скрытия полосы прокрутки и анимации волны */}
@@ -1003,6 +1079,34 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         }
         .animate-floating {
           animation: floating 5s ease-in-out infinite;
+        }
+        @keyframes overshoot {
+          0% {
+            transform: scale(1);
+          }
+          70% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+        @keyframes overshoot-delayed {
+          0% {
+            transform: scale(0.8);
+          }
+          70% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+        .animate-overshoot {
+          animation: overshoot 800ms ease-in-out;
+        }
+        .animate-overshoot-delayed {
+          animation: overshoot-delayed 800ms ease-in-out forwards;
         }
       `}</style>
     </div>
