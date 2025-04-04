@@ -325,7 +325,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       onOrderComplete();
     } else {
       // Иначе просто возвращаемся к предыдущему экрану
-      onBackClick();
+    onBackClick();
     }
   };
 
@@ -375,7 +375,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
           <div className="flex flex-col space-y-4 mt-4">
             {cartItems.map((item, index) => (
               <SwipeableCartItem 
-                key={item.id}
+                key={item.id} 
                 item={item}
                 onRemove={() => removeItem(item.id)}
                 onChangeQuantity={(quantity) => updateQuantity(item.id, quantity)}
@@ -387,8 +387,8 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
           <div className="flex flex-col h-full">
             <div className={`flex flex-col items-center justify-center pt-12 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-white/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
               <h3 className="text-xl font-medium text-white/80 mb-2">Ваша корзина пуста</h3>
               <p className="text-sm text-white/60 text-center max-w-xs">Добавьте что-нибудь из меню, чтобы оформить заказ</p>
               
