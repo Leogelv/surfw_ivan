@@ -147,19 +147,19 @@ const CategoriesScreen = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
-      {/* Верхний декоративный эффект */}
-      <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
+    <div className="h-full flex flex-col bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816] overflow-hidden">
+      {/* Верхний декоративный эффект - только для верхней части, не на весь экран */}
+      <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0 pointer-events-none"
            style={{ 
              backgroundImage: getBgPattern(selectedCategory), 
              backgroundSize: "40px 40px"
            }}></div>
       
       {/* Круговой градиент по центру верха */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/30 to-transparent z-0"></div>
+      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/30 to-transparent z-0 pointer-events-none"></div>
       
-      {/* Заголовок категории c выпадающим меню - сделано sticky */}
-      <div className="sticky top-0 px-6 pt-4 pb-2 z-20 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5">
+      {/* Заголовок категории c выпадающим меню - прикрепленный к верху, усиленный sticky */}
+      <div className="sticky top-0 z-30 w-full px-6 pt-4 pb-2 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5">
         <div className="flex items-center mt-2">
           <div className="relative">
             <button 
@@ -182,9 +182,9 @@ const CategoriesScreen = ({
           <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r ${colors.gradient}`}></div>
         </div>
         
-        {/* Выпадающий список категорий */}
+        {/* Выпадающий список категорий с абсолютным позиционированием относительно sticky-хедера */}
         {showCategoryDropdown && (
-          <div className="absolute left-0 right-0 mt-2 mx-4 p-2 bg-[#2A2118]/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg z-30 transition-all">
+          <div className="absolute left-0 right-0 mt-2 mx-4 p-2 bg-[#2A2118]/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg z-40 transition-all">
             <div className="grid grid-cols-3 gap-2">
               {Object.keys(products).map(category => {
                 const catColors = getCategoryColor(category);
@@ -211,7 +211,7 @@ const CategoriesScreen = ({
       </div>
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
-      <div className={`flex-1 relative overflow-hidden px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20' : 'opacity-100'}`}>
+      <div className={`flex-1 overflow-auto relative px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
         <div 
           ref={scrollContainerRef}
           className="flex overflow-x-auto py-4 px-2 hide-scrollbar snap-x snap-mandatory h-full"
