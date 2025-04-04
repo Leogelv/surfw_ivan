@@ -8,9 +8,10 @@ interface HomeScreenProps {
   onProfileClick: () => void;
   onLogoClick: () => void;
   onOrdersClick?: () => void; // Добавляем обработчик для экрана заказов
+  cartItemCount?: number; // Добавляем счетчик товаров в корзине
 }
 
-const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick, onLogoClick, onOrdersClick = onCartClick }: HomeScreenProps) => {
+const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick, onLogoClick, onOrdersClick = onCartClick, cartItemCount = 0 }: HomeScreenProps) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isLoaded, setIsLoaded] = useState(false);
@@ -76,7 +77,13 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <h2 className="text-white text-6xl font-bold drop-shadow-lg tracking-wider">КОФЕ</h2>
+            <Image
+              src="/surf/coffee.svg"
+              alt="Кофе"
+              width={180}
+              height={100}
+              className="w-auto h-24"
+            />
           </div>
           {/* Декоративная накладка */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#8B5A2B] to-[#3E2723] mix-blend-overlay opacity-15"></div>
@@ -103,7 +110,13 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
             className="object-cover transition-transform duration-700 hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <h2 className="text-white text-6xl font-bold drop-shadow-lg tracking-wider">ЧАЙ</h2>
+            <Image
+              src="/surf/drinks.svg"
+              alt="Чай"
+              width={180}
+              height={100}
+              className="w-auto h-24"
+            />
           </div>
           {/* Декоративная накладка */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#6B4226] to-[#3E2723] mix-blend-overlay opacity-15"></div>
@@ -130,7 +143,13 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
             className="object-cover transition-transform duration-700 hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <h2 className="text-white text-6xl font-bold drop-shadow-lg tracking-wider">ЕДА</h2>
+            <Image
+              src="/surf/food.svg"
+              alt="Еда"
+              width={180}
+              height={100}
+              className="w-auto h-24"
+            />
           </div>
           {/* Декоративная накладка */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#6D4C41] to-[#3E2723] mix-blend-overlay opacity-15"></div>
@@ -170,12 +189,19 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
           
           {/* Иконки справа */}
           <div className="flex space-x-3">
-            <button onClick={onCartClick} className="p-3 relative group">
-              <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </button>
+            {cartItemCount > 0 && (
+              <button onClick={onCartClick} className="p-3 relative group">
+                <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+                {cartItemCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {cartItemCount}
+                  </div>
+                )}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </button>
+            )}
             <button onClick={onProfileClick} className="p-3 relative group">
               <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">

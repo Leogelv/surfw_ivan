@@ -12,7 +12,7 @@ interface ProfileScreenProps {
 const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: ProfileScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
-  const { user, webApp } = useTelegram();
+  const { user, webApp, isFullScreenEnabled, telegramHeaderPadding } = useTelegram();
 
   // Демо-данные для заказов
   const orders = [
@@ -49,6 +49,11 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
 
   return (
     <div className="fixed inset-0 bg-[#1D1816]/95 backdrop-blur-md z-50 flex flex-col text-white">
+      {/* Отступ для Telegram Header */}
+      {isFullScreenEnabled && (
+        <div style={{ height: `${telegramHeaderPadding}px` }} className="w-full"></div>
+      )}
+      
       {/* Верхняя часть с данными пользователя */}
       <div className="p-6 relative">
         <button 

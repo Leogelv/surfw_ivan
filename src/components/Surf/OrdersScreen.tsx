@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 interface OrdersScreenProps {
   onBackClick: () => void;
+  newOrderNumber?: string;
 }
 
 // Типы для заказов
@@ -23,7 +24,7 @@ interface Order {
   spot: string;
 }
 
-const OrdersScreen = ({ onBackClick }: OrdersScreenProps) => {
+const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   
   // Демо-данные для заказов
@@ -53,6 +54,32 @@ const OrdersScreen = ({ onBackClick }: OrdersScreenProps) => {
       spot: 'Кофейня Surf на Ленина'
     }
   ]);
+
+  // Добавляем новый заказ, если передан номер
+  useEffect(() => {
+    if (newOrderNumber) {
+      const now = new Date();
+      const day = now.getDate();
+      const month = now.toLocaleString('ru', { month: 'short' });
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      
+      const newOrder: Order = {
+        id: newOrderNumber.replace('#', ''),
+        status: 'pending',
+        items: [
+          { name: 'Капучино', quantity: 1, price: 350, size: 'Средний' },
+          { name: 'Круассан', quantity: 2, price: 220 }
+        ],
+        total: 790,
+        created: `${day} ${month}, ${hours}:${minutes}`,
+        estimatedTime: 15,
+        spot: 'Кофейня Surf на Ленина'
+      };
+      
+      setOrders(prev => [newOrder, ...prev]);
+    }
+  }, [newOrderNumber]);
 
   // Анимация загрузки
   useEffect(() => {

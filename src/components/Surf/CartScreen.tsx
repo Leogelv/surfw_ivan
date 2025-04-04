@@ -13,9 +13,10 @@ interface CartItem {
 
 interface CartScreenProps {
   onBackClick: () => void;
+  onOrderComplete?: (orderNumber?: string) => void;
 }
 
-const CartScreen = ({ onBackClick }: CartScreenProps) => {
+const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([
@@ -76,8 +77,13 @@ const CartScreen = ({ onBackClick }: CartScreenProps) => {
   const goHome = () => {
     // Сначала скрываем оформление заказа
     setShowCheckout(false);
-    // Затем возвращаемся к предыдущему экрану
-    onBackClick();
+    // Затем вызываем обработчик завершения заказа, если он передан
+    if (onOrderComplete) {
+      onOrderComplete();
+    } else {
+      // Иначе просто возвращаемся к предыдущему экрану
+      onBackClick();
+    }
   };
 
   if (showCheckout) {
@@ -85,6 +91,13 @@ const CartScreen = ({ onBackClick }: CartScreenProps) => {
       <CheckoutScreen 
         onBackClick={backToCart} 
         onHomeClick={goHome}
+        onOrderComplete={(orderNumber) => {
+          if (onOrderComplete) {
+            onOrderComplete(orderNumber);
+          } else {
+            goHome();
+          }
+        }}
         total={totalAmount}
         items={cartItems}
       />

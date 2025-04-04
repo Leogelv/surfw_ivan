@@ -5,6 +5,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --telegram-header-padding: 0px;
+  --telegram-header-gradient: none;
+  --font-bebas-neue: 'Bebas Neue', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {

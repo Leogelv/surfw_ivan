@@ -7,9 +7,10 @@ interface ProductScreenProps {
   onCartClick: () => void;
   onProfileClick: () => void;
   onLogoClick: () => void;
+  onAddToCart?: (productId: string, quantity: number) => void;
 }
 
-const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick }: ProductScreenProps) => {
+const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick, onAddToCart }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -340,10 +341,15 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       setActiveOrders(prev => prev + 1);
       setIsAddingToCart(false);
       
-      // После успешного добавления переходим в корзину
-      setTimeout(() => {
-        onCartClick();
-      }, 300);
+      // Если передан обработчик, используем его
+      if (onAddToCart) {
+        onAddToCart(productName, quantity);
+      } else {
+        // Иначе просто перейти в корзину
+        setTimeout(() => {
+          onCartClick();
+        }, 300);
+      }
     }, 800);
   };
 
@@ -431,7 +437,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         <div className="absolute top-[100px] right-3 z-50">
           <button 
             onClick={onBackClick}
-            className="bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/80 transition-all"
+            className="bg-black/60 backdrop-blur-md p-2 rounded-full border border-white/10 hover:bg-black/80 transition-all active:scale-95"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

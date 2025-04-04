@@ -5,6 +5,7 @@ import { useTelegram } from '@/context/TelegramContext';
 interface CheckoutScreenProps {
   onBackClick: () => void;
   onHomeClick: () => void;
+  onOrderComplete?: (orderNumber: string) => void;
   total: number;
   items: Array<{
     id: string;
@@ -15,7 +16,13 @@ interface CheckoutScreenProps {
   }>;
 }
 
-const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: CheckoutScreenProps) => {
+const CheckoutScreen = ({ 
+  onBackClick, 
+  onHomeClick, 
+  onOrderComplete,
+  total, 
+  items = [] 
+}: CheckoutScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentStep, setCurrentStep] = useState<'details' | 'payment' | 'success'>('details');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
@@ -40,7 +47,8 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
     
     // Имитация обработки заказа
     setTimeout(() => {
-      setOrderNumber(`#${Math.floor(1000 + Math.random() * 9000)}`);
+      const newOrderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
+      setOrderNumber(newOrderNumber);
       setCurrentStep('success');
       setProcessingPayment(false);
     }, 1500);
@@ -57,6 +65,15 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
   // Обработчик выбора времени
   const handleScheduledTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduledTime(e.target.value);
+  };
+
+  // Обработчик нажатия кнопки "Новый заказ"
+  const handleNewOrder = () => {
+    if (onOrderComplete && orderNumber) {
+      onOrderComplete(orderNumber);
+    } else {
+      onHomeClick();
+    }
   };
 
   return (
@@ -305,99 +322,61 @@ const CheckoutScreen = ({ onBackClick, onHomeClick, total, items = [] }: Checkou
           </div>
         )}
         
-        {/* Итоговый экран успешной оплаты */}
+        {/* Шаг 3: Успешное оформление заказа */}
         {currentStep === 'success' && (
-          <div className={`flex flex-col items-center px-6 pt-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-            <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mb-6">
-              <svg className="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className={`px-6 pt-8 flex flex-col items-center transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center mb-6">
+              <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             
-            <h2 className="text-2xl font-bold mb-2">Заказ оформлен!</h2>
-            <p className="text-white/60 text-center mb-8">
-              Ваш заказ {orderNumber} успешно оформлен и будет готов примерно через 15 минут
-            </p>
+            <h3 className="text-2xl font-bold mb-2 text-center">Ваш заказ принят!</h3>
+            <p className="text-white/70 text-center mb-6">Заказ {orderNumber} успешно оформлен</p>
             
             <div className="w-full bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 p-4 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-[#A67C52] mr-2 animate-pulse"></div>
-                  <h4 className="font-bold">Заказ {orderNumber}</h4>
-                </div>
-                <div className="bg-[#A67C52]/20 px-3 py-1 rounded-full text-sm">
-                  Готовится
-                </div>
+              <h4 className="text-lg font-medium mb-3">Информация о заказе</h4>
+              <div className="grid grid-cols-2 gap-y-2 text-sm">
+                <div className="text-white/70">Номер заказа:</div>
+                <div className="text-right font-medium">{orderNumber}</div>
+                
+                <div className="text-white/70">Статус:</div>
+                <div className="text-right font-medium text-green-500">Принят</div>
+                
+                <div className="text-white/70">Метод оплаты:</div>
+                <div className="text-right font-medium">{paymentMethod === 'card' ? 'Карта' : 'Наличные'}</div>
+                
+                <div className="text-white/70">Место получения:</div>
+                <div className="text-right font-medium">{selectedSpot}</div>
+                
+                <div className="text-white/70">Время готовности:</div>
+                <div className="text-right font-medium">~15-20 минут</div>
               </div>
-              
-              <div className="flex items-start mb-4">
-                <svg className="h-5 w-5 text-[#A67C52] mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </div>
+            
+            <div className="w-full p-4 bg-[#A67C52]/20 rounded-xl border border-[#A67C52]/30 mb-8">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-[#A67C52] mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div>
-                  <p className="text-sm font-medium">Место получения</p>
-                  <p className="text-sm text-white/70">{selectedSpot}</p>
-                  <p className="text-xs text-white/60 mt-0.5">Эсто-Садок, ул. Горная Карусель, 5</p>
+                <div className="flex-1">
+                  <p className="text-sm">Статус заказа будет обновляться в реальном времени. Вы получите уведомление, когда заказ будет готов к выдаче.</p>
                 </div>
-              </div>
-              
-              <div className="space-y-2 mb-4">
-                {items.map((item, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <div className="text-white/80">
-                      {item.name} {item.size && <span className="text-white/60 text-xs">({item.size})</span>}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-white/60">x{item.quantity}</span>
-                      <span>{item.price * item.quantity} ₽</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="pt-3 border-t border-white/10 flex justify-between">
-                <span className="font-medium">Итого:</span>
-                <span className="font-medium">{total} ₽</span>
-              </div>
-            </div>
-            
-            <div className="relative h-48 w-full mb-6 rounded-xl overflow-hidden border border-white/10">
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent z-10"></div>
-              <iframe 
-                src="https://www.openstreetmap.org/export/embed.html?bbox=40.2724%2C43.6727%2C40.2744%2C43.6747&amp;layer=mapnik&amp;marker=43.6737%2C40.2734" 
-                className="w-full h-full border-0"
-                title="Карта местоположения"
-                loading="lazy"
-              ></iframe>
-              <div className="absolute bottom-2 right-2 z-20 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                © OpenStreetMap
-              </div>
-              <div className="absolute top-3 left-3 z-20 bg-[#A67C52] px-3 py-1 rounded-lg text-sm shadow-lg">
-                Surf Coffee
-              </div>
-            </div>
-            
-            <div className="flex items-start mb-4">
-              <svg className="h-5 w-5 text-[#A67C52] mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <div>
-                <p className="text-sm font-medium">Время получения</p>
-                <p className="text-sm text-white/70">
-                  {pickupTime === 'asap' 
-                    ? 'Как можно скорее (примерно через 15 минут)' 
-                    : `К ${scheduledTime}`
-                  }
-                </p>
               </div>
             </div>
             
             <button 
-              onClick={onHomeClick}
-              className="w-full py-4 mb-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-full font-bold text-lg transition-all shadow-lg shadow-[#A67C52]/30 flex items-center justify-center"
+              onClick={handleNewOrder}
+              className="w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#A67C52]/30 transition-all"
             >
-              <span>Сделать новый заказ</span>
+              Новый заказ
+            </button>
+            
+            <button 
+              className="w-full py-3 bg-transparent border border-white/20 hover:bg-white/5 text-white/70 rounded-xl font-medium mt-3 transition-all"
+              onClick={handleNewOrder}
+            >
+              Вернуться на главную
             </button>
           </div>
         )}

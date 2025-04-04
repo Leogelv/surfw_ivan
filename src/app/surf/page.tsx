@@ -17,8 +17,38 @@ function SurfApp() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
+  const [cartItems, setCartItems] = useState<Array<{id: string, quantity: number}>>([
+    {id: 'cappuccino-1', quantity: 1},
+    {id: 'croissant-1', quantity: 2}
+  ]);
+  const [newOrderNumber, setNewOrderNumber] = useState<string | undefined>(undefined);
   
   const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp } = useTelegram();
+
+  // Количество товаров в корзине
+  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  // Метод для сброса корзины и сохранения номера заказа
+  const resetCartAndSetOrder = (orderNumber?: string) => {
+    setCartItems([]);
+    if (orderNumber) {
+      setNewOrderNumber(orderNumber);
+    }
+  };
+
+  // Метод для добавления товара в корзину
+  const addToCart = (productId: string, quantity: number = 1) => {
+    setCartItems(prev => {
+      const existingItem = prev.find(item => item.id === productId);
+      if (existingItem) {
+        return prev.map(item => 
+          item.id === productId ? {...item, quantity: item.quantity + quantity} : item
+        );
+      } else {
+        return [...prev, {id: productId, quantity}];
+      }
+    });
+  };
 
   useEffect(() => {
     // Инициализация Telegram WebApp при загрузке компонента
@@ -39,10 +69,10 @@ function SurfApp() {
     if (typeof document !== 'undefined') {
       document.documentElement.style.setProperty(
         '--telegram-header-padding', 
-        isFullScreenEnabled && currentScreen !== 'home' ? `${telegramHeaderPadding}px` : '0px'
+        isFullScreenEnabled && currentScreen !== 'home' && currentScreen !== 'product' ? `${telegramHeaderPadding}px` : '0px'
       );
       // Добавляем стиль для верхнего градиента в Telegram
-      if (isFullScreenEnabled && currentScreen !== 'home') {
+      if (isFullScreenEnabled && currentScreen !== 'home' && currentScreen !== 'product') {
         document.documentElement.style.setProperty(
           '--telegram-header-gradient',
           'linear-gradient(to bottom, #1D1816 90%, #1D1816 95%)'
@@ -115,6 +145,14 @@ function SurfApp() {
     transition: 'padding-top 0.3s ease'
   };
 
+  // Сбрасываем номер заказа после отображения
+  useEffect(() => {
+    if (newOrderNumber && currentScreen === 'orders') {
+      const timer = setTimeout(() => setNewOrderNumber(undefined), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [newOrderNumber, currentScreen]);
+
   return (
     <div style={contentStyle} className="h-screen bg-black">
       {/* Градиентный оверлей для верхней части Telegram WebApp */}
@@ -136,6 +174,7 @@ function SurfApp() {
             onProfileClick={toggleProfile}
             onLogoClick={goHome}
             onOrdersClick={goToOrders}
+            cartItemCount={cartItemCount}
           />
         )}
         {currentScreen === 'categories' && (
@@ -147,6 +186,7 @@ function SurfApp() {
             onProfileClick={toggleProfile}
             onLogoClick={goHome}
             onOrdersClick={goToOrders}
+            cartItemCount={cartItemCount}
           />
         )}
         {currentScreen === 'product' && (
@@ -156,16 +196,25 @@ function SurfApp() {
             onCartClick={goToCart}
             onProfileClick={toggleProfile}
             onLogoClick={goHome}
+            onAddToCart={(id, quantity) => {
+              addToCart(id, quantity);
+              goToCart();
+            }}
           />
         )}
         {currentScreen === 'cart' && (
           <CartScreen 
             onBackClick={goBack}
+            onOrderComplete={(orderNumber) => {
+              resetCartAndSetOrder(orderNumber);
+              goHome();
+            }}
           />
         )}
         {currentScreen === 'orders' && (
           <OrdersScreen 
             onBackClick={goBack}
+            newOrderNumber={newOrderNumber}
           />
         )}
       </div>
