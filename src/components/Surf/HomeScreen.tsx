@@ -81,7 +81,7 @@ const HomeScreen = ({
   // Получение рефа для выбранной категории
   const getCategoryRef = (category: string) => {
     if (category === 'coffee') return coffeeRef;
-    if (category === 'tea') return teaRef;
+    if (category === 'drinks') return teaRef;
     if (category === 'food') return foodRef;
     return null;
   };
@@ -145,15 +145,15 @@ const HomeScreen = ({
           <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-[#A67C52] z-20 animate-pulse"></div>
         </div>
         
-        {/* Чай */}
+        {/* Напитки (бывший Чай) */}
         <div 
           ref={teaRef}
           className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
-            activeCategory === 'tea' ? 'scale-[1.02] shadow-lg shadow-[#6B4226]/20' : 
+            activeCategory === 'drinks' ? 'scale-[1.02] shadow-lg shadow-[#6B4226]/20' : 
             activeCategory ? 'opacity-80 scale-[0.99]' : ''
           } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
-            ${clickedCategory === 'tea' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
-            ${clickedCategory && clickedCategory !== 'tea' ? 'opacity-0' : ''}
+            ${clickedCategory === 'drinks' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+            ${clickedCategory && clickedCategory !== 'drinks' ? 'opacity-0' : ''}
           `}
           style={{ 
             transitionDelay: '200ms',
@@ -161,16 +161,16 @@ const HomeScreen = ({
             transitionDuration: clickedCategory ? '800ms' : undefined,
             transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
           }}
-          onClick={() => handleCategoryClick('tea')}
-          onMouseEnter={() => handleCategoryHover('tea')}
+          onClick={() => handleCategoryClick('drinks')}
+          onMouseEnter={() => handleCategoryHover('drinks')}
           onMouseLeave={() => handleCategoryHover(null)}
         >
           <Image
             src="/surf/tea_categ.png"
-            alt="Чай"
+            alt="Напитки"
             fill
             className={`object-cover transition-transform duration-700 
-              ${clickedCategory === 'tea' ? 'scale-110' : 'hover:scale-110'}`}
+              ${clickedCategory === 'drinks' ? 'scale-110' : 'hover:scale-110'}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
             <Image
@@ -179,7 +179,7 @@ const HomeScreen = ({
               width={180}
               height={100}
               className={`w-auto h-24 transition-all duration-800 
-                ${clickedCategory === 'tea' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
+                ${clickedCategory === 'drinks' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
             />
           </div>
           {/* Декоративная накладка */}

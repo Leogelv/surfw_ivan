@@ -49,7 +49,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
     return () => clearTimeout(timer);
   }, []);
 
-  // ИСПРАВЛЕНО: функция для закрытия профиля
+  // Функция для закрытия профиля
   const handleCloseProfile = () => {
     haptic.buttonClick(); // Haptic feedback при нажатии
     onClose(); // Закрываем профиль
@@ -57,7 +57,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
   };
 
   return (
-    <div className="fixed inset-0 bg-[#1D1816]/95 backdrop-blur-md z-50 flex flex-col text-white">
+    <div className="fixed inset-0 bg-[#1D1816] z-50 flex flex-col text-white">
       {/* Отступ для Telegram Header */}
       {isFullScreenEnabled && (
         <div style={{ height: `${telegramHeaderPadding}px` }} className="w-full"></div>
@@ -70,14 +70,14 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           alt="Surf Coffee"
           width={150}
           height={65}
-          className="h-14 w-auto transition-all duration-500 transform"
+          className="h-14 w-auto"
           priority
         />
       </div>
       
-      {/* Верхняя часть с данными пользователя */}
+      {/* Верхняя часть с данными пользователя - фиксированная */}
       <div className="p-6 relative">
-        {/* ИСПРАВЛЕНО: кнопка закрытия профиля */}
+        {/* Кнопка закрытия профиля */}
         <button 
           onClick={handleCloseProfile}
           className="absolute top-6 right-6 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 shadow-lg hover:shadow-xl transition-all z-50 active:scale-95"
@@ -87,7 +87,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           </svg>
         </button>
 
-        <div className={`flex items-center transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className="flex items-center">
           <div className="relative w-20 h-20 mr-4">
             {user?.photo_url ? (
               <Image
@@ -112,11 +112,11 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         </div>
       </div>
 
-      {/* Информация о пользователе */}
-      <div className="flex-1 overflow-auto px-6 pb-8">
+      {/* Сам контент профиля в скроллящемся контейнере */}
+      <div className="flex-1 overflow-auto px-6 pb-8 bg-[#1D1816]">
         {/* Бонусная система */}
-        <div className={`mb-6 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 p-4">
+        <div className="mb-6">
+          <div className="bg-[#2A2118]/85 rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 p-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-lg font-medium">Ваши бонусы</h3>
               <div className="bg-gradient-to-r from-[#A67C52] to-[#5D4037] px-3 py-1 rounded-full text-white text-sm font-medium">
@@ -135,15 +135,14 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         </div>
 
         {/* История заказов */}
-        <div className={`transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <h3 className="text-lg font-medium mb-3 flex items-center">
+        <div>
+          <h3 className="text-lg font-medium mb-3">
             История заказов
-            <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
           </h3>
-          {orders.map((order, index) => (
+          {orders.map((order) => (
             <div 
               key={order.id}
-              className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/10 p-4 mb-4"
+              className="bg-[#2A2118]/85 rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/10 p-4 mb-4"
             >
               <div className="flex justify-between">
                 <div>
@@ -163,7 +162,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
               <div className="mt-3 pt-3 border-t border-white/10">
                 <div className="space-y-2">
                   {order.items.map((item, i) => (
-                    <div key={i} className="flex items-center py-2 px-2 bg-white/5 rounded-lg hover:bg-white/10 transition-all">
+                    <div key={i} className="flex items-center py-2 px-2 bg-white/5 rounded-lg">
                       <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/10 mr-3 flex-shrink-0">
                         <Image
                           src={item.image || '/surf/coffee_categ.png'}
@@ -194,7 +193,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         </div>
 
         {/* Настройки профиля */}
-        <div className={`mt-6 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className="mt-6">
           <h3 className="text-lg font-medium mb-3">Настройки</h3>
           <div className="space-y-2">
             <button 
@@ -238,7 +237,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         </div>
 
         {/* Добавляем кнопку выхода в конец контента */}
-        <div className={`mt-8 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className="mt-8">
           <button 
             onClick={handleCloseProfile}
             className="w-full py-3 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-xl font-bold text-lg shadow-md shadow-[#A67C52]/20 transition-all active:scale-98"
@@ -248,9 +247,9 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         </div>
 
         {/* Версия и правовая информация */}
-        <div className="mt-6 text-center text-white/40 text-xs pb-6">
-          <p>Версия 1.0.0</p>
-          <p className="mt-1">© 2024 Surf Coffee. Все права защищены.</p>
+        <div className="mt-8 text-center text-xs text-white/40">
+          <p>Surf Coffee © 2023</p>
+          <p className="mt-1">Версия 1.0.0</p>
         </div>
       </div>
     </div>

@@ -90,10 +90,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   // Получаем модификаторы для продукта
   const getProductModifiers = () => {
     const isCoffee = product.category === 'coffee';
+    const isDrinks = product.category === 'drinks';
     const isFood = product.category === 'food';
 
     const milkOptions = isCoffee ? ['Обычное', 'Растительное', 'Овсяное', 'Миндальное', 'Кокосовое', 'Без молока'] : [];
-    const syrupOptions = isCoffee ? ['Карамель', 'Ваниль', 'Лесной орех', 'Кокос', 'Шоколад'] : [];
+    const syrupOptions = (isCoffee || isDrinks) ? ['Карамель', 'Ваниль', 'Лесной орех', 'Кокос', 'Шоколад'] : [];
     
     const foodOptions = isFood ? [
       'Подогреть', 
@@ -186,7 +187,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       image: '/surf/tea_categ.png',
       description: 'Премиальный зеленый чай с мягким травяным ароматом и освежающим послевкусием. Богат антиоксидантами и заваривается при идеальной температуре.',
       calories: 0,
-      category: 'tea'
+      category: 'drinks'
     },
     'herbal-tea': {
       name: 'Травяной чай',
@@ -194,15 +195,31 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       image: '/surf/tea_categ.png',
       description: 'Ароматный травяной чай из целебных трав, который успокаивает и восстанавливает. Идеальный выбор для вечернего расслабления.',
       calories: 0,
-      category: 'tea'
+      category: 'drinks'
     },
     'black-tea': {
       name: 'Черный чай',
-      price: 270,
+      price: 280,
       image: '/surf/tea_categ.png',
-      description: 'Крепкий черный чай с насыщенным вкусом и глубоким ароматом. Идеально подходит для бодрого начала дня.',
+      description: 'Крепкий черный чай с глубоким насыщенным вкусом и ароматом. Бодрит и тонизирует.',
       calories: 0,
-      category: 'tea'
+      category: 'drinks'
+    },
+    'smoothie-berry': {
+      name: 'Ягодный смузи',
+      price: 350,
+      image: '/surf/tea_categ.png',
+      description: 'Освежающий смузи из свежих ягод и фруктов. Насыщенный вкус и польза в каждом глотке.',
+      calories: 180,
+      category: 'drinks'
+    },
+    'ivan-chai': {
+      name: 'Иван-чай',
+      price: 290,
+      image: '/surf/tea_categ.png',
+      description: 'Традиционный русский травяной чай с мягким вкусом и приятным ароматом. Полезные свойства и глубокое послевкусие.',
+      calories: 0,
+      category: 'drinks'
     },
     'croissant': {
       name: 'Круассан',
@@ -255,7 +272,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         light: 'bg-[#B98D6F]',
         button: 'from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41]'
       },
-      tea: { 
+      drinks: { 
         gradient: 'from-[#6B4226] to-[#3E2723]', 
         accent: 'bg-[#8D6E63]',
         shadow: 'shadow-[#8D6E63]/30',
@@ -283,7 +300,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     const category = product.category || 'coffee';
     const emojis: Record<string, string> = {
       coffee: '☕',
-      tea: '🍵',
+      drinks: '🍵',
       food: '🥐',
     };
     return emojis[category] || '✨';
@@ -453,13 +470,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       return 'мука, сахар, яйца, растительные и животные жиры, разрыхлитель';
     } else if (category === 'coffee') {
       return 'кофе арабика, вода' + (product.name.toLowerCase().includes('капучино') || product.name.toLowerCase().includes('латте') ? ', молоко' : '');
-    } else if (category === 'tea') {
+    } else if (category === 'drinks') {
       if (product.name.toLowerCase().includes('зеленый')) {
         return 'листья зеленого чая, природные ароматизаторы';
       } else if (product.name.toLowerCase().includes('черный')) {
         return 'листья черного чая';
       } else if (product.name.toLowerCase().includes('травяной')) {
         return 'смесь трав, цветов и специй';
+      } else if (product.name.toLowerCase().includes('смузи')) {
+        return 'свежие ягоды, банан, йогурт, мед';
+      } else if (product.name.toLowerCase().includes('иван')) {
+        return 'ферментированные листья кипрея';
       }
       return 'чайные листья, натуральные экстракты';
     }
@@ -552,14 +573,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Контент продукта - начинается ниже за счет уменьшения текстовой плашки */}
       <div 
         ref={contentRef}
-        className="flex-1 overflow-auto pb-32 relative z-20"
-        style={{ 
-          paddingTop: getImageHeight(),
-          transition: 'padding-top 0.5s ease-in-out'
-        }}
+        className={`flex-1 overflow-auto ${isScrolling ? '' : 'transition-all duration-500'} hide-scrollbar`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onScroll={handleScroll}
       >
         {/* Информация о продукте с эффектом наезжающей шапки */}
         <div className="flex-1 bg-gradient-to-b from-[#2A2118] to-[#1D1816] px-6 py-5 -mt-10 rounded-t-3xl flex flex-col relative z-10 border-t border-white/10">          
@@ -655,143 +673,154 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               )}
             </div>
             
-            {/* Выбор размера - с чип-листом как был */}
-            <div className="mb-5">
-              <h3 className="text-lg font-medium mb-2 flex items-center">
-                Размер
-                <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {(['small', 'medium', 'large'] as const).map((size) => {
-                  // Определяем иконку в зависимости от категории продукта
-                  const isCoffee = product.category === 'coffee';
-                  const isTea = product.category === 'tea';
-                  
-                  // Класс для размера иконки
-                  const iconSizeClass = size === 'small' ? 'h-4 w-4' : 
-                                     size === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
-                  
-                  return (
-                    <button 
-                      key={size} 
-                      onClick={() => {
-                        setSelectedSize(size);
-                        triggerHapticFeedback();
-                      }}
-                      className={`py-3 rounded-xl transition-all flex flex-col items-center justify-center relative overflow-hidden group ${
-                        selectedSize === size 
-                          ? 'bg-gradient-to-r from-[#A67C52] to-[#5D4037] text-white' 
-                          : 'bg-white/5 hover:bg-white/10'
-                      }`}
-                    >
-                      {/* Декоративная волна для серф-эстетики */}
-                      <div className={`absolute inset-x-0 bottom-0 h-1 opacity-50 ${selectedSize === size ? 'bg-white' : 'bg-[#A67C52]'}`}>
-                        <svg viewBox="0 0 120 20" xmlns="http://www.w3.org/2000/svg" className={`h-4 w-full animate-wave fill-current ${selectedSize === size ? 'text-white' : 'text-[#A67C52]'}`}>
-                          <path d="M0,10 C30,20 30,0 60,10 C90,20 90,0 120,10 V30 H0 Z"/>
-                        </svg>
-                      </div>
-                      
-                      {/* Иконка в зависимости от категории продукта */}
-                      <div className={`mb-1 ${iconSizeClass} transition-transform group-hover:scale-110`}>
-                        {isCoffee && (
-                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                          </svg>
-                        )}
-                        {isTea && (
-                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M4,19H20V21H4V19M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                          </svg>
-                        )}
-                        {!isCoffee && !isTea && (
-                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="text-sm">{sizeLabels[size]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            
-            {/* Выбор количества - более интерактивный */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2 flex items-center">
-                Количество
-                <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
-              </h3>
-              <div className="flex flex-col space-y-3">
-                <div className="flex items-center space-x-2 bg-white/5 rounded-xl p-1">
-                  <button 
-                    onClick={decreaseQuantity}
-                    disabled={quantity <= 1}
-                    className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
-                      quantity <= 1 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                    </svg>
-                  </button>
-                  <span className="flex-1 text-center font-medium text-lg">{quantity}</span>
-                  <button 
-                    onClick={increaseQuantity}
-                    disabled={quantity >= 10}
-                    className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
-                      quantity >= 10 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                </div>
-                
-                {/* Визуализация количества через иконки */}
-                <div className="flex items-center justify-center overflow-hidden">
-                  <div className="flex space-x-1 py-2 px-4 bg-[#232019]/60 backdrop-blur-sm rounded-full overflow-x-auto hide-scrollbar">
-                    {Array.from({ length: Math.min(quantity, 10) }).map((_, index) => {
+            {/* Информация и модификаторы продукта */}
+            <div className={`px-6 py-6 pb-40 ${hasScrolled ? 'opacity-100' : 'opacity-90'} transition-opacity duration-500`}>
+              {/* Информация о продукте */}
+              <div className="mb-6">
+                {/* Выбор размера - только для кофе и напитков */}
+                {(product.category === 'coffee' || product.category === 'drinks') && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-2 flex items-center">
+                      Размер
+                      <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
+                    </h3>
+                    <div className="grid grid-cols-3 gap-2">
+                    {(['small', 'medium', 'large'] as const).map((size) => {
+                      // Определяем иконку в зависимости от категории продукта
                       const isCoffee = product.category === 'coffee';
-                      const isTea = product.category === 'tea';
-                      const iconSize = selectedSize === 'small' ? 'h-4 w-4' :
-                                     selectedSize === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
+                      const isDrinks = product.category === 'drinks';
+                      
+                      // Класс для размера иконки
+                      const iconSizeClass = size === 'small' ? 'h-4 w-4' : 
+                                         size === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
                       
                       return (
-                        <div 
-                          key={index} 
-                          className={`${iconSize} text-[#A67C52] ${index === 0 ? '' : '-ml-1'} transform ${
-                            index % 2 === 0 ? 'rotate-3' : '-rotate-3'
-                          }`}
-                          style={{ 
-                            animationDelay: `${index * 0.1}s`,
-                            transform: `rotate(${index % 2 === 0 ? '3deg' : '-3deg'}) translateY(${Math.sin(index) * 2}px)`
+                        <button
+                          key={size}
+                          onClick={() => {
+                            setSelectedSize(size);
+                            triggerHapticFeedback();
                           }}
+                          className={`py-3 rounded-xl transition-all flex flex-col items-center justify-center relative overflow-hidden group ${
+                            selectedSize === size
+                              ? 'bg-gradient-to-r from-[#A67C52] to-[#5D4037] text-white' 
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
                         >
-                          {isCoffee && (
-                            <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                          {/* Декоративная волна для серф-эстетики */}
+                          <div className={`absolute inset-x-0 bottom-0 h-1 opacity-50 ${selectedSize === size ? 'bg-white' : 'bg-[#A67C52]'}`}>
+                            <svg viewBox="0 0 120 20" xmlns="http://www.w3.org/2000/svg" className={`h-4 w-full animate-wave fill-current ${selectedSize === size ? 'text-white' : 'text-[#A67C52]'}`}>
+                              <path d="M0,10 C30,20 30,0 60,10 C90,20 90,0 120,10 V30 H0 Z"/>
                             </svg>
-                          )}
-                          {isTea && (
-                            <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M4,19H20V21H4V19M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                            </svg>
-                          )}
-                          {!isCoffee && !isTea && (
-                            <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
-                            </svg>
-                          )}
-                        </div>
+                          </div>
+                          
+                          {/* Иконка в зависимости от категории продукта */}
+                          <div className={`mb-1 ${iconSizeClass} transition-transform group-hover:scale-110`}>
+                            {isCoffee && (
+                              <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                              </svg>
+                            )}
+                            {isDrinks && (
+                              <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3,2H21L17,22H7L3,2M7,4L6.4,7H17.6L17,4H7M15.5,16H8.5L8.1,19H15.9L15.5,16M9.4,13H14.6L14.2,10H9.8L9.4,13Z" />
+                              </svg>
+                            )}
+                            {!isCoffee && !isDrinks && (
+                              <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className="text-sm">{sizeLabels[size]}</span>
+                        </button>
                       );
                     })}
-                    {quantity > 10 && (
-                      <div className="text-xs text-[#A67C52] opacity-80 px-1">+{quantity - 10}</div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+              
+              {/* Модификаторы продукта */}
+              <div className="space-y-6">
+                {/* Выбор количества - более интерактивный */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-2 flex items-center">
+                    Количество
+                    <div className="ml-2 w-1.5 h-1.5 rounded-full bg-[#A67C52] animate-pulse"></div>
+                  </h3>
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center space-x-2 bg-white/5 rounded-xl p-1">
+                      <button 
+                        onClick={decreaseQuantity}
+                        disabled={quantity <= 1}
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
+                          quantity <= 1 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                        </svg>
+                      </button>
+                      <span className="flex-1 text-center font-medium text-lg">{quantity}</span>
+                      <button 
+                        onClick={increaseQuantity}
+                        disabled={quantity >= 10}
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${
+                          quantity >= 10 ? 'text-white/30' : 'bg-white/10 hover:bg-white/20'
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Визуализация количества через иконки - скрыта */}
+                    <div className="hidden">
+                      <div className="flex space-x-1 py-2 px-4 bg-[#232019]/60 backdrop-blur-sm rounded-full overflow-x-auto hide-scrollbar">
+                        {Array.from({ length: Math.min(quantity, 10) }).map((_, index) => {
+                          const isCoffee = product.category === 'coffee';
+                          const isDrinks = product.category === 'drinks';
+                          const iconSize = selectedSize === 'small' ? 'h-4 w-4' :
+                                         selectedSize === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
+                          
+                          return (
+                            <div 
+                              key={index} 
+                              className={`${iconSize} text-[#A67C52] ${index === 0 ? '' : '-ml-1'} transform ${
+                                index % 2 === 0 ? 'rotate-3' : '-rotate-3'
+                              }`}
+                              style={{ 
+                                animationDelay: `${index * 0.1}s`,
+                                transform: `rotate(${index % 2 === 0 ? '3deg' : '-3deg'}) translateY(${Math.sin(index) * 2}px)`
+                              }}
+                            >
+                              {isCoffee && (
+                                <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                                </svg>
+                              )}
+                              {isDrinks && (
+                                <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M3,2H21L17,22H7L3,2M7,4L6.4,7H17.6L17,4H7M15.5,16H8.5L8.1,19H15.9L15.5,16M9.4,13H14.6L14.2,10H9.8L9.4,13Z" />
+                                </svg>
+                              )}
+                              {!isCoffee && !isDrinks && (
+                                <svg className="w-full h-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
+                                </svg>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {quantity > 10 && (
+                          <div className="text-xs text-[#A67C52] opacity-80 px-1">+{quantity - 10}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -965,92 +994,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </>
           )}
         </button>
-        
-        {/* Иконки размера/количества под кнопкой с proper анимацией */}
-        <div className="mt-3 flex justify-between">
-          {product.category === 'coffee' || product.category === 'tea' ? (
-            <div className="flex items-center justify-between w-full">
-              {/* Размер - просто иконка нужного размера без подписи */}
-              <div className="flex items-center justify-center">
-                <div 
-                  className="transition-all duration-500 ease-out transform animate-overshoot"
-                  style={{ 
-                    height: selectedSize === 'small' ? '35px' : selectedSize === 'medium' ? '55px' : '80px',
-                    width: 'auto',
-                  }}
-                >
-                  <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor" style={{color: '#A67C52'}}>
-                    <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                  </svg>
-                </div>
-              </div>
-              
-              {/* Количество - ряд иконок без подписи */}
-              <div className="flex justify-end items-center">
-                <div className="flex items-end space-x-1">
-                  {Array.from({ length: Math.min(quantity, 7) }).map((_, index) => (
-                    <div 
-                      key={index} 
-                      className="transition-all"
-                      style={{
-                        transform: `translateY(${Math.sin(index * 0.8) * 5}px)`, 
-                        animationDelay: `${index * 0.1}s`
-                      }}
-                    >
-                      <svg 
-                        className={`animate-float-${index % 3}`}
-                        style={{
-                          color: '#A67C52', 
-                          height: '24px', 
-                          width: 'auto',
-                          animationDuration: `${1 + index * 0.2}s`,
-                          animationDelay: `${index * 0.1}s`
-                        }}
-                        viewBox="0 0 24 24" 
-                        fill="currentColor"
-                      >
-                        <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
-                      </svg>
-                    </div>
-                  ))}
-                  {quantity > 7 && <span className="text-[#A67C52] text-sm font-medium ml-1">+{quantity - 7}</span>}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center w-full">
-              {/* Иконки еды согласно количеству - сразу без подписи */}
-              <div className="flex items-end space-x-1">
-                {Array.from({ length: Math.min(quantity, 7) }).map((_, index) => (
-                  <div 
-                    key={index} 
-                    className="transition-all"
-                    style={{
-                      transform: `translateY(${Math.sin(index * 0.8) * 5}px)`, 
-                      animationDelay: `${index * 0.1}s`
-                    }}
-                  >
-                    <svg 
-                      className={`animate-float-${index % 3}`}
-                      style={{
-                        color: '#A67C52', 
-                        height: '24px', 
-                        width: 'auto',
-                        animationDuration: `${1 + index * 0.2}s`,
-                        animationDelay: `${index * 0.1}s`
-                      }}
-                      viewBox="0 0 24 24" 
-                      fill="currentColor"
-                    >
-                      <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
-                    </svg>
-                  </div>
-                ))}
-                {quantity > 7 && <span className="text-[#A67C52] text-sm font-medium ml-1">+{quantity - 7}</span>}
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Стили для скрытия полосы прокрутки и анимации волны */}

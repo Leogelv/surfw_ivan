@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, TouchEvent } from 'react';
 import Image from 'next/image';
 import CheckoutScreen from './CheckoutScreen';
+import useHapticFeedback from '@/hooks/useHapticFeedback';
 
 interface CartItem {
   id: string;
@@ -280,6 +281,22 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       image: '/surf/croissant.png'
     }
   ]);
+  
+  // Состояние для бонусов
+  const [bonusPoints, setBonusPoints] = useState(150);
+  const [useBonusPoints, setUseBonusPoints] = useState(false);
+  const [bonusToUse, setBonusToUse] = useState(0);
+  
+  const haptic = useHapticFeedback();
+
+  // Рассчитываем общую сумму
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Вычисляем максимум баллов, который можно списать (до 50% от стоимости заказа)
+  const maxBonusToUse = Math.min(bonusPoints, Math.floor(totalAmount * 0.5));
+
+  // Рассчитываем финальную сумму с учетом скидки
+  const finalAmount = totalAmount - bonusToUse;
 
   // Анимация загрузки
   useEffect(() => {
@@ -290,34 +307,51 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Рассчитываем общую сумму
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // При изменении useBonusPoints устанавливаем максимальное значение бонусов для списания
+  useEffect(() => {
+    if (useBonusPoints) {
+      setBonusToUse(maxBonusToUse);
+    } else {
+      setBonusToUse(0);
+    }
+  }, [useBonusPoints, maxBonusToUse]);
 
   // Удаление товара из корзины
   const removeItem = (id: string) => {
+    haptic.impactOccurred('medium');
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
   // Изменение количества товара
   const updateQuantity = (id: string, newQuantity: number) => {
+    haptic.selectionChanged();
     if (newQuantity < 1) return;
     setCartItems(prev => prev.map(item => 
       item.id === id ? { ...item, quantity: newQuantity } : item
     ));
   };
 
+  // Переключатель использования бонусов
+  const toggleBonusUse = () => {
+    haptic.selectionChanged();
+    setUseBonusPoints(!useBonusPoints);
+  };
+
   // Оформление заказа
   const checkout = () => {
+    haptic.buttonClick();
     setShowCheckout(true);
   };
 
   // Вернуться к корзине из оформления заказа
   const backToCart = () => {
+    haptic.buttonClick();
     setShowCheckout(false);
   };
 
   // Вернуться на главную страницу
   const goHome = () => {
+    haptic.buttonClick();
     // Сначала скрываем оформление заказа
     setShowCheckout(false);
     // Затем вызываем обработчик завершения заказа, если он передан
@@ -325,7 +359,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       onOrderComplete();
     } else {
       // Иначе просто возвращаемся к предыдущему экрану
-    onBackClick();
+      onBackClick();
     }
   };
 
@@ -341,7 +375,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
             goHome();
           }
         }}
-        total={totalAmount}
+        total={finalAmount}
         items={cartItems}
       />
     );
@@ -358,7 +392,13 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
            
       {/* Заголовок */}
       <div className="px-6 pt-4 pb-2 relative z-10 flex items-center">
-        <button onClick={onBackClick} className="p-2 mr-2 bg-white/5 rounded-full">
+        <button 
+          onClick={() => {
+            haptic.buttonClick();
+            onBackClick();
+          }} 
+          className="p-2 mr-2 bg-white/5 rounded-full"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -375,7 +415,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
           <div className="flex flex-col space-y-4 mt-4">
             {cartItems.map((item, index) => (
               <SwipeableCartItem 
-                key={item.id} 
+                key={item.id}
                 item={item}
                 onRemove={() => removeItem(item.id)}
                 onChangeQuantity={(quantity) => updateQuantity(item.id, quantity)}
@@ -387,13 +427,16 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
           <div className="flex flex-col h-full">
             <div className={`flex flex-col items-center justify-center pt-12 transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-white/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
               <h3 className="text-xl font-medium text-white/80 mb-2">Ваша корзина пуста</h3>
               <p className="text-sm text-white/60 text-center max-w-xs">Добавьте что-нибудь из меню, чтобы оформить заказ</p>
               
               <button 
-                onClick={onBackClick}
+                onClick={() => {
+                  haptic.buttonClick();
+                  onBackClick();
+                }}
                 className="mt-6 px-6 py-2.5 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-full font-medium text-sm transition-all shadow-lg shadow-[#A67C52]/20 flex items-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -410,6 +453,68 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
         
         {cartItems.length > 0 && (
           <>
+            {/* Карточка "Лицензия Серфера" с бонусами */}
+            <div className={`mt-6 mb-4 transition-all duration-700 delay-150 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+              <div className="bg-gradient-to-br from-[#8B5A2B]/30 to-[#3E2723]/30 backdrop-blur-sm rounded-xl overflow-hidden border border-[#A67C52]/30 shadow-[#A67C52]/20 shadow-lg p-4 relative">
+                {/* Декоративный элемент */}
+                <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-[#A67C52]/10 blur-xl"></div>
+                <div className="absolute right-4 top-4">
+                  <svg className="w-12 h-12 text-[#A67C52]/20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21,5C19.89,4.65 18.67,4.5 17.5,4.5C15.55,4.5 13.45,4.9 12,6C10.55,4.9 8.45,4.5 6.5,4.5C4.55,4.5 2.45,4.9 1,6V20.65C1,20.9 1.25,21.15 1.5,21.15C1.6,21.15 1.65,21.1 1.75,21.1C3.1,20.45 5.05,20 6.5,20C8.45,20 10.55,20.4 12,21.5C13.35,20.65 15.8,20 17.5,20C19.15,20 20.85,20.3 22.25,21.05C22.35,21.1 22.4,21.1 22.5,21.1C22.75,21.1 23,20.85 23,20.6V6C22.4,5.55 21.75,5.25 21,5M21,18.5C19.9,18.15 18.7,18 17.5,18C15.8,18 13.35,18.65 12,19.5V8C13.35,7.15 15.8,6.5 17.5,6.5C18.7,6.5 19.9,6.65 21,7V18.5Z" />
+                  </svg>
+                </div>
+                
+                <div className="flex items-center mb-3">
+                  <div className="p-2 bg-[#A67C52] rounded-lg mr-3 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold">Лицензия Серфера</h3>
+                    <div className="flex items-center mt-1">
+                      <svg className="w-4 h-4 text-[#A67C52] mr-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12,15.39L8.24,17.66L9.23,13.38L5.91,10.5L10.29,10.13L12,6.09L13.71,10.13L18.09,10.5L14.77,13.38L15.76,17.66M22,9.24L14.81,8.63L12,2L9.19,8.63L2,9.24L7.45,13.97L5.82,21L12,17.27L18.18,21L16.54,13.97L22,9.24Z" />
+                      </svg>
+                      <span className="text-white/80 text-sm font-medium">{bonusPoints} бонусов</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="relative h-1.5 bg-[#2A2118] rounded-full overflow-hidden mb-1">
+                  <div 
+                    className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-[#A67C52] to-[#5D4037] rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((bonusPoints / 500) * 100, 100)}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-[10px] text-white/50 mb-4">
+                  <span>0</span>
+                  <span>До VIP уровня: {Math.max(500 - bonusPoints, 0)}</span>
+                  <span>500</span>
+                </div>
+                
+                {/* Переключатель для использования бонусов, только если есть товары и бонусы */}
+                {cartItems.length > 0 && bonusPoints > 0 && (
+                  <div className="flex items-center justify-between mt-2 bg-[#2A2118]/70 p-3 rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium">Списать {maxBonusToUse} баллов</div>
+                      <div className="text-xs text-white/60">Скидка {Math.round((bonusToUse / totalAmount) * 100)}%</div>
+                    </div>
+                    <button 
+                      onClick={toggleBonusUse}
+                      className={`w-12 h-6 rounded-full relative transition-all duration-300 ${useBonusPoints ? 'bg-[#A67C52]' : 'bg-white/20'}`}
+                    >
+                      <div 
+                        className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 ${
+                          useBonusPoints ? 'right-0.5' : 'left-0.5'
+                        }`}
+                      ></div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="relative my-6">
               <div className="absolute left-0 right-0 h-[1px] bg-white/10"></div>
               <div className="absolute left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
@@ -428,7 +533,10 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
                   </div>
                   <button 
                     className="text-[#A67C52] text-sm hover:text-[#B98D6F] transition-colors"
-                    onClick={checkout}
+                    onClick={() => {
+                      haptic.buttonClick();
+                      checkout();
+                    }}
                   >
                     Повторить
                   </button>
@@ -446,12 +554,23 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       {/* Итоговая сумма и кнопка оформления заказа */}
       {cartItems.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-6 py-4 border-t border-white/10">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-2">
             <span className="text-white/80">Итого:</span>
-            <div className="text-xl font-bold">{totalAmount} ₽</div>
+            <div className="flex flex-col items-end">
+              {useBonusPoints && bonusToUse > 0 && (
+                <div className="flex items-center text-sm text-[#A67C52]">
+                  <span className="line-through text-white/40 mr-2">{totalAmount} ₽</span>
+                  <span>−{bonusToUse} ₽</span>
+                </div>
+              )}
+              <div className="text-xl font-bold">{finalAmount} ₽</div>
+            </div>
           </div>
           <button 
-            onClick={checkout}
+            onClick={() => {
+              haptic.buttonClick();
+              checkout();
+            }}
             className="w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-full font-bold text-lg transition-all shadow-lg shadow-[#A67C52]/30 flex items-center justify-center group backdrop-blur-sm border border-white/10"
           >
             <span className="mr-2">Оформить заказ</span>
