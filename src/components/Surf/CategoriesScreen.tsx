@@ -158,8 +158,8 @@ const CategoriesScreen = ({
       {/* Круговой градиент по центру верха */}
       <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/30 to-transparent z-0"></div>
       
-      {/* Заголовок категории c выпадающим меню */}
-      <div className="px-6 pt-4 pb-2 relative z-10">
+      {/* Заголовок категории c выпадающим меню - сделано sticky */}
+      <div className="sticky top-0 px-6 pt-4 pb-2 z-20 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5">
         <div className="flex items-center mt-2">
           <div className="relative">
             <button 
@@ -181,6 +181,33 @@ const CategoriesScreen = ({
           </div>
           <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r ${colors.gradient}`}></div>
         </div>
+        
+        {/* Выпадающий список категорий */}
+        {showCategoryDropdown && (
+          <div className="absolute left-0 right-0 mt-2 mx-4 p-2 bg-[#2A2118]/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg z-30 transition-all">
+            <div className="grid grid-cols-3 gap-2">
+              {Object.keys(products).map(category => {
+                const catColors = getCategoryColor(category);
+                return (
+                  <button
+                    key={category}
+                    onClick={() => selectCategory(category)}
+                    className={`py-2 px-3 rounded-lg transition-all ${
+                      category === selectedCategory 
+                        ? `bg-gradient-to-r ${catColors.gradient} text-white`
+                        : 'bg-white/5 hover:bg-white/10 text-white/80'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center">
+                      <span className="text-2xl mb-1">{getCategoryEmoji(category)}</span>
+                      <span className="text-sm">{getCategoryTitle(category)}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
@@ -328,50 +355,6 @@ const CategoriesScreen = ({
         </div>
       </div>
       
-      {/* Полноэкранное выпадающее меню категорий */}
-      {showCategoryDropdown && (
-        <div className="fixed inset-0 bg-[#1D1816]/80 backdrop-blur-md z-50 flex items-center justify-center transition-opacity duration-300 animate-fadeIn">
-          <div className="bg-[#2A2118]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-4/5 max-w-xs overflow-hidden p-2">
-            <div className="flex justify-between items-center mb-3 px-3 pt-2">
-              <h3 className="text-xl font-bold text-white">Категории</h3>
-              <button 
-                onClick={() => setShowCategoryDropdown(false)}
-                className="text-white/70 hover:text-white p-1"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-1">
-              {Object.keys(products).map((category) => (
-                <button
-                  key={category}
-                  onClick={() => selectCategory(category)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3 ${
-                    selectedCategory === category 
-                      ? 'bg-gradient-to-r from-[#A67C52]/20 to-transparent border-l-4 border-[#A67C52]' 
-                      : 'hover:bg-white/10'
-                  }`}
-                >
-                  <div className="bg-black/20 p-2 rounded-full">
-                    <span className="text-2xl">{getCategoryEmoji(category)}</span>
-                  </div>
-                  <div>
-                    <span className={`text-lg font-medium ${selectedCategory === category ? 'text-[#A67C52]' : 'text-white'}`}>
-                      {getCategoryTitle(category)}
-                    </span>
-                    <p className="text-xs text-white/50">
-                      {products[category as keyof typeof products].length} позиций
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Стили для скрытия полосы прокрутки */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar {

@@ -655,7 +655,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               )}
             </div>
             
-            {/* Выбор размера */}
+            {/* Выбор размера - с чип-листом как был */}
             <div className="mb-5">
               <h3 className="text-lg font-medium mb-2 flex items-center">
                 Размер
@@ -667,8 +667,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                   const isCoffee = product.category === 'coffee';
                   const isTea = product.category === 'tea';
                   
-                  // Размеры иконок в пикселях
-                  const sizeHeight = size === 'small' ? 35 : size === 'medium' ? 55 : 80;
+                  // Класс для размера иконки
+                  const iconSizeClass = size === 'small' ? 'h-4 w-4' : 
+                                     size === 'medium' ? 'h-5 w-5' : 'h-6 w-6';
                   
                   return (
                     <button 
@@ -691,27 +692,19 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
                       </div>
                       
                       {/* Иконка в зависимости от категории продукта */}
-                      <div 
-                        className={`mb-1 transition-all duration-800 ease-in-out transform ${
-                          selectedSize === size ? 'scale-110' : 'scale-100'
-                        } ${selectedSize === size ? 'animate-overshoot' : ''}`}
-                        style={{ 
-                          height: `${sizeHeight}px`,
-                          width: 'auto',
-                        }}
-                      >
+                      <div className={`mb-1 ${iconSizeClass} transition-transform group-hover:scale-110`}>
                         {isCoffee && (
-                          <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
                           </svg>
                         )}
                         {isTea && (
-                          <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M4,19H20V21H4V19M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
                           </svg>
                         )}
                         {!isCoffee && !isTea && (
-                          <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="w-full h-full" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
                           </svg>
                         )}
@@ -972,6 +965,67 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </>
           )}
         </button>
+        
+        {/* Иконки размера/количества под кнопкой с proper анимацией */}
+        <div className="mt-3 flex justify-center">
+          {product.category === 'coffee' || product.category === 'tea' ? (
+            <div className="flex items-center space-x-6">
+              <div className="text-center">
+                <div className="text-xs text-white/60 mb-1">Размер</div>
+                <div className="flex justify-center">
+                  {/* Иконка чашки с анимацией размера */}
+                  <div 
+                    className="transition-all duration-800 ease-in-out transform animate-overshoot"
+                    style={{ 
+                      height: selectedSize === 'small' ? '35px' : selectedSize === 'medium' ? '55px' : '80px',
+                      width: 'auto',
+                    }}
+                  >
+                    <svg className="h-full w-auto" viewBox="0 0 24 24" fill="currentColor" style={{color: '#A67C52'}}>
+                      <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <div className="text-xs text-white/60 mb-1">Количество</div>
+                <div className="flex justify-center space-x-1">
+                  {/* Отображение количества иконок согласно выбранному количеству */}
+                  {Array.from({ length: Math.min(quantity, 7) }).map((_, index) => (
+                    <svg 
+                      key={index} 
+                      style={{color: '#A67C52', height: '20px', width: 'auto', opacity: 0.7 + (index * 0.3 / quantity)}}
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                    >
+                      <path d="M2,21V19H20V21H2M20,8V5H18V8H20M20,3A2,2 0 0,1 22,5V8A2,2 0 0,1 20,10H18V13A4,4 0 0,1 14,17H8A4,4 0 0,1 4,13V3H20M16,5H6V13A2,2 0 0,0 8,15H14A2,2 0 0,0 16,13V5Z" />
+                    </svg>
+                  ))}
+                  {quantity > 7 && <span className="text-[#A67C52] text-xs ml-1">+{quantity - 7}</span>}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="text-xs text-white/60 mb-1">Количество</div>
+              <div className="flex justify-center space-x-1">
+                {/* Иконки еды согласно количеству */}
+                {Array.from({ length: Math.min(quantity, 7) }).map((_, index) => (
+                  <svg 
+                    key={index} 
+                    style={{color: '#A67C52', height: '20px', width: 'auto', opacity: 0.7 + (index * 0.3 / quantity)}}
+                    viewBox="0 0 24 24" 
+                    fill="currentColor"
+                  >
+                    <path d="M8.1,13.34L3.91,9.16C2.35,7.59 2.35,5.06 3.91,3.5L10.93,10.5L8.1,13.34M13.41,13L20.29,19.88L18.88,21.29L12,14.41L5.12,21.29L3.71,19.88L13.36,10.22L13.16,10C12.38,9.23 12.38,7.97 13.16,7.19L17.5,2.82L18.43,3.74L15.19,7L16.15,7.94L19.39,4.69L20.31,5.61L17.06,8.85L18,9.81L21.26,6.56L22.18,7.5L17.81,11.84C17.03,12.62 15.77,12.62 15,11.84L14.78,11.64L13.41,13Z" />
+                  </svg>
+                ))}
+                {quantity > 7 && <span className="text-[#A67C52] text-xs ml-1">+{quantity - 7}</span>}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Стили для скрытия полосы прокрутки и анимации волны */}

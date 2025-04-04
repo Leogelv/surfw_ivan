@@ -49,18 +49,11 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
     return () => clearTimeout(timer);
   }, []);
 
-  // Функция для закрытия профиля и возврата на главную
-  const handleCloseAndGoHome = () => {
+  // ИСПРАВЛЕНО: функция для закрытия профиля
+  const handleCloseProfile = () => {
     haptic.buttonClick(); // Haptic feedback при нажатии
-    onHomeClick();
-    onClose();
-  };
-
-  // Функция для перехода к заказам
-  const handleOrdersClick = () => {
-    haptic.buttonClick(); // Haptic feedback при нажатии
-    onOrdersClick();
-    onClose();
+    onClose(); // Закрываем профиль
+    onHomeClick(); // Переходим на главную
   };
 
   return (
@@ -72,8 +65,9 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       
       {/* Верхняя часть с данными пользователя */}
       <div className="p-6 relative">
+        {/* ИСПРАВЛЕНО: кнопка закрытия профиля */}
         <button 
-          onClick={onHomeClick}
+          onClick={handleCloseProfile}
           className="absolute top-6 right-6 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 shadow-lg hover:shadow-xl transition-all z-50"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -166,7 +160,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
                 className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors"
                 onClick={() => { 
                   haptic.buttonClick(); // Haptic feedback при нажатии
-                  handleOrdersClick(); 
+                  onOrdersClick(); 
                 }}
               >
                 Повторить заказ
@@ -234,7 +228,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
             className="relative p-3 group" 
             onClick={() => { 
               haptic.buttonClick(); // Haptic feedback при нажатии
-              handleOrdersClick(); 
+              onOrdersClick(); 
             }}
           >
             {activeOrders > 0 && (
@@ -253,7 +247,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
             className="cursor-pointer relative" 
             onClick={() => { 
               haptic.buttonClick(); // Haptic feedback при нажатии
-              handleCloseAndGoHome(); 
+              handleCloseProfile(); 
             }}
           >
             <Image 
@@ -265,9 +259,9 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
             />
           </div>
           
-          {/* Закрыть профиль */}
+          {/* ИСПРАВЛЕНО: кнопка закрытия внизу */}
           <button 
-            onClick={onHomeClick} 
+            onClick={handleCloseProfile} 
             className="p-3 relative group bg-black/40 hover:bg-black/60 rounded-full active:scale-95 transition-all shadow-lg border border-white/20"
           >
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
