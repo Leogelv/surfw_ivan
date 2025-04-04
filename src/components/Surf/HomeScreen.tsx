@@ -7,9 +7,9 @@ interface HomeScreenProps {
   onCartClick: () => void;
   onProfileClick: () => void;
   onLogoClick: () => void;
-  onOrdersClick?: () => void; // Добавляем обработчик для экрана заказов
-  cartItemCount?: number; // Добавляем счетчик товаров в корзине
-  showCart?: boolean; // Флаг для отображения иконки корзины
+  onOrdersClick?: () => void;
+  cartItemCount?: number;
+  showCart?: boolean;
 }
 
 const HomeScreen = ({ 
@@ -23,19 +23,16 @@ const HomeScreen = ({
   showCart = true 
 }: HomeScreenProps) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
+  const [activeOrders, setActiveOrders] = useState(2);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  // Новое состояние для анимации при клике
   const [clickedCategory, setClickedCategory] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
-  // Рефы для контейнеров категорий
   const coffeeRef = useRef<HTMLDivElement>(null);
-  const teaRef = useRef<HTMLDivElement>(null);
+  const drinksRef = useRef<HTMLDivElement>(null);
   const foodRef = useRef<HTMLDivElement>(null);
   
-  // Эффект пульсации для логотипа
   const [logoScale, setLogoScale] = useState(1);
   
   useEffect(() => {
@@ -46,9 +43,7 @@ const HomeScreen = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Анимация загрузки экрана
   useEffect(() => {
-    // Сбрасываем состояние при размонтировании
     setIsLoaded(false);
     
     const timer = setTimeout(() => {
@@ -57,216 +52,248 @@ const HomeScreen = ({
     
     return () => clearTimeout(timer);
   }, []);
-
-  // Обработчик наведения на категорию
+  
   const handleCategoryHover = (category: string | null) => {
     if (!isTransitioning) {
       setActiveCategory(category);
     }
   };
   
-  // Новый обработчик клика по категории с анимацией
   const handleCategoryClick = (category: string) => {
     if (isTransitioning) return;
     
     setClickedCategory(category);
     setIsTransitioning(true);
     
-    // Запускаем анимацию перехода
     setTimeout(() => {
       onCategoryClick(category);
-    }, 800); // Время анимации такое же, как в CSS (800ms)
+    }, 800);
   };
   
-  // Получение рефа для выбранной категории
   const getCategoryRef = (category: string) => {
     if (category === 'coffee') return coffeeRef;
-    if (category === 'drinks') return teaRef;
+    if (category === 'drinks') return drinksRef;
     if (category === 'food') return foodRef;
     return null;
   };
-  
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816] overflow-hidden">
-      {/* Верхний декоративный эффект */}
       <div className="absolute top-0 left-0 right-0 h-60 opacity-70 z-0"
-           style={{ 
-             backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C6D3E' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")", 
-             backgroundSize: "40px 40px"
-           }}></div>
-
-      {/* Круговой градиент по центру верха */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/30 to-transparent z-0"></div>
+        style={{ background: 'radial-gradient(circle at center, rgba(166, 124, 82, 0.3) 0%, transparent 70%)' }}>
+      </div>
       
-      {/* Категории */}
-      <div className="flex-1 flex flex-col space-y-1 p-1 relative z-10">
-        {/* Кофе */}
-        <div 
-          ref={coffeeRef}
-          className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
-            activeCategory === 'coffee' ? 'scale-[1.02] shadow-lg shadow-[#8B5A2B]/20' : 
-            activeCategory ? 'opacity-80 scale-[0.99]' : ''
-          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
-            ${clickedCategory === 'coffee' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
-            ${clickedCategory && clickedCategory !== 'coffee' ? 'opacity-0' : ''}
-          `}
-          style={{ 
-            transitionDelay: '100ms',
-            transitionProperty: clickedCategory ? 'all' : undefined,
-            transitionDuration: clickedCategory ? '800ms' : undefined,
-            transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
-          }}
-          onClick={() => handleCategoryClick('coffee')}
-          onMouseEnter={() => handleCategoryHover('coffee')}
-          onMouseLeave={() => handleCategoryHover(null)}
-        >
-          <Image
-            src="/surf/coffee_categ.png"
-            alt="Кофе"
-            fill
-            className={`object-cover transition-transform duration-700 
-              ${clickedCategory === 'coffee' ? 'scale-110' : 'hover:scale-110'}`}
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
-            <Image
-              src="/surf/coffee.svg"
-              alt="Кофе"
-              width={180}
-              height={100}
-              className={`w-auto h-24 transition-all duration-800 
-                ${clickedCategory === 'coffee' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
-            />
+      {activeOrders > 0 && (
+        <button onClick={onOrdersClick} className={`fixed top-5 left-5 z-40 flex items-center transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'} ${clickedCategory ? 'opacity-0 translate-y-10' : ''}`}>
+          <div className="w-10 h-10 relative flex items-center justify-center bg-[#A67C52] rounded-full shadow-lg mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="absolute -top-1 -right-1 bg-white text-[#A67C52] text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
+              {activeOrders}
+            </div>
           </div>
-          {/* Декоративная накладка */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#8B5A2B] to-[#3E2723] mix-blend-overlay opacity-15"></div>
-          
-          {/* Пульсирующая точка */}
-          <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-[#A67C52] z-20 animate-pulse"></div>
+          <span className="text-white font-medium text-sm">Активные заказы</span>
+        </button>
+      )}
+      
+      <button onClick={onMenuClick} className={`fixed top-5 right-5 z-40 p-2 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'} ${clickedCategory ? 'opacity-0 translate-y-10' : ''}`}>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      
+      <div className="flex-1 overflow-hidden flex flex-col px-4 py-14 relative">
+        <div className={`text-center mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'} ${clickedCategory ? 'opacity-0 translate-y-10' : ''}`}
+          style={{ transitionDelay: '50ms' }}>
+          <h1 className="text-4xl font-bold text-white tracking-tighter">
+            <span className="text-[#F2C04F]">Vibe</span> Cafe
+          </h1>
+          <p className="text-white/60 text-sm mt-1 font-medium">
+            Выберите категорию
+          </p>
         </div>
         
-        {/* Напитки (бывший Чай) */}
-        <div 
-          ref={teaRef}
-          className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
-            activeCategory === 'drinks' ? 'scale-[1.02] shadow-lg shadow-[#6B4226]/20' : 
-            activeCategory ? 'opacity-80 scale-[0.99]' : ''
-          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
-            ${clickedCategory === 'drinks' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
-            ${clickedCategory && clickedCategory !== 'drinks' ? 'opacity-0' : ''}
-          `}
-          style={{ 
-            transitionDelay: '200ms',
-            transitionProperty: clickedCategory ? 'all' : undefined,
-            transitionDuration: clickedCategory ? '800ms' : undefined,
-            transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
-          }}
-          onClick={() => handleCategoryClick('drinks')}
-          onMouseEnter={() => handleCategoryHover('drinks')}
-          onMouseLeave={() => handleCategoryHover(null)}
-        >
-          <Image
-            src="/surf/tea_categ.png"
-            alt="Напитки"
-            fill
-            className={`object-cover transition-transform duration-700 
-              ${clickedCategory === 'drinks' ? 'scale-110' : 'hover:scale-110'}`}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
+        <div className="flex flex-col space-y-3 flex-1 relative">
+          <div 
+            ref={coffeeRef}
+            className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
+              activeCategory === 'coffee' ? 'scale-[1.02] shadow-lg shadow-[#8B5A2B]/20' : 
+              activeCategory ? 'opacity-80 scale-[0.99]' : ''
+            } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+              ${clickedCategory === 'coffee' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+              ${clickedCategory && clickedCategory !== 'coffee' ? 'opacity-0' : ''}
+            `}
+            style={{ 
+              transitionDelay: '100ms',
+              transitionProperty: clickedCategory ? 'all' : undefined,
+              transitionDuration: clickedCategory ? '800ms' : undefined,
+              transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
+            }}
+            onClick={() => handleCategoryClick('coffee')}
+            onMouseEnter={() => handleCategoryHover('coffee')}
+            onMouseLeave={() => handleCategoryHover(null)}
+          >
             <Image
-              src="/surf/drinks.svg"
-              alt="Чай"
-              width={180}
-              height={100}
-              className={`w-auto h-24 transition-all duration-800 
-                ${clickedCategory === 'drinks' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
+              src="/surf/coffee_categ.png" 
+              alt="Coffee"
+              fill
+              className={`object-cover transition-transform duration-700 
+                ${clickedCategory === 'coffee' ? 'scale-110' : 'hover:scale-110'}`}
+              priority
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center justify-center transition-transform duration-500">
+                <Image 
+                  src="/surf/coffee.svg" 
+                  alt="Coffee"
+                  width={180}
+                  height={100}
+                  className={`w-auto h-24 transition-all duration-800 
+                  ${clickedCategory === 'coffee' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
+                />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-5 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Кофе</h2>
+                <p className="text-white/60 text-sm">Свежая обжарка</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-2 rounded-full">
+                <span className="text-2xl">☕</span>
+              </div>
+            </div>
           </div>
-          {/* Декоративная накладка */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#6B4226] to-[#3E2723] mix-blend-overlay opacity-15"></div>
           
-          {/* Пульсирующая точка */}
-          <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-[#8D6E63] z-20 animate-pulse"></div>
-        </div>
-        
-        {/* Еда */}
-        <div 
-          ref={foodRef}
-          className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
-            activeCategory === 'food' ? 'scale-[1.02] shadow-lg shadow-[#6D4C41]/20' : 
-            activeCategory ? 'opacity-80 scale-[0.99]' : ''
-          } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
-            ${clickedCategory === 'food' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
-            ${clickedCategory && clickedCategory !== 'food' ? 'opacity-0' : ''}
-          `}
-          style={{ 
-            transitionDelay: '300ms',
-            transitionProperty: clickedCategory ? 'all' : undefined,
-            transitionDuration: clickedCategory ? '800ms' : undefined,
-            transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
-          }}
-          onClick={() => handleCategoryClick('food')}
-          onMouseEnter={() => handleCategoryHover('food')}
-          onMouseLeave={() => handleCategoryHover(null)}
-        >
-          <Image
-            src="/surf/food_categ.png"
-            alt="Еда"
-            fill
-            className={`object-cover transition-transform duration-700 
-              ${clickedCategory === 'food' ? 'scale-110' : 'hover:scale-110'}`}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
+          <div 
+            ref={drinksRef}
+            className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
+              activeCategory === 'drinks' ? 'scale-[1.02] shadow-lg shadow-[#6B4226]/20' : 
+              activeCategory ? 'opacity-80 scale-[0.99]' : ''
+            } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+              ${clickedCategory === 'drinks' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+              ${clickedCategory && clickedCategory !== 'drinks' ? 'opacity-0' : ''}
+            `}
+            style={{ 
+              transitionDelay: '200ms',
+              transitionProperty: clickedCategory ? 'all' : undefined,
+              transitionDuration: clickedCategory ? '800ms' : undefined,
+              transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
+            }}
+            onClick={() => handleCategoryClick('drinks')}
+            onMouseEnter={() => handleCategoryHover('drinks')}
+            onMouseLeave={() => handleCategoryHover(null)}
+          >
             <Image
-              src="/surf/food.svg"
-              alt="Еда"
-              width={180}
-              height={100}
-              className={`w-auto h-24 transition-all duration-800 
-                ${clickedCategory === 'food' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
+              src="/surf/tea_categ.png"
+              alt="Напитки"
+              fill
+              className={`object-cover transition-transform duration-700 
+                ${clickedCategory === 'drinks' ? 'scale-110' : 'hover:scale-110'}`}
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center justify-center transition-transform duration-500">
+                <Image 
+                  src="/surf/drinks.svg"
+                  alt="Напитки"
+                  width={180}
+                  height={100}
+                  className={`w-auto h-24 transition-all duration-800 
+                  ${clickedCategory === 'drinks' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
+                />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-5 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Напитки</h2>
+                <p className="text-white/60 text-sm">Чай и лимонады</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-2 rounded-full">
+                <span className="text-2xl">🍵</span>
+              </div>
+            </div>
           </div>
-          {/* Декоративная накладка */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#6D4C41] to-[#3E2723] mix-blend-overlay opacity-15"></div>
           
-          {/* Пульсирующая точка */}
-          <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-[#A1887F] z-20 animate-pulse"></div>
+          <div 
+            ref={foodRef}
+            className={`flex-1 relative cursor-pointer overflow-hidden rounded-xl transition-all duration-700 ${
+              activeCategory === 'food' ? 'scale-[1.02] shadow-lg shadow-[#6D4C41]/20' : 
+              activeCategory ? 'opacity-80 scale-[0.99]' : ''
+            } ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+              ${clickedCategory === 'food' ? 'scale-[1.1] z-50 fixed inset-0 rounded-none' : ''}
+              ${clickedCategory && clickedCategory !== 'food' ? 'opacity-0' : ''}
+            `}
+            style={{ 
+              transitionDelay: '300ms',
+              transitionProperty: clickedCategory ? 'all' : undefined,
+              transitionDuration: clickedCategory ? '800ms' : undefined,
+              transitionTimingFunction: clickedCategory ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined 
+            }}
+            onClick={() => handleCategoryClick('food')}
+            onMouseEnter={() => handleCategoryHover('food')}
+            onMouseLeave={() => handleCategoryHover(null)}
+          >
+            <Image
+              src="/surf/food_categ.png"
+              alt="Food"
+              fill
+              className={`object-cover transition-transform duration-700 
+                ${clickedCategory === 'food' ? 'scale-110' : 'hover:scale-110'}`}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center justify-center transition-transform duration-500">
+                <Image 
+                  src="/surf/food.svg"
+                  alt="Food"
+                  width={180}
+                  height={100}
+                  className={`w-auto h-24 transition-all duration-800 
+                  ${clickedCategory === 'food' ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}
+                />
+              </div>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 p-5 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Еда</h2>
+                <p className="text-white/60 text-sm">Свежая выпечка</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-2 rounded-full">
+                <span className="text-2xl">🥐</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
-      {/* Фиксированное нижнее меню с логотипом */}
       <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 
-        ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
-        ${clickedCategory ? 'opacity-0 translate-y-10' : ''}`}
-          style={{ transitionDelay: '400ms' }}>
+          ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}
+          ${clickedCategory ? 'opacity-0 translate-y-10' : ''}`}
+        style={{ transitionDelay: '400ms' }}>
         <div className="flex items-center justify-between">
-          {/* Мои заказы */}
-          <button className="relative p-3 group" onClick={onOrdersClick}>
+          <button onClick={onOrdersClick} className="p-3 relative group">
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             {activeOrders > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                 {activeOrders}
               </div>
             )}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
           </button>
           
-          {/* Логотип */}
           <div className="relative cursor-pointer" style={{ transform: `scale(${logoScale})`, transition: 'transform 0.8s ease-in-out' }} onClick={onLogoClick}>
             <Image 
               src="/surf/logo.svg" 
-              alt="Surf Coffee" 
-              width={150} 
-              height={65} 
-              className="h-14 w-auto relative"
+              alt="Vibe Cafe Logo"
+              width={100} 
+              height={40}
+              className="h-10 w-auto"
             />
           </div>
           
-          {/* Иконки справа */}
           <div className="flex space-x-3">
-            {showCart && cartItemCount > 0 && (
+            {showCart && (
               <button onClick={onCartClick} className="p-3 relative group">
                 <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
                 {cartItemCount > 0 && (
@@ -290,11 +317,6 @@ const HomeScreen = ({
       </div>
     </div>
   );
-};
-
-// Функция для перехода на главную страницу
-const goHome = () => {
-  // Просто заглушка, в реальном приложении здесь будет логика
 };
 
 export default HomeScreen; 

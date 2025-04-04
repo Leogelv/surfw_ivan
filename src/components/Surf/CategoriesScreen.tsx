@@ -38,84 +38,69 @@ const CategoriesScreen = ({
     return () => setIsLoaded(false);
   }, [selectedCategory]);
 
-  // Данные о продуктах для каждой категории (цены в рублях)
-  const products = {
-    coffee: [
-      { id: 'cappuccino', name: 'Капучино', price: 350, image: '/surf/coffee_categ.png', description: 'Насыщенный эспрессо с нежной молочной пенкой', calories: 120 },
-      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/coffee_categ.png', description: 'Освежающий холодный кофе с молоком', calories: 180 },
-      { id: 'espresso', name: 'Эспрессо', price: 250, image: '/surf/coffee_categ.png', description: 'Крепкий концентрированный кофе', calories: 5 },
-      { id: 'mocha', name: 'Мокко', price: 420, image: '/surf/coffee_categ.png', description: 'Кофе с шоколадным сиропом и молоком', calories: 220 },
-      { id: 'americano', name: 'Американо', price: 280, image: '/surf/coffee_categ.png', description: 'Эспрессо с добавлением горячей воды', calories: 10 },
-    ],
-    tea: [
-      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Легкий, освежающий чай, богатый антиоксидантами', calories: 0 },
-      { id: 'black-tea', name: 'Черный чай', price: 270, image: '/surf/tea_categ.png', description: 'Классический насыщенный чай', calories: 0 },
-      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Успокаивающий чай без кофеина', calories: 0 },
-      { id: 'fruit-tea', name: 'Фруктовый чай', price: 310, image: '/surf/tea_categ.png', description: 'Ароматный чай с кусочками фруктов', calories: 5 },
-    ],
-    food: [
-      { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Хрустящий масляный французский круассан', calories: 240 },
-      { id: 'sandwich', name: 'Сэндвич', price: 380, image: '/surf/food_categ.png', description: 'Свежие ингредиенты на ремесленном хлебе', calories: 320 },
-      { id: 'avocado-toast', name: 'Тост с авокадо', price: 450, image: '/surf/food_categ.png', description: 'Авокадо на тосте из цельнозернового хлеба', calories: 280 },
-      { id: 'brownie', name: 'Брауни', price: 260, image: '/surf/food_categ.png', description: 'Шоколадный десерт с орехами', calories: 310 },
-    ],
+  // Получаем название категории
+  const getCategoryTitle = (category: string): string => {
+    const titles: Record<string, { ru: string, en: string }> = {
+      coffee: { ru: 'Кофе', en: 'Coffee' },
+      drinks: { ru: 'Напитки', en: 'Drinks' },
+      food: { ru: 'Еда', en: 'Food' },
+    };
+    return titles[category]?.ru || category;
   };
 
-  // Получаем продукты для выбранной категории
-  const categoryProducts = selectedCategory ? products[selectedCategory as keyof typeof products] : [];
-  
-  // Получаем заголовок категории
-  const getCategoryTitle = (category: string) => {
-    const titles: Record<string, string> = {
-      coffee: 'Кофе',
-      tea: 'Чай',
-      food: 'Еда',
+  // Получаем цвета для категории
+  const getCategoryColors = (category: string): { accent: string, light: string, wave: string } => {
+    const colors: Record<string, { accent: string, light: string, wave: string }> = {
+      coffee: { accent: 'bg-[#A67C52]', light: 'bg-[#CCA68A]', wave: 'text-[#A67C52]' },
+      drinks: { accent: 'bg-[#8D6E63]', light: 'bg-[#BCAAA4]', wave: 'text-[#8D6E63]' },
+      food: { accent: 'bg-[#A1887F]', light: 'bg-[#D7CCC8]', wave: 'text-[#A1887F]' },
     };
-    return titles[category] || 'Категории';
+    return colors[category] || colors.coffee;
   };
 
-  // Получаем цвет акцента для категории
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, { gradient: string, accent: string, shadow: string }> = {
-      coffee: { 
-        gradient: 'from-[#8B5A2B] to-[#3E2723]', 
-        accent: 'bg-[#A67C52]',
-        shadow: 'shadow-[#A67C52]/30'
-      },
-      tea: { 
-        gradient: 'from-[#6B4226] to-[#3E2723]', 
-        accent: 'bg-[#8D6E63]',
-        shadow: 'shadow-[#8D6E63]/30'
-      },
-      food: { 
-        gradient: 'from-[#6D4C41] to-[#3E2723]', 
-        accent: 'bg-[#A1887F]',
-        shadow: 'shadow-[#A1887F]/30'
-      },
+  // Получаем узор фона для категории
+  const getBgPattern = (category: string): string => {
+    const patterns: Record<string, string> = {
+      coffee: 'bg-[radial-gradient(circle_at_center,rgba(166,124,82,0.15)_0.5px,transparent_0.5px),radial-gradient(circle_at_center,rgba(166,124,82,0.1)_1px,transparent_1px)]',
+      drinks: 'bg-[radial-gradient(circle_at_center,rgba(141,110,99,0.15)_0.5px,transparent_0.5px),radial-gradient(circle_at_center,rgba(141,110,99,0.1)_1px,transparent_1px)]',
+      food: 'bg-[radial-gradient(circle_at_center,rgba(161,136,127,0.15)_0.5px,transparent_0.5px),radial-gradient(circle_at_center,rgba(161,136,127,0.1)_1px,transparent_1px)]',
     };
-    return colors[category] || { 
-      gradient: 'from-[#5D4037] to-[#3E2723]', 
-      accent: 'bg-[#8D6E63]',
-      shadow: 'shadow-[#8D6E63]/30'
-    };
-  };
-
-  // Получаем соответствующий фон для категории
-  const getBgPattern = (category: string) => {
-    return "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C6D3E' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")";
+    return patterns[category] || patterns.coffee;
   };
 
   // Получаем эмодзи для категории
-  const getCategoryEmoji = (category: string) => {
+  const getCategoryEmoji = (category: string): string => {
     const emojis: Record<string, string> = {
       coffee: '☕',
-      tea: '🍵',
+      drinks: '🍵',
       food: '🥐',
     };
     return emojis[category] || '✨';
   };
 
-  const colors = getCategoryColor(selectedCategory);
+  // Хардкод данных о продуктах (для демо)
+  const productsByCategory: Record<string, Array<{ id: string; name: string; price: number; image: string; description?: string; calories?: number; aspectRatio?: string }>> = {
+    coffee: [
+      { id: 'latte', name: 'Латте', price: 350, image: '/surf/latte.png', description: 'Нежный латте с бархатистой текстурой', calories: 120, aspectRatio: '3/4' },
+      { id: 'americano', name: 'Американо', price: 280, image: '/surf/americano.png', description: 'Классический черный кофе', calories: 10, aspectRatio: '3/4' },
+      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/icelatte.png', description: 'Охлаждающий латте со льдом', calories: 180, aspectRatio: '3/4' },
+    ],
+    drinks: [
+      { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90 },
+      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Премиальный зеленый чай', calories: 0 },
+      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0 },
+    ],
+    food: [
+      { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Свежеиспеченный круассан', calories: 240 },
+      { id: 'salmon-croissant', name: 'Круассан с лососем', price: 450, image: '/surf/salmoncroissant.png', description: 'Круассан с лососем и сыром', calories: 320 },
+      { id: 'panini', name: 'Панини', price: 380, image: '/surf/panini.png', description: 'Горячий итальянский сэндвич', calories: 350 },
+    ]
+  };
+
+  // Получаем продукты для выбранной категории
+  const categoryProducts = selectedCategory ? productsByCategory[selectedCategory] : [];
+  
+  const colors = getCategoryColors(selectedCategory);
 
   // Обработчик скролла карточек продуктов
   const handleScroll = () => {
@@ -142,7 +127,12 @@ const CategoriesScreen = ({
   const selectCategory = (category: string) => {
     setShowCategoryDropdown(false);
     if (category !== selectedCategory) {
-      onProductClick(products[category as keyof typeof products][0].id);
+      // Вместо перехода на продукт, просто обновляем выбранную категорию
+      onHomeClick(); // Возвращаемся на главный экран
+      setTimeout(() => {
+        // После небольшой задержки открываем нужную категорию
+        window.location.href = `/#${category}`;
+      }, 100);
     }
   };
 
@@ -179,22 +169,22 @@ const CategoriesScreen = ({
               <div className={`ml-2 w-2 h-2 rounded-full animate-pulse ${colors.accent}`}></div>
             </button>
           </div>
-          <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r ${colors.gradient}`}></div>
+          <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r ${colors.wave}`}></div>
         </div>
         
         {/* Выпадающий список категорий с абсолютным позиционированием относительно sticky-хедера */}
         {showCategoryDropdown && (
           <div className="absolute left-0 right-0 mt-2 mx-4 p-2 bg-[#2A2118]/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg z-40 transition-all">
             <div className="grid grid-cols-3 gap-2">
-              {Object.keys(products).map(category => {
-                const catColors = getCategoryColor(category);
+              {Object.keys(productsByCategory).map(category => {
+                const catColors = getCategoryColors(category);
                 return (
                   <button
                     key={category}
                     onClick={() => selectCategory(category)}
                     className={`py-2 px-3 rounded-lg transition-all ${
                       category === selectedCategory 
-                        ? `bg-gradient-to-r ${catColors.gradient} text-white`
+                        ? `bg-gradient-to-r ${catColors.wave} text-white`
                         : 'bg-white/5 hover:bg-white/10 text-white/80'
                     }`}
                   >
@@ -238,11 +228,11 @@ const CategoriesScreen = ({
                 }}
               >
                 <div className={`bg-[#2A2118]/85 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer h-auto
-                  border border-white/5 ${colors.shadow} transition-all duration-300 hover:shadow-lg`}>
+                  border border-white/5 ${colors.accent} transition-all duration-300 hover:shadow-lg`}>
                   
                   {/* Изображение продукта (на весь экран при активности) */}
                   <div className={`relative ${isActive ? 'h-72' : 'h-56'} w-full transition-all duration-300`}>
-                    <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} mix-blend-overlay opacity-60 z-10`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
                       src={product.image}
                       alt={product.name}
@@ -269,7 +259,7 @@ const CategoriesScreen = ({
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <h4 className="font-bold text-xl text-white">{product.name}</h4>
-                      <div className={`bg-gradient-to-r ${colors.gradient} text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner`}>
+                      <div className={`bg-gradient-to-r ${colors.wave} text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner`}>
                         {product.price} ₽
                       </div>
                     </div>
@@ -281,7 +271,7 @@ const CategoriesScreen = ({
                         e.stopPropagation();
                         onProductClick(product.id);
                       }} 
-                      className={`w-full py-3 rounded-full bg-gradient-to-r ${colors.gradient} text-white font-medium transition-transform hover:scale-105 flex items-center justify-center space-x-2`}
+                      className={`w-full py-3 rounded-full bg-gradient-to-r ${colors.wave} text-white font-medium transition-transform hover:scale-105 flex items-center justify-center space-x-2`}
                     >
                       <span>Выбрать</span>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
