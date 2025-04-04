@@ -8,9 +8,10 @@ interface ProductScreenProps {
   onProfileClick: () => void;
   onLogoClick: () => void;
   onAddToCart?: (productId: string, quantity: number) => void;
+  showCart?: boolean; // Флаг для отображения иконки корзины
 }
 
-const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick, onAddToCart }: ProductScreenProps) => {
+const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick, onAddToCart, showCart = true }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -727,18 +728,19 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       </div>
 
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 mt-16 hidden">
+      <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+          style={{ transitionDelay: '400ms' }}>
         <div className="flex items-center justify-between">
           {/* Кнопка назад */}
-          <button onClick={onBackClick} className="p-3 relative group">
+          <button className="p-3 relative group" onClick={onBackClick}>
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </button>
           
           {/* Логотип */}
-          <div className="cursor-pointer relative" onClick={onLogoClick}>
+          <div className="cursor-pointer" onClick={onLogoClick}>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
@@ -748,18 +750,23 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             />
           </div>
           
-          {/* Корзина */}
-          <button onClick={onCartClick} className="relative p-3 group">
-            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-            {activeOrders > 0 && (
-              <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {activeOrders}
-              </div>
+          {/* Иконки справа */}
+          <div className="flex space-x-3">
+            {showCart && (
+              <button onClick={onCartClick} className="p-3 relative group">
+                <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </button>
             )}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-          </button>
+            <button onClick={onProfileClick} className="p-3 relative group">
+              <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

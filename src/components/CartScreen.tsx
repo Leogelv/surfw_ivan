@@ -334,7 +334,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       <CheckoutScreen 
         onBackClick={backToCart} 
         onHomeClick={goHome}
-        onOrderComplete={(orderNumber: string) => {
+        onOrderComplete={(orderNumber) => {
           if (onOrderComplete) {
             onOrderComplete(orderNumber);
           } else {
@@ -452,16 +452,10 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
           </div>
           <button 
             onClick={checkout}
-            className="w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-full font-bold text-lg transition-all shadow-lg shadow-[#A67C52]/30 flex items-center justify-center group backdrop-blur-sm border border-white/10"
+            className="w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D0D37] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-xl font-bold text-lg shadow-lg shadow-[#A67C52]/30 flex items-center justify-center group transition-all"
           >
             <span className="mr-2">Оформить заказ</span>
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </button>

@@ -17,10 +17,7 @@ function SurfApp() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
-  const [cartItems, setCartItems] = useState<Array<{id: string, quantity: number}>>([
-    {id: 'cappuccino-1', quantity: 1},
-    {id: 'croissant-1', quantity: 2}
-  ]);
+  const [cartItems, setCartItems] = useState<Array<{id: string, quantity: number}>>([]);
   const [newOrderNumber, setNewOrderNumber] = useState<string | undefined>(undefined);
   
   const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp } = useTelegram();
@@ -175,6 +172,7 @@ function SurfApp() {
             onLogoClick={goHome}
             onOrdersClick={goToOrders}
             cartItemCount={cartItemCount}
+            showCart={cartItems.length > 0}
           />
         )}
         {currentScreen === 'categories' && (
@@ -187,6 +185,7 @@ function SurfApp() {
             onLogoClick={goHome}
             onOrdersClick={goToOrders}
             cartItemCount={cartItemCount}
+            showCart={cartItems.length > 0}
           />
         )}
         {currentScreen === 'product' && (
@@ -200,6 +199,7 @@ function SurfApp() {
               addToCart(id, quantity);
               goToCart();
             }}
+            showCart={cartItems.length > 0}
           />
         )}
         {currentScreen === 'cart' && (

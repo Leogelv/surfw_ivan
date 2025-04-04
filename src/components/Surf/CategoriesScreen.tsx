@@ -10,6 +10,7 @@ interface CategoriesScreenProps {
   onLogoClick: () => void;
   onOrdersClick?: () => void;
   cartItemCount?: number;
+  showCart?: boolean; // Флаг для отображения иконки корзины
 }
 
 const CategoriesScreen = ({ 
@@ -20,7 +21,8 @@ const CategoriesScreen = ({
   onProfileClick, 
   onLogoClick,
   onOrdersClick = onCartClick,
-  cartItemCount = 0
+  cartItemCount = 0,
+  showCart = true
 }: CategoriesScreenProps) => {
   // Анимация для категорий
   const [isLoaded, setIsLoaded] = useState(false);
@@ -279,23 +281,19 @@ const CategoriesScreen = ({
       </div>
       
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10">
+      <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+          style={{ transitionDelay: '400ms' }}>
         <div className="flex items-center justify-between">
-          {/* Мои заказы */}
-          <button className="relative p-3 group" onClick={onOrdersClick}>
+          {/* Назад на главную */}
+          <button className="p-3 relative group" onClick={onHomeClick}>
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-            {activeOrders > 0 && (
-              <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {activeOrders}
-              </div>
-            )}
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </button>
           
           {/* Логотип */}
-          <div className="cursor-pointer relative" onClick={onLogoClick}>
+          <div className="cursor-pointer" onClick={onLogoClick}>
             <Image 
               src="/surf/logo.svg" 
               alt="Surf Coffee" 
@@ -307,12 +305,14 @@ const CategoriesScreen = ({
           
           {/* Иконки справа */}
           <div className="flex space-x-3">
-            {cartItemCount > 0 && (
+            {showCart && cartItemCount > 0 && (
               <button onClick={onCartClick} className="p-3 relative group">
                 <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-                <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cartItemCount}
-                </div>
+                {cartItemCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {cartItemCount}
+                  </div>
+                )}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>

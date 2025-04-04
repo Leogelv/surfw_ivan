@@ -47,6 +47,12 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
     return () => clearTimeout(timer);
   }, []);
 
+  // Функция для закрытия профиля и возврата на главную
+  const handleCloseAndGoHome = () => {
+    onHomeClick();
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 bg-[#1D1816]/95 backdrop-blur-md z-50 flex flex-col text-white">
       {/* Отступ для Telegram Header */}
@@ -57,7 +63,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       {/* Верхняя часть с данными пользователя */}
       <div className="p-6 relative">
         <button 
-          onClick={onClose}
+          onClick={handleCloseAndGoHome}
           className="absolute top-6 right-6 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -148,7 +154,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
               </div>
               <button 
                 className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors"
-                onClick={onOrdersClick}
+                onClick={() => { onOrdersClick(); onClose(); }}
               >
                 Повторить заказ
               </button>
@@ -226,7 +232,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           </div>
           
           {/* Закрыть профиль */}
-          <button onClick={onClose} className="p-3 relative group">
+          <button onClick={handleCloseAndGoHome} className="p-3 relative group">
             <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

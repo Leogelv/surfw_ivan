@@ -9,9 +9,19 @@ interface HomeScreenProps {
   onLogoClick: () => void;
   onOrdersClick?: () => void; // Добавляем обработчик для экрана заказов
   cartItemCount?: number; // Добавляем счетчик товаров в корзине
+  showCart?: boolean; // Флаг для отображения иконки корзины
 }
 
-const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick, onLogoClick, onOrdersClick = onCartClick, cartItemCount = 0 }: HomeScreenProps) => {
+const HomeScreen = ({ 
+  onCategoryClick, 
+  onMenuClick, 
+  onCartClick, 
+  onProfileClick, 
+  onLogoClick, 
+  onOrdersClick = onCartClick, 
+  cartItemCount = 0,
+  showCart = true 
+}: HomeScreenProps) => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isLoaded, setIsLoaded] = useState(false);
@@ -189,7 +199,7 @@ const HomeScreen = ({ onCategoryClick, onMenuClick, onCartClick, onProfileClick,
           
           {/* Иконки справа */}
           <div className="flex space-x-3">
-            {cartItemCount > 0 && (
+            {showCart && cartItemCount > 0 && (
               <button onClick={onCartClick} className="p-3 relative group">
                 <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
                 {cartItemCount > 0 && (
