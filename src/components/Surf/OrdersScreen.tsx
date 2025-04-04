@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import useHapticFeedback from '@/hooks/useHapticFeedback';
 
 interface OrdersScreenProps {
   onBackClick: () => void;
@@ -12,6 +13,7 @@ interface OrderItem {
   quantity: number;
   price: number;
   size?: string;
+  image?: string; // Добавляем изображение для товара
 }
 
 interface Order {
@@ -26,15 +28,16 @@ interface Order {
 
 const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const haptic = useHapticFeedback();
   
-  // Демо-данные для заказов
+  // Демо-данные для заказов с изображениями
   const [orders, setOrders] = useState<Order[]>([
     {
       id: '2589',
       status: 'preparing',
       items: [
-        { name: 'Капучино', quantity: 1, price: 350, size: 'Средний' },
-        { name: 'Круассан', quantity: 1, price: 220 }
+        { name: 'Капучино', quantity: 1, price: 350, size: 'Средний', image: '/surf/coffee_categ.png' },
+        { name: 'Круассан', quantity: 1, price: 220, image: '/surf/croissant.png' }
       ],
       total: 570,
       created: '15 июн, 14:30',
@@ -45,8 +48,8 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
       id: '2588',
       status: 'ready',
       items: [
-        { name: 'Американо', quantity: 2, price: 280, size: 'Большой' },
-        { name: 'Тост с авокадо', quantity: 1, price: 450 }
+        { name: 'Американо', quantity: 2, price: 280, size: 'Большой', image: '/surf/coffee_categ.png' },
+        { name: 'Тост с авокадо', quantity: 1, price: 450, image: '/surf/food_categ.png' }
       ],
       total: 1010,
       created: '15 июн, 14:15',
@@ -68,8 +71,8 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
         id: newOrderNumber.replace('#', ''),
         status: 'pending',
         items: [
-          { name: 'Капучино', quantity: 1, price: 350, size: 'Средний' },
-          { name: 'Круассан', quantity: 2, price: 220 }
+          { name: 'Капучино', quantity: 1, price: 350, size: 'Средний', image: '/surf/coffee_categ.png' },
+          { name: 'Круассан', quantity: 2, price: 220, image: '/surf/croissant.png' }
         ],
         total: 790,
         created: `${day} ${month}, ${hours}:${minutes}`,
@@ -112,26 +115,33 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
     return colorMap[status];
   };
 
-  // Получить иконку для статуса
+  // Получить иконку для статуса с улучшенной анимацией
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
       case 'pending':
         return (
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <div className="relative animate-pulse">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-[#A67C52] rounded-full animate-ping"></div>
+          </div>
         );
       case 'preparing':
         return (
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          <div className="animate-spin-slow">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+          </div>
         );
       case 'ready':
         return (
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <div className="animate-bounce-once">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
         );
       case 'completed':
         return (
@@ -153,6 +163,20 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
     return progressMap[status];
   };
 
+  // Анимированный фон для статусов
+  const getStatusBackground = (status: Order['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-gradient-to-r from-[#A67C52]/20 to-transparent';
+      case 'preparing':
+        return 'bg-gradient-to-r from-[#A67C52]/20 to-[#A67C52]/10 animate-gradient-x';
+      case 'ready':
+        return 'bg-gradient-to-r from-green-500/20 to-green-500/10 animate-gradient-x';
+      case 'completed':
+        return 'bg-gradient-to-r from-gray-500/20 to-transparent';
+    }
+  };
+
   return (
     <div className="h-full flex flex-col text-white bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816]">
       {/* Верхний декоративный эффект */}
@@ -164,7 +188,13 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
            
       {/* Заголовок */}
       <div className="px-6 pt-4 pb-2 relative z-10 flex items-center">
-        <button onClick={onBackClick} className="p-2 mr-2 bg-white/5 rounded-full">
+        <button 
+          onClick={() => {
+            haptic.buttonClick();
+            onBackClick();
+          }} 
+          className="p-2 mr-2 bg-white/5 rounded-full hover:bg-white/10 active:scale-95 transition-all"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -182,10 +212,10 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
             {orders.map((order, index) => (
               <div 
                 key={order.id} 
-                className={`transform transition-all duration-500 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'}`}
+                className={`transform transition-all duration-700 ${isLoaded ? 'translate-x-0 opacity-100' : 'translate-x-20 opacity-0'}`}
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
-                <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30">
+                <div className={`bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 ${getStatusBackground(order.status)}`}>
                   {/* Шапка заказа */}
                   <div className="p-4 border-b border-white/10">
                     <div className="flex justify-between items-start">
@@ -204,13 +234,17 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
                       </div>
                     </div>
                     
-                    {/* Прогресс заказа */}
+                    {/* Прогресс заказа с улучшенной анимацией */}
                     <div className="mt-4">
                       <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
                         <div 
-                          className={`absolute left-0 top-0 bottom-0 ${getStatusColor(order.status)}`} 
+                          className={`absolute left-0 top-0 bottom-0 ${getStatusColor(order.status)} transition-all duration-1000 ease-out`} 
                           style={{ width: `${getOrderProgress(order.status)}%` }}
-                        ></div>
+                        >
+                          {order.status === 'preparing' && (
+                            <div className="absolute inset-0 w-full h-full bg-white/30 animate-pulse-wave"></div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex justify-between text-xs text-white/50 mt-1">
                         <span>Принят</span>
@@ -235,46 +269,65 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
                       </div>
                     </div>
                     
-                    {/* Время готовки */}
+                    {/* Время готовки с анимированным таймером */}
                     {order.status === 'preparing' && (
                       <div className="mb-3 flex items-start">
-                        <svg className="h-5 w-5 text-[#A67C52] mr-2 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-5 w-5 text-[#A67C52] mr-2 mt-0.5 flex-shrink-0 animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div>
                           <p className="text-sm font-medium">Примерное время готовки</p>
-                          <p className="text-sm text-white/70">{order.estimatedTime} минут</p>
+                          <div className="text-sm text-white/70 flex items-center">
+                            <span className="mr-2">{order.estimatedTime} минут</span>
+                            <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-[#A67C52] rounded-full animate-timer" style={{ animationDuration: `${order.estimatedTime * 60}s` }}></div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
                     
-                    {/* Готов к выдаче */}
+                    {/* Готов к выдаче с пульсирующей анимацией */}
                     {order.status === 'ready' && (
-                      <div className="mb-3 bg-green-500/20 p-3 rounded-lg flex items-center">
-                        <svg className="h-6 w-6 text-green-500 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="mb-3 bg-green-500/20 p-3 rounded-lg flex items-center border border-green-500/20 relative overflow-hidden">
+                        <div className="absolute -inset-1 bg-green-500/10 animate-pulse-slow rounded-lg"></div>
+                        <svg className="h-6 w-6 text-green-500 mr-2 flex-shrink-0 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        <p className="text-sm font-medium">Ваш заказ готов! Заберите его на кассе.</p>
+                        <p className="text-sm font-medium relative z-10">Ваш заказ готов! Заберите его на кассе.</p>
                       </div>
                     )}
                     
-                    {/* Состав заказа */}
+                    {/* Состав заказа с изображениями */}
                     <div className="mt-4">
-                      <h5 className="text-sm font-medium mb-2">Состав заказа:</h5>
-                      <div className="space-y-2">
+                      <h5 className="text-sm font-medium mb-3">Состав заказа:</h5>
+                      <div className="space-y-3">
                         {order.items.map((item, i) => (
-                          <div key={i} className="flex justify-between text-sm">
-                            <div className="text-white/80">
-                              {item.name} {item.size && <span className="text-white/60 text-xs">({item.size})</span>}
+                          <div key={i} className="flex items-center py-2 px-3 bg-white/5 rounded-lg transition-all hover:bg-white/10">
+                            {/* Изображение товара */}
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/10 mr-3 flex-shrink-0">
+                              <Image
+                                src={item.image || '/surf/coffee_categ.png'}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                              />
                             </div>
-                            <div className="flex items-center space-x-3">
-                              <span className="text-white/60">x{item.quantity}</span>
-                              <span>{item.price * item.quantity} ₽</span>
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center">
+                                <div className="font-medium text-sm">
+                                  {item.name} {item.size && <span className="text-white/60 text-xs">({item.size})</span>}
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-white/60 text-sm">x{item.quantity}</span>
+                                  <span className="text-sm">{item.price * item.quantity} ₽</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-3 pt-3 border-t border-white/10 flex justify-between">
+                      <div className="mt-4 pt-3 border-t border-white/10 flex justify-between">
                         <span className="font-medium">Итого:</span>
                         <span className="font-medium">{order.total} ₽</span>
                       </div>
@@ -286,7 +339,7 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
           </div>
         ) : (
           <div className={`flex flex-col items-center justify-center h-64 text-center transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white/20 mb-4 animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
             <h3 className="text-xl font-medium text-white/80 mb-2">У вас нет активных заказов</h3>
@@ -298,12 +351,76 @@ const OrdersScreen = ({ onBackClick, newOrderNumber }: OrdersScreenProps) => {
       {/* Нижняя кнопка */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-6 py-4 border-t border-white/10">
         <button 
-          onClick={onBackClick}
+          onClick={() => {
+            haptic.buttonClick();
+            onBackClick();
+          }}
           className="w-full py-4 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-full font-bold text-lg transition-all shadow-lg shadow-[#A67C52]/30 flex items-center justify-center"
         >
           <span>Вернуться в меню</span>
         </button>
       </div>
+
+      {/* Дополнительные стили для анимаций */}
+      <style jsx global>{`
+        @keyframes spin-slow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 3s linear infinite;
+        }
+
+        @keyframes bounce-once {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .animate-bounce-once {
+          animation: bounce-once 1s ease-in-out 2;
+        }
+
+        @keyframes pulse-wave {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-pulse-wave {
+          animation: pulse-wave 2s linear infinite;
+        }
+
+        @keyframes timer {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+        .animate-timer {
+          animation: timer linear forwards;
+        }
+
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.4; }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 3s infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes gradient-x {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 3s ease infinite;
+        }
+      `}</style>
     </div>
   );
 };

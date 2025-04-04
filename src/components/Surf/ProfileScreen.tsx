@@ -63,12 +63,24 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
         <div style={{ height: `${telegramHeaderPadding}px` }} className="w-full"></div>
       )}
       
+      {/* Добавляем логотип над профилем */}
+      <div className="flex justify-center pt-6 pb-2">
+        <Image
+          src="/surf/logo.svg"
+          alt="Surf Coffee"
+          width={150}
+          height={65}
+          className="h-14 w-auto transition-all duration-500 transform"
+          priority
+        />
+      </div>
+      
       {/* Верхняя часть с данными пользователя */}
       <div className="p-6 relative">
         {/* ИСПРАВЛЕНО: кнопка закрытия профиля */}
         <button 
           onClick={handleCloseProfile}
-          className="absolute top-6 right-6 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 shadow-lg hover:shadow-xl transition-all z-50"
+          className="absolute top-6 right-6 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 shadow-lg hover:shadow-xl transition-all z-50 active:scale-95"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -101,7 +113,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
       </div>
 
       {/* Информация о пользователе */}
-      <div className="flex-1 overflow-auto px-6 pb-24">
+      <div className="flex-1 overflow-auto px-6 pb-8">
         {/* Бонусная система */}
         <div className={`mb-6 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="bg-[#2A2118]/85 backdrop-blur-sm rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 p-4">
@@ -213,62 +225,20 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           </div>
         </div>
 
+        {/* Добавляем кнопку выхода в конец контента */}
+        <div className={`mt-8 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <button 
+            onClick={handleCloseProfile}
+            className="w-full py-3 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-xl font-bold text-lg shadow-md shadow-[#A67C52]/20 transition-all active:scale-98"
+          >
+            Вернуться в меню
+          </button>
+        </div>
+
         {/* Версия и правовая информация */}
-        <div className="mt-8 text-center text-white/40 text-xs">
+        <div className="mt-6 text-center text-white/40 text-xs pb-6">
           <p>Версия 1.0.0</p>
           <p className="mt-1">© 2024 Surf Coffee. Все права защищены.</p>
-        </div>
-      </div>
-
-      {/* Фиксированное нижнее меню с логотипом */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10">
-        <div className="flex items-center justify-between">
-          {/* Мои заказы */}
-          <button 
-            className="relative p-3 group" 
-            onClick={() => { 
-              haptic.buttonClick(); // Haptic feedback при нажатии
-              onOrdersClick(); 
-            }}
-          >
-            {activeOrders > 0 && (
-              <div className="absolute -top-1 -right-1 bg-[#A67C52] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {activeOrders}
-              </div>
-            )}
-            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </button>
-          
-          {/* Логотип */}
-          <div 
-            className="cursor-pointer relative" 
-            onClick={() => { 
-              haptic.buttonClick(); // Haptic feedback при нажатии
-              handleCloseProfile(); 
-            }}
-          >
-            <Image 
-              src="/surf/logo.svg" 
-              alt="Surf Coffee" 
-              width={150} 
-              height={65} 
-              className="h-14 w-auto relative"
-            />
-          </div>
-          
-          {/* ИСПРАВЛЕНО: кнопка закрытия внизу */}
-          <button 
-            onClick={handleCloseProfile} 
-            className="p-3 relative group bg-black/40 hover:bg-black/60 rounded-full active:scale-95 transition-all shadow-lg border border-white/20"
-          >
-            <div className="absolute inset-0 scale-0 bg-white/5 rounded-full group-hover:scale-100 transition-transform duration-300"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white relative" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
       </div>
     </div>
