@@ -79,22 +79,22 @@ const CategoriesScreen = ({
   };
 
   // Хардкод данных о продуктах (для демо)
-  const productsByCategory: Record<string, Array<{ id: string; name: string; price: number; image: string; description?: string; calories?: number; aspectRatio?: string }>> = {
+  const productsByCategory: Record<string, Array<{ id: string; name: string; price: number; image: string; description?: string; calories?: number; aspectRatio?: string; category?: string }>> = {
     coffee: [
-      { id: 'latte', name: 'Латте', price: 350, image: '/surf/latte.png', description: 'Нежный латте с бархатистой текстурой', calories: 120, aspectRatio: '3/5' },
-      { id: 'americano', name: 'Американо', price: 280, image: '/surf/americano.png', description: 'Классический черный кофе', calories: 10, aspectRatio: '3/5' },
-      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/icelatte.png', description: 'Охлаждающий латте со льдом', calories: 180, aspectRatio: '3/5' },
+      { id: 'latte', name: 'Латте', price: 350, image: '/surf/latte.png', description: 'Нежный латте с бархатистой текстурой', calories: 120, aspectRatio: '3/5', category: 'coffee' },
+      { id: 'americano', name: 'Американо', price: 280, image: '/surf/americano.png', description: 'Классический черный кофе', calories: 10, aspectRatio: '3/5', category: 'coffee' },
+      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/icelatte.png', description: 'Охлаждающий латте со льдом', calories: 180, aspectRatio: '3/5', category: 'coffee' },
     ],
     drinks: [
-      { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90, aspectRatio: '3/5' },
-      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5' },
-      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0, aspectRatio: '3/5' },
+      { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90, aspectRatio: '3/5', category: 'drinks' },
+      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5', category: 'drinks' },
+      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0, aspectRatio: '3/5', category: 'drinks' },
     ],
     food: [
-      { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Свежеиспеченный круассан', calories: 240 },
-      { id: 'salmon-croissant', name: 'Круассан с лососем', price: 450, image: '/surf/salmoncroissant.png', description: 'Круассан с лососем и сыром', calories: 320 },
-      { id: 'panini', name: 'Панини', price: 380, image: '/surf/panini.png', description: 'Горячий итальянский сэндвич', calories: 350 },
-      { id: 'pepperoni', name: 'Пицца Пепперони', price: 490, image: '/surf/pepperoni.png', description: 'Сочная пицца с пепперони на тонком тесте', calories: 520 },
+      { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Свежеиспеченный круассан', calories: 240, category: 'food' },
+      { id: 'salmon-croissant', name: 'Круассан с лососем', price: 450, image: '/surf/salmoncroissant.png', description: 'Круассан с лососем и сыром', calories: 320, category: 'food' },
+      { id: 'panini', name: 'Панини', price: 380, image: '/surf/panini.png', description: 'Горячий итальянский сэндвич', calories: 350, category: 'food' },
+      { id: 'pepperoni', name: 'Пицца Пепперони', price: 490, image: '/surf/pepperoni.png', description: 'Сочная пицца с пепперони на тонком тесте', calories: 520, category: 'food' },
     ]
   };
 
@@ -215,9 +215,11 @@ const CategoriesScreen = ({
           'bg-gradient-radial from-[#A1887F]/30 via-[#5D4037]/20 to-transparent'
         }`}></div>
         
+        {/* ОПТИМИЗАЦИЯ СКРОЛЛА: используем touch-manipulation для улучшения свайпов на мобильных устройствах */}
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto py-8 px-2 hide-scrollbar snap-x snap-mandatory h-full max-h-[calc(100vh-150px)] relative z-10"
+          className="flex overflow-x-auto py-8 px-2 hide-scrollbar snap-x snap-mandatory h-full max-h-[calc(100vh-150px)] relative z-10 touch-pan-x"
+          style={{touchAction: 'pan-x', WebkitOverflowScrolling: 'touch'}}
           onScroll={handleScroll}
         >
           {categoryProducts.map((product, index) => {
@@ -252,8 +254,16 @@ const CategoriesScreen = ({
                   <div className="absolute -top-6 -left-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   
-                  {/* Изображение продукта с уменьшенной высотой на 15% */}
-                  <div className={`relative ${isActive ? 'h-[102vh]' : 'h-[85vh]'} w-full transition-all duration-300 max-h-[500px]`}
+                  {/* Изображение продукта с уменьшенной высотой */}
+                  {/* НАСТРОЙКА ВЫСОТЫ КАРТОЧЕК: меняйте значения h-[XXvh] для изменения высоты */}
+                  <div className={`relative ${
+                    // Делаем разные высоты для разных категорий
+                    product.category === 'food' || selectedCategory === 'food' 
+                      ? 'h-[65vh] max-h-[400px]' // Квадратные для еды
+                      : isActive 
+                        ? 'h-[85vh] max-h-[450px]' // Вытянутые для кофе/напитков (активная)
+                        : 'h-[75vh] max-h-[400px]' // Вытянутые для кофе/напитков (неактивная)
+                  } w-full transition-all duration-300`}
                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
