@@ -432,6 +432,13 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         setIsImageExpanded(false);
         triggerHapticFeedback('light');
       }
+      
+      // Если уже в верхнем положении (изображение развернуто) и продолжаем тянуть сильно вниз - возвращаемся в категорию
+      if (isImageExpanded && contentRef.current.scrollTop <= 0 && diff > 150) {
+        triggerHapticFeedback('medium');
+        console.log('Swipe down to return to category');
+        onBackClick(); // Возвращаемся в категорию
+      }
     }
   };
 
@@ -518,8 +525,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
         
-        {/* Кнопка закрытия над фоткой - отступ сверху 20px вместо 100px */}
-        <div className="absolute top-[20px] right-3 z-50" style={{ pointerEvents: 'auto' }}>
+        {/* Кнопка закрытия над фоткой - отступ сверху 100px */}
+        <div className="absolute top-[100px] right-3 z-50" style={{ pointerEvents: 'auto' }}>
           <button 
             onClick={() => {
               console.log('Closing product view'); // Добавляем логирование для отладки
