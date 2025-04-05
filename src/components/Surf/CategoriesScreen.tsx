@@ -231,13 +231,14 @@ const CategoriesScreen = ({
                   border border-white/5 ${colors.accent} transition-all duration-300 hover:shadow-lg`}>
                   
                   {/* Изображение продукта (на весь экран при активности) */}
-                  <div className={`relative ${isActive ? 'h-72' : 'h-56'} w-full transition-all duration-300`}>
+                  <div className={`relative ${isActive ? 'h-72' : 'h-56'} w-full transition-all duration-300`}
+                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
                       src={product.image}
                       alt={product.name}
                       fill
-                      className="object-cover"
+                      className={`object-cover ${product.aspectRatio ? 'object-top' : 'object-center'}`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
                     

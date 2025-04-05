@@ -388,18 +388,24 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
 
   // Расчет высоты фото в зависимости от прокрутки
   const getImageHeight = () => {
-    if (isImageExpanded) return '100vw'; // Квадратное фото при развернутом состоянии
+    // Для категорий кофе и напитков делаем вытянутую форму (3:4, высота = 1.33 * ширина)
+    const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
     
-    // Определяем базовую высоту и максимальную прокрутку для эффекта
-    const baseHeight = 'calc(100vw * 0.8)'; // 80% ширины экрана = квадрат с учетом отступов
-    const minHeight = 'calc(100vw * 0.5)'; // 50% ширины экрана при максимальном скролле
+    if (isImageExpanded) {
+      return isCoffeeOrDrinks ? 'calc(100vw * 1.33)' : '100vw'; // Развернутый вид
+    }
+    
+    // Определяем базовую высоту в зависимости от категории
+    const baseHeight = isCoffeeOrDrinks 
+      ? 'calc(100vw * 1.15)' // Вытянутая форма для кофе и напитков
+      : 'calc(100vw * 0.8)'; // Квадратная форма для остальных категорий
     
     // Если скролл имеет отрицательное значение (тянут вниз), расширяем фото
     if (scrollPosition < -50) {
-      return '100vw'; // Полностью квадратное изображение при свайпе вниз
+      return isCoffeeOrDrinks ? 'calc(100vw * 1.33)' : '100vw';
     }
     
-    return baseHeight; // Базовая высота в квадратной пропорции
+    return baseHeight;
   };
 
   // Обработчики для свайпа изображения
@@ -512,8 +518,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           className={`absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/40 z-10 transition-opacity duration-700 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         ></div>
         
-        {/* Кнопка закрытия над фоткой - делаем меньше и с отступом 100px сверху */}
-        <div className="absolute top-[100px] right-3 z-50" style={{ pointerEvents: 'auto' }}>
+        {/* Кнопка закрытия над фоткой - отступ сверху 20px вместо 100px */}
+        <div className="absolute top-[20px] right-3 z-50" style={{ pointerEvents: 'auto' }}>
           <button 
             onClick={() => {
               console.log('Closing product view'); // Добавляем логирование для отладки
