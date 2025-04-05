@@ -1,17 +1,15 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter, Bebas_Neue } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import { TelegramProvider } from '@/context/TelegramContext'
-import dynamic from 'next/dynamic'
+import TelegramViewportStyle from '@/components/TelegramViewportStyle'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const bebasNeue = Bebas_Neue({ weight: ['400'], subsets: ['latin'], variable: '--font-bebas-neue' })
-
-// Динамически импортируем клиентский компонент для CSS-переменных
-const TelegramViewportStyle = dynamic(() => import('@/components/TelegramViewportStyle'), {
-  ssr: false
-});
+// Используем только Inter, убираем Bebas_Neue
+const inter = Inter({ 
+  subsets: ['latin'], 
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
   title: 'Surf Coffee',
@@ -29,7 +27,7 @@ export default function RootLayout({
       <head>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
-      <body className={`${inter.variable} ${bebasNeue.variable} font-sans`}>
+      <body className={`${inter.variable} font-sans`}>
         <TelegramProvider>
           <TelegramViewportStyle />
           {children}

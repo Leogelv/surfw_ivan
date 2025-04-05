@@ -13,7 +13,7 @@ export default {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        bebas: ["var(--font-bebas-neue)"],
+        // Удаляем bebas и полагаемся на Inter с уменьшенным межбуквенным интервалом
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
