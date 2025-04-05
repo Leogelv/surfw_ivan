@@ -94,6 +94,7 @@ const CategoriesScreen = ({
       { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Свежеиспеченный круассан', calories: 240 },
       { id: 'salmon-croissant', name: 'Круассан с лососем', price: 450, image: '/surf/salmoncroissant.png', description: 'Круассан с лососем и сыром', calories: 320 },
       { id: 'panini', name: 'Панини', price: 380, image: '/surf/panini.png', description: 'Горячий итальянский сэндвич', calories: 350 },
+      { id: 'pepperoni', name: 'Пицца Пепперони', price: 490, image: '/surf/pepperoni.png', description: 'Сочная пицца с пепперони на тонком тесте', calories: 520 },
     ]
   };
 
@@ -127,12 +128,21 @@ const CategoriesScreen = ({
   const selectCategory = (category: string) => {
     setShowCategoryDropdown(false);
     if (category !== selectedCategory) {
-      // Вместо перехода на продукт, просто обновляем выбранную категорию
-      onHomeClick(); // Возвращаемся на главный экран
-      setTimeout(() => {
-        // После небольшой задержки открываем нужную категорию
-        window.location.href = `/#${category}`;
-      }, 100);
+      // Проверяем, есть ли в пропсах функция для изменения категории
+      if (typeof window !== 'undefined') {
+        // Обновляем URL для истории навигации, но без перезагрузки
+        window.history.pushState({}, '', `/#${category}`);
+        
+        // Эмулируем смену категории через URL, чтобы не ломать текущий код SurfApp
+        const urlChangeEvent = new CustomEvent('categoriesScreenCategoryChange', { 
+          detail: { category } 
+        });
+        window.dispatchEvent(urlChangeEvent);
+        
+        // Просто чтобы сразу увидеть изменения в UI
+        // В реальном проекте этот код должен быть заменен на обработчик выше
+        window.location.hash = category;
+      }
     }
   };
 
@@ -202,9 +212,16 @@ const CategoriesScreen = ({
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
       <div className={`flex-1 overflow-auto relative px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+        {/* Добавляем сочное фоновое свечение в зависимости от категории */}
+        <div className={`absolute -top-20 left-1/2 transform -translate-x-1/2 w-[140%] h-[300px] rounded-full blur-3xl z-0 pointer-events-none ${
+          selectedCategory === 'coffee' ? 'bg-gradient-radial from-[#A67C52]/30 via-[#5D4037]/20 to-transparent' :
+          selectedCategory === 'drinks' ? 'bg-gradient-radial from-[#8D6E63]/30 via-[#5D4037]/20 to-transparent' :
+          'bg-gradient-radial from-[#A1887F]/30 via-[#5D4037]/20 to-transparent'
+        }`}></div>
+        
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto py-4 px-2 hide-scrollbar snap-x snap-mandatory h-full"
+          className="flex overflow-x-auto py-4 px-2 hide-scrollbar snap-x snap-mandatory h-full relative z-10"
           onScroll={handleScroll}
         >
           {categoryProducts.map((product, index) => {
@@ -215,8 +232,8 @@ const CategoriesScreen = ({
                 key={product.id} 
                 className={`flex-shrink-0 w-[90%] snap-center mx-1 transition-all duration-300 ${
                   isActive 
-                    ? 'scale-105 opacity-100 z-20' 
-                    : 'scale-90 opacity-80 z-10'
+                    ? 'scale-105 opacity-100 z-20 translate-y-0' 
+                    : 'scale-90 opacity-80 z-10 translate-y-2'
                 } ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
                 style={{ transitionDelay: `${index * 100}ms` }}
                 onClick={() => {
@@ -227,29 +244,38 @@ const CategoriesScreen = ({
                   }
                 }}
               >
-                <div className={`bg-[#2A2118]/85 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer h-auto
-                  border border-white/5 ${colors.accent} transition-all duration-300 hover:shadow-lg`}>
+                <div className={`bg-gradient-to-br from-[#2A2118] via-[#1D1816] to-[#2E241C] backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer h-auto
+                  border border-white/10 shadow-xl shadow-black/30 transition-all duration-300 ${
+                    selectedCategory === 'coffee' ? 'hover:shadow-[#A67C52]/20' :
+                    selectedCategory === 'drinks' ? 'hover:shadow-[#8D6E63]/20' :
+                    'hover:shadow-[#A1887F]/20'
+                  } hover:shadow-2xl relative`}>
+                  
+                  {/* Добавляем декоративные элементы для более роскошного вида */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                  <div className="absolute -top-6 -left-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
+                  <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   
                   {/* Изображение продукта (на весь экран при активности) */}
                   <div className={`relative ${isActive ? 'h-72' : 'h-56'} w-full transition-all duration-300`}
-                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
+                      style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
                       src={product.image}
                       alt={product.name}
                       fill
-                      className={`object-cover ${product.aspectRatio ? 'object-top' : 'object-center'}`}
+                      className={`object-cover ${product.aspectRatio ? 'object-top' : 'object-center'} transition-transform duration-500 hover:scale-110`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
                     
                     {/* Калории в верхнем правом углу */}
                     {product.calories !== undefined && (
-                      <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10">
+                      <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/40 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg">
                         <svg className="w-4 h-4 text-[#B98D6F]" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
                           <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
                         </svg>
-                        <span className="text-xs">{product.calories} кал</span>
+                        <span className="text-xs font-medium">{product.calories} кал</span>
                       </div>
                     )}
                     
@@ -257,10 +283,14 @@ const CategoriesScreen = ({
                     <div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${colors.accent} z-20 animate-pulse`}></div>
                   </div>
                   
-                  <div className="p-4">
+                  <div className="p-5">
                     <div className="flex justify-between items-start mb-3">
                       <h4 className="font-bold text-xl text-white">{product.name}</h4>
-                      <div className={`bg-gradient-to-r ${colors.wave} text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner`}>
+                      <div className={`text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner shadow-black/20 border border-white/10 ${
+                        selectedCategory === 'coffee' ? 'bg-gradient-to-r from-[#A67C52]/90 to-[#A67C52]/70' :
+                        selectedCategory === 'drinks' ? 'bg-gradient-to-r from-[#8D6E63]/90 to-[#8D6E63]/70' :
+                        'bg-gradient-to-r from-[#A1887F]/90 to-[#A1887F]/70'
+                      }`}>
                         {product.price} ₽
                       </div>
                     </div>
@@ -272,7 +302,11 @@ const CategoriesScreen = ({
                         e.stopPropagation();
                         onProductClick(product.id);
                       }} 
-                      className={`w-full py-3 rounded-full bg-gradient-to-r ${colors.wave} text-white font-medium transition-transform hover:scale-105 flex items-center justify-center space-x-2`}
+                      className={`w-full py-3 rounded-full text-white font-medium transition-all hover:scale-105 active:scale-95 flex items-center justify-center space-x-2 border border-white/10 ${
+                        selectedCategory === 'coffee' ? 'bg-gradient-to-r from-[#A67C52]/90 to-[#A67C52]/70 hover:shadow-lg hover:shadow-[#A67C52]/30' :
+                        selectedCategory === 'drinks' ? 'bg-gradient-to-r from-[#8D6E63]/90 to-[#8D6E63]/70 hover:shadow-lg hover:shadow-[#8D6E63]/30' :
+                        'bg-gradient-to-r from-[#A1887F]/90 to-[#A1887F]/70 hover:shadow-lg hover:shadow-[#A1887F]/30'
+                      }`}
                     >
                       <span>Выбрать</span>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
