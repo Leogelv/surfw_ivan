@@ -87,7 +87,7 @@ const CategoriesScreen = ({
     ],
     drinks: [
       { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90, aspectRatio: '3/5' },
-      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5' },
+      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5' },
       { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0, aspectRatio: '3/5' },
     ],
     food: [

@@ -195,7 +195,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     'green-tea': {
       name: 'Зеленый чай',
       price: 270,
-      image: '/surf/tea_categ.png',
+      image: '/surf/tea_mint.png',
       description: 'Премиальный зеленый чай с мягким травяным ароматом и освежающим послевкусием. Богат антиоксидантами и заваривается при идеальной температуре.',
       calories: 0,
       category: 'drinks'
