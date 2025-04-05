@@ -107,8 +107,8 @@ const CategoriesScreen = ({
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, clientWidth } = scrollContainerRef.current;
-      const cardWidth = clientWidth * 0.9; // Примерная ширина карточки
-      const index = Math.round(scrollLeft / cardWidth);
+      const cardWidth = clientWidth * 0.8; // Уменьшаем ширину карточки до 80% от контейнера
+      const index = Math.round(scrollLeft / (cardWidth + (clientWidth * 0.05))); // Учитываем отступы
       setActiveProductIndex(Math.min(index, categoryProducts.length - 1));
     }
   };
@@ -116,9 +116,12 @@ const CategoriesScreen = ({
   // Плавный скролл к выбранной карточке
   const scrollToCard = (index: number) => {
     if (scrollContainerRef.current) {
-      const cardWidth = scrollContainerRef.current.clientWidth * 0.9;
+      const { clientWidth } = scrollContainerRef.current;
+      const cardWidth = clientWidth * 0.8; // Уменьшаем ширину карточки до 80% от контейнера
+      const scrollPosition = index * (cardWidth + (clientWidth * 0.05)); // Учитываем отступы
+      
       scrollContainerRef.current.scrollTo({
-        left: index * cardWidth,
+        left: scrollPosition,
         behavior: 'smooth'
       });
     }
@@ -207,7 +210,7 @@ const CategoriesScreen = ({
       </div>
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
-      <div className={`flex-1 overflow-y-hidden relative px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+      <div className={`flex-1 overflow-hidden relative px-0 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
         {/* Добавляем сочное фоновое свечение в зависимости от категории */}
         <div className={`absolute -top-20 left-1/2 transform -translate-x-1/2 w-[140%] h-[300px] rounded-full blur-3xl z-0 pointer-events-none ${
           selectedCategory === 'coffee' ? 'bg-gradient-radial from-[#A67C52]/30 via-[#5D4037]/20 to-transparent' :
@@ -218,8 +221,13 @@ const CategoriesScreen = ({
         {/* ОПТИМИЗАЦИЯ СКРОЛЛА: используем touch-manipulation для улучшения свайпов на мобильных устройствах */}
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto py-8 px-2 hide-scrollbar snap-x snap-mandatory h-full max-h-[calc(100vh-150px)] relative z-10 touch-pan-x"
-          style={{touchAction: 'pan-x', WebkitOverflowScrolling: 'touch'}}
+          className="flex overflow-x-auto overflow-y-hidden px-2 py-8 hide-scrollbar snap-x snap-mandatory w-full max-w-[100vw] h-full max-h-[calc(100vh-150px)] relative z-10 touch-pan-x"
+          style={{
+            touchAction: 'pan-x', 
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory',
+            scrollBehavior: 'smooth'
+          }}
           onScroll={handleScroll}
         >
           {categoryProducts.map((product, index) => {
@@ -228,12 +236,15 @@ const CategoriesScreen = ({
             return (
               <div 
                 key={product.id} 
-                className={`flex-shrink-0 w-[90%] snap-center mx-1 transition-all duration-300 ${
+                className={`flex-shrink-0 w-[80%] max-w-[85vw] snap-center mx-[2.5%] transition-all duration-300 ${
                   isActive 
-                    ? 'scale-105 opacity-100 z-20 translate-y-0' 
-                    : 'scale-90 opacity-80 z-10 translate-y-2'
+                    ? 'scale-[1.03] opacity-100 z-20 translate-y-0' 
+                    : 'scale-95 opacity-80 z-10 translate-y-2'
                 } ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}
-                style={{ transitionDelay: `${index * 100}ms` }}
+                style={{ 
+                  transitionDelay: `${index * 100}ms`,
+                  scrollSnapAlign: 'center'
+                }}
                 onClick={() => {
                   if (showCategoryDropdown) return; // Игнорировать клики при открытом меню
                   scrollToCard(index);
