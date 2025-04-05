@@ -395,17 +395,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
     
     if (isImageExpanded) {
-      return isCoffeeOrDrinks ? 'calc(100vw * 1.67)' : '100vw'; // Развернутый вид
+      return isCoffeeOrDrinks ? 'calc(100vw * 1.42)' : '100vw'; // Уменьшили с 1.67 до 1.42 (на ~15%)
     }
     
     // Определяем базовую высоту в зависимости от категории
     const baseHeight = isCoffeeOrDrinks 
-      ? 'calc(100vw * 1.33)' // Вытянутая форма для кофе и напитков
+      ? 'calc(100vw * 1.13)' // Уменьшили с 1.33 до 1.13 (на ~15%)
       : 'calc(100vw * 0.8)'; // Квадратная форма для остальных категорий
     
     // Если скролл имеет отрицательное значение (тянут вниз), расширяем фото
     if (scrollPosition < -50) {
-      return isCoffeeOrDrinks ? 'calc(100vw * 1.67)' : '100vw';
+      return isCoffeeOrDrinks ? 'calc(100vw * 1.42)' : '100vw';
     }
     
     return baseHeight;
@@ -552,7 +552,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               fill
               priority
               sizes="100vw"
-              className={`object-cover ${product.category === 'coffee' || product.category === 'drinks' ? 'object-top' : 'object-center'} transition-transform duration-700 ${
+              className={`object-cover object-center transition-transform duration-700 ${
                 isImageExpanded ? 'scale-110' : 'scale-100'
               }`}
             />

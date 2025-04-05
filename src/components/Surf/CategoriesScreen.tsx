@@ -138,10 +138,6 @@ const CategoriesScreen = ({
           detail: { category } 
         });
         window.dispatchEvent(urlChangeEvent);
-        
-        // Просто чтобы сразу увидеть изменения в UI
-        // В реальном проекте этот код должен быть заменен на обработчик выше
-        window.location.hash = category;
       }
     }
   };
@@ -256,15 +252,15 @@ const CategoriesScreen = ({
                   <div className="absolute -top-6 -left-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   
-                  {/* Изображение продукта с увеличенной высотой */}
-                  <div className={`relative ${isActive ? 'h-[120vh]' : 'h-[100vh]'} w-full transition-all duration-300 max-h-[500px]`}
+                  {/* Изображение продукта с уменьшенной высотой на 15% */}
+                  <div className={`relative ${isActive ? 'h-[102vh]' : 'h-[85vh]'} w-full transition-all duration-300 max-h-[500px]`}
                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
                       src={product.image}
                       alt={product.name}
                       fill
-                      className={`object-cover ${product.aspectRatio ? 'object-top' : 'object-center'} transition-transform duration-500 hover:scale-110`}
+                      className={`object-cover object-center transition-transform duration-500 hover:scale-110`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
                     
