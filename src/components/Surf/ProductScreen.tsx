@@ -512,10 +512,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Кнопка закрытия (вверху) */}
       <button 
         onClick={onBackClick} 
-        className="absolute top-[100px] left-4 z-50 p-2 rounded-full bg-black/30 backdrop-blur-md border border-white/10"
+        className="fixed top-[60px] right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
       
@@ -560,18 +560,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             {/* Градиент на фото снизу */}
             <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#1D1816] to-transparent z-10"></div>
             
-            {/* Индикатор свайпа */}
-            <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/80 z-20 transition-opacity duration-300 ${
-              isImageExpanded ? 'opacity-0' : 'opacity-80'
-            }`}>
-              <div className="flex flex-col items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-                <span className="text-xs mt-1 opacity-70">Смахните для увеличения</span>
-              </div>
-            </div>
-            
             {/* Калории в правом верхнем углу */}
             {product.calories && (
               <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/60 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg">
@@ -584,7 +572,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
           </div>
           
-          <div className="px-6">
+          {/* Контент продукта с нахлестом на фото */}
+          <div className="relative -mt-12 bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10">
             {/* Название и цена */}
             <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="flex justify-between items-start">

@@ -211,7 +211,7 @@ const CategoriesScreen = ({
       </div>
 
       {/* Горизонтальная лента продуктов с эффектом залипания */}
-      <div className={`flex-1 overflow-auto relative px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+      <div className={`flex-1 overflow-y-hidden relative px-2 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
         {/* Добавляем сочное фоновое свечение в зависимости от категории */}
         <div className={`absolute -top-20 left-1/2 transform -translate-x-1/2 w-[140%] h-[300px] rounded-full blur-3xl z-0 pointer-events-none ${
           selectedCategory === 'coffee' ? 'bg-gradient-radial from-[#A67C52]/30 via-[#5D4037]/20 to-transparent' :
@@ -221,7 +221,7 @@ const CategoriesScreen = ({
         
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto py-8 px-2 hide-scrollbar snap-x snap-mandatory h-full relative z-10"
+          className="flex overflow-x-auto py-8 px-2 hide-scrollbar snap-x snap-mandatory h-full max-h-[calc(100vh-150px)] relative z-10"
           onScroll={handleScroll}
         >
           {categoryProducts.map((product, index) => {
@@ -257,7 +257,7 @@ const CategoriesScreen = ({
                   <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   
                   {/* Изображение продукта с увеличенной высотой */}
-                  <div className={`relative ${isActive ? 'h-80' : 'h-64'} w-full transition-all duration-300`}
+                  <div className={`relative ${isActive ? 'h-[120vh]' : 'h-[100vh]'} w-full transition-all duration-300 max-h-[500px]`}
                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
