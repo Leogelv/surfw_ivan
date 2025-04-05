@@ -48,37 +48,37 @@ function SurfApp() {
   };
 
   useEffect(() => {
-    // Инициализация Telegram WebApp при загрузке компонента
-    if (webApp) {
+    // Проверка, находимся ли мы в контексте Telegram или в обычном браузере
+    const isTelegramWebApp = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+    
+    // Инициализация Telegram WebApp только если он доступен
+    if (isTelegramWebApp && webApp) {
       initializeTelegramApp();
     } else {
-      // Если WebApp еще не доступен, попробуем через небольшую задержку
-      const timer = setTimeout(() => {
-        initializeTelegramApp();
-      }, 300);
-      
-      return () => clearTimeout(timer);
+      console.log('Running in browser mode, skipping Telegram WebApp initialization');
     }
   }, [webApp, initializeTelegramApp]);
 
   // Устанавливаем CSS-переменную для отступа в зависимости от режима фулскрин
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty(
-        '--telegram-header-padding', 
-        isFullScreenEnabled && currentScreen !== 'home' && currentScreen !== 'product' ? `${telegramHeaderPadding}px` : '0px'
-      );
-      // Добавляем стиль для верхнего градиента в Telegram
-      if (isFullScreenEnabled && currentScreen !== 'home' && currentScreen !== 'product') {
+      // Проверка, находимся ли мы в контексте Telegram
+      const isTelegramWebApp = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+      
+      // Устанавливаем отступы только если мы в Telegram и включен полноэкранный режим
+      if (isTelegramWebApp && isFullScreenEnabled && currentScreen !== 'home' && currentScreen !== 'product') {
+        document.documentElement.style.setProperty(
+          '--telegram-header-padding', 
+          `${telegramHeaderPadding}px`
+        );
         document.documentElement.style.setProperty(
           '--telegram-header-gradient',
           'linear-gradient(to bottom, #1D1816 90%, #1D1816 95%)'
         );
       } else {
-        document.documentElement.style.setProperty(
-          '--telegram-header-gradient',
-          'none'
-        );
+        // В обычном браузере или если не в полноэкранном режиме
+        document.documentElement.style.setProperty('--telegram-header-padding', '0px');
+        document.documentElement.style.setProperty('--telegram-header-gradient', 'none');
       }
     }
   }, [isFullScreenEnabled, telegramHeaderPadding, currentScreen]);
@@ -153,7 +153,7 @@ function SurfApp() {
   return (
     <div style={contentStyle} className="h-screen bg-black">
       {/* Градиентный оверлей для верхней части Telegram WebApp */}
-      {isFullScreenEnabled && (
+      {isFullScreenEnabled && typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && (
         <div 
           className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
           style={{

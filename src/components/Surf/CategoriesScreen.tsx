@@ -176,7 +176,7 @@ const CategoriesScreen = ({
         {showCategoryDropdown && (
           <div className="absolute left-0 right-0 mt-2 mx-4 p-2 bg-[#2A2118]/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg z-40 transition-all">
             <div className="grid grid-cols-3 gap-2">
-              {Object.keys(productsByCategory).map(category => {
+              {productsByCategory && Object.keys(productsByCategory).map(category => {
                 const catColors = getCategoryColors(category);
                 return (
                   <button

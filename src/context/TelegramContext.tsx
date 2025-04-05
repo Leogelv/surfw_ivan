@@ -159,29 +159,49 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
 
   // Функция для полной инициализации Telegram WebApp с необходимыми настройками
   const initializeTelegramApp = () => {
-    if (webApp) {
-      try {
-        // Подготовка приложения
-        webApp.ready();
-        
-        // Расширение на весь экран
+    // Проверяем наличие Telegram WebApp
+    if (!webApp) {
+      console.log('Telegram WebApp is not available, possibly running in browser mode');
+      return;
+    }
+    
+    try {
+      // Подготовка приложения
+      webApp.ready();
+      
+      // Проверяем и вызываем методы только если они доступны
+      
+      // Расширение на весь экран
+      if (typeof webApp.expand === 'function') {
         webApp.expand();
-        
-        // Запрос на полноэкранный режим
-        webApp.requestFullscreen();
-        
-        // Отключение вертикальных свайпов
-        webApp.isVerticalSwipesEnabled = false;
-        webApp.disableVerticalSwipes();
-        
-        // Установка цветов, соответствующих нашему приложению
-        webApp.setHeaderColor('#1D1816'); // Темно-коричневый
-        webApp.setBackgroundColor('#1D1816'); // Темно-коричневый
-        
-        setIsFullScreenEnabled(true);
-      } catch (error) {
-        console.error('Failed to initialize Telegram WebApp:', error);
       }
+      
+      // Запрос на полноэкранный режим
+      if (typeof webApp.requestFullscreen === 'function') {
+        try {
+          webApp.requestFullscreen();
+        } catch (err) {
+          console.log('requestFullscreen is not supported in this Telegram WebApp version');
+        }
+      }
+      
+      // Отключение вертикальных свайпов
+      if (typeof webApp.disableVerticalSwipes === 'function') {
+        webApp.disableVerticalSwipes();
+      }
+      
+      // Установка цветов, соответствующих нашему приложению
+      if (typeof webApp.setHeaderColor === 'function') {
+        webApp.setHeaderColor('#1D1816'); // Темно-коричневый
+      }
+      
+      if (typeof webApp.setBackgroundColor === 'function') {
+        webApp.setBackgroundColor('#1D1816'); // Темно-коричневый
+      }
+      
+      setIsFullScreenEnabled(true);
+    } catch (error) {
+      console.error('Failed to initialize Telegram WebApp:', error);
     }
   };
 
