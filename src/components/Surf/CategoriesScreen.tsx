@@ -81,14 +81,14 @@ const CategoriesScreen = ({
   // Хардкод данных о продуктах (для демо)
   const productsByCategory: Record<string, Array<{ id: string; name: string; price: number; image: string; description?: string; calories?: number; aspectRatio?: string }>> = {
     coffee: [
-      { id: 'latte', name: 'Латте', price: 350, image: '/surf/latte.png', description: 'Нежный латте с бархатистой текстурой', calories: 120, aspectRatio: '3/4' },
-      { id: 'americano', name: 'Американо', price: 280, image: '/surf/americano.png', description: 'Классический черный кофе', calories: 10, aspectRatio: '3/4' },
-      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/icelatte.png', description: 'Охлаждающий латте со льдом', calories: 180, aspectRatio: '3/4' },
+      { id: 'latte', name: 'Латте', price: 350, image: '/surf/latte.png', description: 'Нежный латте с бархатистой текстурой', calories: 120, aspectRatio: '3/5' },
+      { id: 'americano', name: 'Американо', price: 280, image: '/surf/americano.png', description: 'Классический черный кофе', calories: 10, aspectRatio: '3/5' },
+      { id: 'iced-latte', name: 'Айс Латте', price: 380, image: '/surf/icelatte.png', description: 'Охлаждающий латте со льдом', calories: 180, aspectRatio: '3/5' },
     ],
     drinks: [
-      { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90 },
-      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Премиальный зеленый чай', calories: 0 },
-      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0 },
+      { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90, aspectRatio: '3/5' },
+      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_categ.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5' },
+      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0, aspectRatio: '3/5' },
     ],
     food: [
       { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Свежеиспеченный круассан', calories: 240 },
@@ -221,7 +221,7 @@ const CategoriesScreen = ({
         
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto py-4 px-2 hide-scrollbar snap-x snap-mandatory h-full relative z-10"
+          className="flex overflow-x-auto py-8 px-2 hide-scrollbar snap-x snap-mandatory h-full relative z-10"
           onScroll={handleScroll}
         >
           {categoryProducts.map((product, index) => {
@@ -256,8 +256,8 @@ const CategoriesScreen = ({
                   <div className="absolute -top-6 -left-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   <div className="absolute -top-6 -right-6 w-12 h-12 bg-gradient-radial from-white/5 to-transparent rounded-full blur-xl"></div>
                   
-                  {/* Изображение продукта (на весь экран при активности) */}
-                  <div className={`relative ${isActive ? 'h-72' : 'h-56'} w-full transition-all duration-300`}
+                  {/* Изображение продукта с увеличенной высотой */}
+                  <div className={`relative ${isActive ? 'h-80' : 'h-64'} w-full transition-all duration-300`}
                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
@@ -284,34 +284,23 @@ const CategoriesScreen = ({
                   </div>
                   
                   <div className="p-5">
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-bold text-xl text-white">{product.name}</h4>
-                      <div className={`text-white px-3 py-1 rounded-full text-sm font-medium shadow-inner shadow-black/20 border border-white/10 ${
-                        selectedCategory === 'coffee' ? 'bg-gradient-to-r from-[#A67C52]/90 to-[#A67C52]/70' :
-                        selectedCategory === 'drinks' ? 'bg-gradient-to-r from-[#8D6E63]/90 to-[#8D6E63]/70' :
-                        'bg-gradient-to-r from-[#A1887F]/90 to-[#A1887F]/70'
-                      }`}>
-                        {product.price} ₽
-                      </div>
-                    </div>
+                    <h4 className="font-bold text-xl text-white mb-2">{product.name}</h4>
                     <p className="text-sm text-white/80 line-clamp-2 leading-relaxed mb-4">{product.description}</p>
                     
-                    {/* Кнопка для выбора продукта */}
+                    {/* Кнопка для выбора продукта с ценой */}
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         onProductClick(product.id);
                       }} 
-                      className={`w-full py-3 rounded-full text-white font-medium transition-all hover:scale-105 active:scale-95 flex items-center justify-center space-x-2 border border-white/10 ${
+                      className={`w-full py-3 rounded-full text-white font-medium transition-all hover:scale-105 active:scale-95 flex items-center justify-between px-5 border border-white/10 ${
                         selectedCategory === 'coffee' ? 'bg-gradient-to-r from-[#A67C52]/90 to-[#A67C52]/70 hover:shadow-lg hover:shadow-[#A67C52]/30' :
                         selectedCategory === 'drinks' ? 'bg-gradient-to-r from-[#8D6E63]/90 to-[#8D6E63]/70 hover:shadow-lg hover:shadow-[#8D6E63]/30' :
                         'bg-gradient-to-r from-[#A1887F]/90 to-[#A1887F]/70 hover:shadow-lg hover:shadow-[#A1887F]/30'
                       }`}
                     >
                       <span>Выбрать</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7-7 7" />
-                      </svg>
+                      <span className="rounded-full bg-white/20 px-3 py-1 text-sm">{product.price} ₽</span>
                     </button>
                   </div>
                 </div>
