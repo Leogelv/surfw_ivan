@@ -188,8 +188,9 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
               {/* Эффект "вспышки" вокруг новой чашки */}
               {isNewCup && (
                 <div className="absolute inset-0 cup-glow-ring" style={{
-                  boxShadow: `0 0 15px 5px ${accentColor}60`,
-                  borderRadius: '50%'
+                  boxShadow: `0 0 10px 3px ${accentColor}40`,
+                  borderRadius: '50%',
+                  opacity: 0
                 }}></div>
               )}
               
@@ -211,7 +212,7 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
               
               {/* Эффект "всплеска" при появлении новой чашки */}
               {isNewCup && (
-                <div className="absolute top-0 left-0 right-0 bottom-0 splash-effect"></div>
+                <div className="absolute inset-0 splash-effect"></div>
               )}
             </div>
           );
@@ -307,6 +308,12 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
           position: relative;
           will-change: transform, opacity, filter;
           touch-action: none; /* Предотвращает проблемы с событиями касания на мобильных */
+        }
+        
+        /* Эффект "вспышки" вокруг новой чашки */
+        .cup-glow-ring {
+          animation: cupGlowRingEffect 2s ease-out forwards;
+          pointer-events: none;
         }
         
         /* Эффект "вспышки" на фоне при добавлении */
@@ -425,11 +432,11 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
         @keyframes bounceInEffect {
           0% { 
             opacity: 0; 
-            transform: scale(0.3) translateY(20px) rotateX(20deg); 
+            transform: scale(0.3) translateY(10px) rotateX(15deg); 
           }
           35% { 
             opacity: 0.7;
-            transform: scale(0.8) translateY(-8px) rotateX(-10deg);
+            transform: scale(0.8) translateY(-5px) rotateX(-8deg);
           }
           70% { 
             opacity: 1; 
@@ -450,7 +457,7 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
             box-shadow: 0 0 0 0px rgba(198, 156, 109, 0.7); 
           }
           100% { 
-            box-shadow: 0 0 0 12px rgba(198, 156, 109, 0); 
+            box-shadow: 0 0 0 15px rgba(198, 156, 109, 0); 
           }
         }
         
@@ -529,6 +536,14 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
             -webkit-transform: translateZ(0);
             -webkit-backface-visibility: hidden;
           }
+        }
+        
+        /* Эффект свечения для кольца вокруг новой чашки */
+        @keyframes cupGlowRingEffect {
+          0% { opacity: 0; }
+          20% { opacity: 0.4; }
+          50% { opacity: 0.2; }
+          100% { opacity: 0; }
         }
       `}</style>
     </div>
