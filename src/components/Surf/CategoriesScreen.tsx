@@ -167,7 +167,7 @@ const CategoriesScreen = ({
       {/* Заголовок категории c выпадающим меню - прикрепленный к верху, усиленный sticky */}
       <div 
         className="sticky top-0 z-30 w-full px-6 pb-2 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5"
-        style={{ paddingTop: '85px' }}
+        style={{ paddingTop: '35px' }}
       >
         <div className="flex items-center">
           <div className="relative">

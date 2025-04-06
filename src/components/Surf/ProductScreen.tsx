@@ -547,7 +547,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         onClick={onBackClick} 
         className="fixed z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
         style={{
-          top: '30px', 
+          top: '50px', 
           left: '16px'
         }}
       >
@@ -556,16 +556,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         </svg>
       </button>
       
-      {/* Заголовок продукта, отображается только при скролле вниз */}
-      <div 
-        className={`fixed top-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md py-3 px-4 border-b border-white/10 flex justify-center transition-all duration-300 ${
-          scrollPosition > 150 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
-        }`}
-        style={{ paddingTop: `${safeAreaInsets.top}px` }}
-      >
-        <h2 className="text-xl font-bold text-white">{product.name}</h2>
-      </div>
-        
       {/* Основное содержимое с отступом сверху для лучшего отображения */}
       <div 
         ref={contentRef}
@@ -604,7 +594,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Калории в правом верхнем углу */}
             {product.calories && (
-              <div className="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/60 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg">
+              <div className="absolute top-16 right-3 z-20 flex items-center space-x-1 bg-black/60 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg">
                 <svg className={`w-4 h-4 ${colors.accent}`} viewBox="0 0 24 24" fill="currentColor">
                   <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
                   <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
