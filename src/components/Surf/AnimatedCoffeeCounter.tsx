@@ -1,19 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { 
-  Drop, 
-  Coffee, 
-  Leaf, 
-  Snowflake, 
-  PlusCircle,
-  Asterisk
-} from "@phosphor-icons/react";
-import { 
-  GiCoconuts, 
-  GiMilkCarton, 
-  GiHoneycomb, 
-  GiVanillaFlower, 
-  GiChocolateBar 
-} from 'react-icons/gi';
 
 // Вспомогательная функция для haptic feedback
 const triggerHapticFeedback = (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
@@ -30,53 +15,12 @@ interface AnimatedCoffeeCounterProps {
   quantity: number;
   selectedSize: 'small' | 'medium' | 'large';
   accentColor: string;
-  modifiers?: {
-    milk?: string;
-    syrups?: string[];
-    extraShot?: boolean;
-  };
-  productCategory?: string;
 }
-
-// Функция получения иконки модификатора на основе его типа
-const getModifierIcon = (modifierType: string, size: number, color: string) => {
-  const iconProps = { size, color, weight: "duotone" as const };
-  const reactIconProps = { size, color, style: { opacity: 0.9 } };
-
-  switch(modifierType.toLowerCase()) {
-    case 'растительное':
-    case 'овсяное':
-      return <Leaf {...iconProps} />;
-    case 'миндальное':
-      return <Asterisk {...iconProps} />;
-    case 'кокосовое':
-      return <GiCoconuts {...reactIconProps} />;
-    case 'обычное':
-    case 'без молока':
-      return <GiMilkCarton {...reactIconProps} />;
-    case 'карамель':
-      return <GiHoneycomb {...reactIconProps} />;
-    case 'ваниль':
-      return <GiVanillaFlower {...reactIconProps} />;
-    case 'лесной орех':
-      return <Drop {...iconProps} />;
-    case 'кокос':
-      return <GiCoconuts {...reactIconProps} />;
-    case 'шоколад':
-      return <GiChocolateBar {...reactIconProps} />;
-    case 'extra shot':
-      return <PlusCircle {...iconProps} />;
-    default:
-      return <Coffee {...iconProps} />;
-  }
-};
 
 const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({ 
   quantity, 
   selectedSize,
-  accentColor = "#A67C52", // Значение по умолчанию
-  modifiers = {},
-  productCategory = 'coffee'
+  accentColor = "#A67C52" // Значение по умолчанию 
 }) => {
   const prevQuantityRef = useRef<number>(quantity);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +82,7 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
     return {
       'small': 'space-x-2', // Меньше отступы для маленьких чашек
       'medium': 'space-x-2.5', // Средние отступы
-      'large': 'space-x-2' // Меньше отступы для больших чашек для компактности
+      'large': 'space-x-2.5' // Увеличил отступы для больших чашек для лучшего визуального баланса
     }[selectedSize];
   };
   
@@ -153,13 +97,7 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
     // Увеличиваем высоту при большом количестве
     const extraHeight = quantity > 3 ? Math.min(10, (quantity - 3) * 2) : 0;
     
-    // Добавляем дополнительную высоту для модификаторов
-    const hasModifiers = (modifiers.milk && modifiers.milk !== 'Обычное') || 
-                         (modifiers.syrups && modifiers.syrups.length > 0) || 
-                         modifiers.extraShot;
-    const modifiersHeight = hasModifiers ? 35 : 0; // Высота для иконок модификаторов
-    
-    return baseHeight + extraHeight + modifiersHeight;
+    return baseHeight + extraHeight;
   };
 
   // Определяем новый размер для всех чашек - обновляется при изменении selectedSize
@@ -178,48 +116,8 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
     }
   }, [selectedSize]);
   
-  // Должны ли мы показывать модификаторы для данной категории продуктов
-  const shouldShowModifiers = ['coffee', 'drinks'].includes(productCategory.toLowerCase());
-  
-  // Подготавливаем массив модификаторов для отображения
-  const getModifiersToShow = () => {
-    if (!shouldShowModifiers) return [];
-    
-    const modifiersArray = [];
-    
-    // Добавляем молоко, если оно не обычное
-    if (modifiers.milk && modifiers.milk !== 'Обычное' && modifiers.milk !== 'Без молока') {
-      modifiersArray.push({
-        type: modifiers.milk,
-        name: modifiers.milk
-      });
-    }
-    
-    // Добавляем сиропы
-    if (modifiers.syrups && modifiers.syrups.length > 0) {
-      modifiers.syrups.forEach(syrup => {
-        modifiersArray.push({
-          type: syrup,
-          name: syrup
-        });
-      });
-    }
-    
-    // Добавляем доп. эспрессо
-    if (modifiers.extraShot) {
-      modifiersArray.push({
-        type: 'extra shot',
-        name: 'Доп. эспрессо'
-      });
-    }
-    
-    return modifiersArray;
-  };
-  
-  const modifiersToShow = getModifiersToShow();
-  
   return (
-    <div className="flex flex-col justify-center mt-2 relative overflow-visible" style={{ height: `${getContainerHeight()}px` }}>
+    <div className="flex justify-center mt-3 relative overflow-visible" style={{ height: `${getContainerHeight()}px` }}>
       {/* Эффект фона при добавлении чашки */}
       {quantity > prevQuantityRef.current && (
         <div 
@@ -233,12 +131,13 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
       
       <div 
         ref={containerRef}
-        className={`flex ${getSpacing()} coffee-wave-container items-end`}
+        className={`flex ${getSpacing()} coffee-wave-container items-end justify-center`}
         style={{
           padding: `${Math.max(6, Math.min(12, quantity * 1.2))}px 0`,
           // Ширина контейнера в зависимости от размера
-          maxWidth: selectedSize === 'large' ? '85%' : selectedSize === 'medium' ? '90%' : '95%',
-          height: modifiersToShow.length > 0 ? 'calc(100% - 35px)' : '100%'
+          width: '100%',
+          maxWidth: selectedSize === 'large' ? '90%' : selectedSize === 'medium' ? '95%' : '100%',
+          height: '100%'
         }}
       >
         {/* Показываем максимум 5 чашек */}
@@ -350,274 +249,286 @@ const AnimatedCoffeeCounter: React.FC<AnimatedCoffeeCounterProps> = ({
             }`}
             style={{
               // Корректируем размер счетчика в зависимости от размера
-              height: `${getBaseSize() * 0.8}px`, 
-              paddingLeft: '4px',
-              paddingRight: '4px',
-              fontWeight: 'bold',
-              backgroundColor: `${accentColor}80`,
-              borderRadius: '8px'
+              fontSize: selectedSize === 'large' ? '17px' : selectedSize === 'medium' ? '14px' : '12px',
+              height: selectedSize === 'large' ? '36px' : selectedSize === 'medium' ? '30px' : '24px',
+              opacity: 0.95,
             }}
           >
-            <span>+{quantity - 5}</span>
+            <span className={`bg-[${accentColor}]/30 text-[#C09371] font-bold rounded-full px-3 py-1 shadow-inner counter-badge ${
+              quantity !== prevQuantityRef.current ? 'counter-update' : ''
+            }`}>
+              +{quantity - 5}
+            </span>
+          </div>
+        )}
+        
+        {/* Показываем исчезающий индикатор +N при уменьшении количества ниже порога */}
+        {quantity <= 5 && prevQuantityRef.current > 5 && (
+          <div 
+            key={`removing-plus-${prevQuantityRef.current}-${animationTrigger}`}
+            className="flex items-center justify-center ml-2 coffee-icon-plus counter-fade-out"
+            style={{
+              position: 'absolute',
+              right: '0',
+              fontSize: selectedSize === 'large' ? '17px' : selectedSize === 'medium' ? '14px' : '12px',
+              height: selectedSize === 'large' ? '36px' : selectedSize === 'medium' ? '30px' : '24px',
+            }}
+          >
+            <span className={`bg-[${accentColor}]/30 text-[#C09371] font-bold rounded-full px-3 py-1 shadow-inner`}>
+              +{prevQuantityRef.current - 5}
+            </span>
           </div>
         )}
       </div>
       
-      {/* Ряд модификаторов */}
-      {shouldShowModifiers && modifiersToShow.length > 0 && (
-        <div className="flex justify-center mt-3 modifier-container">
-          <div className="flex space-x-3 items-center">
-            {modifiersToShow.map((modifier, index) => (
-              <div 
-                key={`modifier-${modifier.type}-${index}`}
-                className="modifier-icon fade-in-up"
-                style={{ 
-                  animationDelay: `${0.1 + index * 0.1}s`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
-                }}
-              >
-                {/* Иконка модификатора */}
-                <div 
-                  className="relative p-1.5 rounded-full bg-white/10 modifier-pulse backdrop-blur-sm"
-                  style={{ backdropFilter: 'blur(4px)' }}
-                >
-                  {getModifierIcon(modifier.type, selectedSize === 'small' ? 16 : 20, accentColor)}
-                  
-                  {/* Эффект свечения */}
-                  <div 
-                    className="absolute inset-0 rounded-full modifier-glow" 
-                    style={{
-                      boxShadow: `0 0 8px 2px ${accentColor}40`,
-                      opacity: 0.7
-                    }}
-                  ></div>
-                  
-                  {/* Декоративное кольцо */}
-                  <div className="absolute inset-0 rounded-full border border-white/20 shadow-inner"></div>
-                </div>
-                
-                {/* Название модификатора с эффектом всплывания */}
-                <span className="text-xs text-white/70 mt-1 max-w-16 truncate modifier-label-fade">
-                  {modifier.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {/* Стили для анимаций и эффектов */}
+      {/* Стили для анимаций */}
       <style jsx global>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        /* Контейнер для чашек с волновым движением */
+        .coffee-wave-container {
+          animation: floatMotion 8s infinite ease-in-out;
+          transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+          position: relative;
         }
         
-        @keyframes modifierPulse {
-          0% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.1);
-          }
-          100% {
-            transform: scale(1);
-          }
-        }
-        
-        @keyframes modifierGlow {
-          0% {
-            opacity: 0.5;
-          }
-          50% {
-            opacity: 0.8;
-          }
-          100% {
-            opacity: 0.5;
-          }
-        }
-        
-        @keyframes labelFadeIn {
-          0% {
-            opacity: 0;
-            transform: translateY(5px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .fade-in-up {
-          animation: fadeInUp 0.6s ease-out forwards;
-          opacity: 0;
-        }
-        
-        .modifier-label-fade {
-          animation: labelFadeIn 0.4s ease-out forwards;
-          animation-delay: 0.3s;
-          opacity: 0;
-        }
-        
-        .modifier-pulse {
-          animation: modifierPulse 3s ease-in-out infinite;
-        }
-        
-        .modifier-glow {
-          animation: modifierGlow 3s ease-in-out infinite;
-        }
-        
-        .cup-flash-effect {
-          animation: flashAnimation 0.8s ease-out;
-        }
-        
+        /* Анимация "пульса" для контейнера при изменении количества */
         .container-pulse {
-          animation: containerPulse 0.6s ease-out;
+          animation: containerPulse 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
+        /* Анимация размера для контейнера */
         .size-transition {
-          transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+          animation: sizePulse 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         
-        .coffee-bounce-in {
-          animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        /* Базовые стили для чашек */
+        .coffee-icon {
+          transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transform-origin: center;
+          position: relative;
+          will-change: transform, opacity, filter;
+          touch-action: none; /* Предотвращает проблемы с событиями касания на мобильных */
         }
         
-        .coffee-shake {
-          animation: shakeAnimation 0.8s ease-in-out;
+        /* Эффект "вспышки" на фоне при добавлении */
+        .cup-flash-effect {
+          animation: flashEffect 0.7s ease-out forwards;
+          pointer-events: none; /* Предотвращает помехи с тач-событиями */
         }
         
-        .coffee-fall-out {
-          animation: fallOut 0.5s ease-in-out forwards;
-        }
-        
-        .counter-fade-in {
-          animation: fadeIn 0.4s ease-out forwards;
-        }
-        
+        /* Эффект блика на чашке */
         .shine-effect {
-          background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
-          animation: shineEffect 2s ease-in-out infinite;
+          background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+          border-radius: 50%;
+          animation: shineEffect 2s infinite ease-in-out;
+          pointer-events: none;
         }
         
+        /* Эффект "всплеска" при добавлении */
         .splash-effect {
-          animation: splashEffect 0.7s ease-out forwards;
+          border-radius: 50%;
+          animation: splashEffect 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+          pointer-events: none;
         }
         
-        /* Анимация пульсации для первой иконки */
+        /* Супер-плавная анимация появления с 3D эффектом "отскока" */
+        .coffee-bounce-in {
+          animation: bounceInEffect 0.8s cubic-bezier(0.18, 1.5, 0.5, 1) forwards;
+          transform-origin: center bottom;
+          backface-visibility: hidden; /* Оптимизация производительности */
+          will-change: transform, opacity; /* Оптимизация для GPU-рендеринга */
+        }
+        
+        /* Эффект "встряхивания" для новой чашки */
+        .coffee-shake {
+          animation: shakeEffect 0.7s ease-in-out;
+          animation-delay: 0.3s;
+        }
+        
+        /* Анимация выпадения/удаления */
+        .coffee-fall-out {
+          animation: fallOutEffect 0.9s cubic-bezier(0.55, -0.15, 0.55, 0.3) forwards;
+          pointer-events: none;
+        }
+        
+        /* Плавное появление счетчика */
+        .counter-fade-in {
+          animation: fadeInEffect 0.6s ease-out forwards;
+        }
+        
+        /* Плавное исчезновение счетчика */
+        .counter-fade-out {
+          animation: fadeOutEffect 0.6s ease-in forwards;
+          pointer-events: none;
+        }
+        
+        /* Анимация обновления счетчика */
+        .counter-update {
+          animation: updateCounterEffect 0.4s ease forwards;
+        }
+        
+        /* Фоновая пульсация для чашек (три варианта с разным таймингом) */
         .coffee-icon-0 {
-          animation: pulse1 4s ease-in-out infinite;
+          animation: softPulse1 3.5s infinite ease-in-out;
         }
         
-        /* Анимация пульсации для второй иконки */
         .coffee-icon-1 {
-          animation: pulse2 4s ease-in-out infinite;
+          animation: softPulse2 4s infinite ease-in-out;
         }
         
-        /* Анимация пульсации для третьей иконки */
         .coffee-icon-2 {
-          animation: pulse3 4s ease-in-out infinite;
+          animation: softPulse3 4.5s infinite ease-in-out; 
         }
         
-        @keyframes flashAnimation {
+        /* Счетчик */
+        .counter-badge {
+          transform-origin: center;
+          transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        /* ===== KEYFRAMES ===== */
+        
+        /* Фоновая вспышка при добавлении чашки */
+        @keyframes flashEffect {
           0% { opacity: 0; }
-          50% { opacity: 1; }
+          20% { opacity: 0.7; }
           100% { opacity: 0; }
         }
         
-        @keyframes containerPulse {
+        /* Пульсация при изменении размера контейнера */
+        @keyframes sizePulse {
+          0% { transform: scale(0.97); }
+          50% { transform: scale(1.03); }
+          100% { transform: scale(1); }
+        }
+        
+        /* Обновление счетчика */
+        @keyframes updateCounterEffect {
           0% { transform: scale(1); }
-          30% { transform: scale(1.03); }
+          40% { transform: scale(1.15); }
           100% { transform: scale(1); }
         }
         
-        @keyframes bounceIn {
-          0% { 
-            opacity: 0;
-            transform: scale(0.3); 
-          }
-          50% { 
-            opacity: 1;
-            transform: scale(1.1); 
-          }
-          70% { transform: scale(0.9); }
-          100% { transform: scale(1); }
+        /* Пульсация контейнера при изменении количества */
+        @keyframes containerPulse {
+          0% { transform: scale(0.97) translateY(0); }
+          50% { transform: scale(1.02) translateY(-2px); }
+          100% { transform: scale(1) translateY(0); }
         }
         
-        @keyframes shakeAnimation {
-          0% { transform: rotate(0deg); }
-          25% { transform: rotate(-5deg); }
-          50% { transform: rotate(0deg); }
-          75% { transform: rotate(5deg); }
-          100% { transform: rotate(0deg); }
+        /* Эффект блика на чашке */
+        @keyframes shineEffect {
+          0%, 100% { opacity: 0; transform: translateX(-100%) rotate(-20deg); }
+          30%, 70% { opacity: 0.7; transform: translateX(100%) rotate(-20deg); }
         }
         
-        @keyframes fallOut {
+        /* Ультра плавная 3D анимация появления */
+        @keyframes bounceInEffect {
           0% { 
-            opacity: 1;
-            transform: translateX(30%) translateY(0); 
+            opacity: 0; 
+            transform: scale(0.3) translateY(20px) rotateX(20deg); 
+          }
+          35% { 
+            opacity: 0.7;
+            transform: scale(0.8) translateY(-8px) rotateX(-10deg);
+          }
+          70% { 
+            opacity: 1; 
+            transform: scale(1.1) translateY(2px) rotateX(5deg); 
+          }
+          85% {
+            transform: scale(0.95) translateY(-1px) rotateX(-3deg);
           }
           100% { 
-            opacity: 0;
-            transform: translateX(100%) translateY(20px); 
+            opacity: 1; 
+            transform: scale(1) translateY(0) rotateX(0); 
           }
         }
         
-        @keyframes fadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        
-        @keyframes shineEffect {
-          0% { opacity: 0; transform: translateX(-100%) rotate(-20deg); }
-          20% { opacity: 0.6; }
-          40% { opacity: 0; transform: translateX(100%) rotate(-20deg); }
-          100% { opacity: 0; transform: translateX(100%) rotate(-20deg); }
-        }
-        
+        /* Эффект "всплеска" */
         @keyframes splashEffect {
+          0% { 
+            box-shadow: 0 0 0 0px rgba(198, 156, 109, 0.7); 
+          }
+          100% { 
+            box-shadow: 0 0 0 12px rgba(198, 156, 109, 0); 
+          }
+        }
+        
+        /* Анимация встряхивания */
+        @keyframes shakeEffect {
+          0%, 100% { transform: rotate(0) translateY(0); }
+          20% { transform: rotate(-5deg) translateY(-2px); }
+          40% { transform: rotate(4deg) translateY(0); }
+          60% { transform: rotate(-3deg) translateY(-1px); }
+          80% { transform: rotate(2deg) translateY(0); }
+        }
+        
+        /* Улучшенная анимация выпадения */
+        @keyframes fallOutEffect {
           0% {
-            box-shadow: 0 0 0 0px rgba(255, 255, 255, 0.7),
-                       0 0 0 0px rgba(255, 255, 255, 0.5),
-                       0 0 0 0px rgba(255, 255, 255, 0.3);
+            opacity: 1;
+            transform: translateX(30%) translateY(0) rotate(0deg);
+          }
+          30% {
+            opacity: 0.9;
+            transform: translateX(35%) translateY(5px) rotate(5deg);
+          }
+          60% {
+            opacity: 0.5;
+            transform: translateX(15%) translateY(20px) rotate(10deg);
           }
           100% {
-            box-shadow: 0 0 0 10px rgba(255, 255, 255, 0),
-                       0 0 0 20px rgba(255, 255, 255, 0),
-                       0 0 0 30px rgba(255, 255, 255, 0);
+            opacity: 0;
+            transform: translateX(0%) translateY(40px) rotate(25deg);
           }
         }
         
-        @keyframes pulse1 {
-          0% { transform: translateY(0); }
-          25% { transform: translateY(-2px); }
-          50% { transform: translateY(0); }
-          75% { transform: translateY(2px); }
-          100% { transform: translateY(0); }
+        /* Появление с затуханием */
+        @keyframes fadeInEffect {
+          0% { opacity: 0; transform: scale(0.8); }
+          100% { opacity: 1; transform: scale(1); }
         }
         
-        @keyframes pulse2 {
-          0% { transform: translateY(1px); }
-          25% { transform: translateY(-1px); }
-          50% { transform: translateY(3px); }
-          75% { transform: translateY(0); }
-          100% { transform: translateY(1px); }
+        /* Исчезновение с затуханием */
+        @keyframes fadeOutEffect {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(0.8); }
         }
         
-        @keyframes pulse3 {
-          0% { transform: translateY(2px); }
-          25% { transform: translateY(0); }
-          50% { transform: translateY(-2px); }
-          75% { transform: translateY(1px); }
-          100% { transform: translateY(2px); }
+        /* Фоновые анимации пульсации чашек (три разных паттерна) */
+        @keyframes softPulse1 {
+          0%, 100% { opacity: 0.95; transform: translateY(0) scale(1); }
+          50% { opacity: 0.85; transform: translateY(-2px) scale(1.03); }
+        }
+        
+        @keyframes softPulse2 {
+          0%, 100% { opacity: 0.92; transform: translateY(0) scale(1) rotate(0deg); }
+          50% { opacity: 0.82; transform: translateY(1px) scale(1.02) rotate(0.5deg); }
+        }
+        
+        @keyframes softPulse3 {
+          0%, 100% { opacity: 0.9; transform: translateY(0) scale(1) rotate(0deg); }
+          50% { opacity: 0.8; transform: translateY(-1.5px) scale(1.01) rotate(-0.5deg); }
+        }
+        
+        /* Плавающее движение для контейнера */
+        @keyframes floatMotion {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(-2px) rotate(0.2deg); }
+          50% { transform: translateY(0) rotate(-0.2deg); }
+          75% { transform: translateY(1.5px) rotate(0.1deg); }
+        }
+        
+        /* Оптимизация для мобильных устройств - предотвращает дерганье */
+        @media (max-width: 768px) {
+          .coffee-icon {
+            transform: translateZ(0); /* Активирует GPU-ускорение */
+          }
+          
+          .coffee-wave-container {
+            -webkit-transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+          }
         }
       `}</style>
     </div>

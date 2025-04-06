@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import AnimatedCoffeeCounter from './AnimatedCoffeeCounter';
-import AnimatedModifierIcons from './AnimatedModifierIcons';
 import useSafeAreaInsets from '@/hooks/useSafeAreaInsets';
 
 // Использую интерфейс без глобального определения
@@ -842,17 +841,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           quantity={quantity} 
           selectedSize={selectedSize} 
           accentColor={colors.button.split(' ')[0].replace('from-', '')}
-        />
-        
-        {/* Добавляем анимированные иконки модификаторов */}
-        <AnimatedModifierIcons
-          selectedMilk={selectedMilk}
-          selectedSyrup={selectedSyrup}
-          extraShot={extraShot}
-          selectedFoodOptions={selectedFoodOptions}
-          isVisible={true}
-          accentColor={colors.button.split(' ')[0].replace('from-', '')}
-          category={product.category}
         />
       </div>
       
