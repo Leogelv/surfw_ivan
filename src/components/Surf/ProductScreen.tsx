@@ -547,7 +547,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         onClick={onBackClick} 
         className="fixed z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
         style={{
-          top: `${safeAreaInsets.top + 20}px`, 
+          top: '100px', // Фиксированный отступ 100px
           left: `${safeAreaInsets.left + 16}px`
         }}
       >
@@ -594,7 +594,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               <div 
                 className="fixed z-50 flex items-center space-x-1 bg-black/60 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg"
                 style={{
-                  top: `${safeAreaInsets.top + 20}px`, 
+                  top: '100px', // Фиксированный отступ 100px
                   right: `${safeAreaInsets.right + 16}px`
                 }}
               >

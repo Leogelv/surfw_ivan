@@ -264,24 +264,7 @@ const EmptyCartRecommendations = () => {
 const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 'cappuccino-1',
-      name: 'Капучино',
-      price: 350,
-      quantity: 1,
-      size: 'Средний',
-      image: '/surf/coffee_categ.png'
-    },
-    {
-      id: 'croissant-1',
-      name: 'Круассан',
-      price: 220,
-      quantity: 2,
-      size: '-',
-      image: '/surf/croissant.png'
-    }
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   
   // Состояние для бонусов
   const [bonusPoints, setBonusPoints] = useState(150);
