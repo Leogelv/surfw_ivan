@@ -10,6 +10,22 @@ import ProfileScreen from '../../components/Surf/ProfileScreen';
 import OrdersScreen from '../../components/Surf/OrdersScreen';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
 
+const products: Record<string, { name: string; price: number; size: string; image: string }> = {
+    'latte': {
+        name: 'Латте',
+        price: 350,
+        size: 'medium',
+        image: '/surf/latte.png'
+    },
+    'americano': {
+        name: 'Американо',
+        price: 280,
+        size: 'medium',
+        image: '/surf/americano.png'
+    },
+    // Добавьте другие продукты здесь
+};
+
 function SurfApp() {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'categories' | 'product' | 'cart' | 'orders'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -187,14 +203,13 @@ function SurfApp() {
   // Моковая функция для получения продукта по ID
   const getProductById = (productId: string) => {
     // Здесь должна быть логика для получения продукта из данных или API
-    // Возвращаем моковые данные для примера
-    return {
-      id: productId,
-      name: 'Пример продукта',
-      price: 100,
-      size: 'medium',
-      image: '/path/to/image.png'
-    };
+    // Пример: получение данных из каталога
+    const product = products[productId];
+    if (!product) {
+        console.error(`Product with ID ${productId} not found.`);
+        return null;
+    }
+    return product;
   };
 
   return (
