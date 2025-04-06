@@ -433,34 +433,103 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartY.current;
     
+    // Предотвращаем срабатывание на малом движении
+    if (Math.abs(deltaY) < 10) return;
+    
     // Проверяем условия для активации возврата через свайп вниз
     if (isImageExpanded && deltaY > 150 && window.scrollY <= 10) {
-      console.log('Swipe down detected!', deltaY);
+      console.log('Swipe down detected to return!', deltaY);
+      
+      // Добавляем визуальный эффект выхода перед навигацией
+      if (imageRef.current) {
+        // Применяем анимацию ухода
+        imageRef.current.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+        imageRef.current.style.transform = 'translateY(50px)';
+        imageRef.current.style.opacity = '0.3';
+        
+        // Анимируем контент
+        if (contentRef.current) {
+          contentRef.current.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+          contentRef.current.style.transform = 'translateY(100px)';
+          contentRef.current.style.opacity = '0';
+        }
+      }
+      
+      // Тактильный отклик
       triggerHapticFeedback('medium');
-      onBackClick(); // Возвращаемся к категории
+      
+      // Задержка перед переходом для корректного отображения анимации
+      setTimeout(() => {
+        onBackClick(); // Возвращаемся к категории
+      }, 300);
+      
       return;
     }
     
     // Расчет нового размера фото при свайпе
     if (deltaY < 0) {
-      // Свайп вверх - увеличиваем фото
-      if (!isImageExpanded) {
+      // Свайп вверх - скрываем расширенное фото
+      if (isImageExpanded) {
         const progress = Math.min(1, Math.abs(deltaY) / 150);
         setScrollPosition(deltaY);
-        imageRef.current?.style.setProperty('height', `calc(${getImageHeight()} + ${progress * 20}vh)`);
+        
+        // Плавное уменьшение фото
+        if (imageRef.current) {
+          const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
+          const baseHeight = isCoffeeOrDrinks ? 'calc(100vw * 1.13)' : 'calc(100vw * 0.8)';
+          const expandedHeight = isCoffeeOrDrinks ? 'calc(100vw * 1.42)' : '100vw';
+          
+          const newHeight = `calc(${expandedHeight} - ${progress * 100}px)`;
+          imageRef.current.style.height = newHeight;
+        }
       }
-    } else if (isImageExpanded) {
-      // Свайп вниз при развернутом фото - уменьшаем
+    } else {
+      // Свайп вниз - показываем больше фото
       const progress = Math.min(1, deltaY / 150);
       setScrollPosition(deltaY);
       
       const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
-      const baseHeight = isCoffeeOrDrinks ? 'calc(100vw * 1.33)' : 'calc(100vw * 0.8)';
       
-      imageRef.current?.style.setProperty(
-        'height', 
-        `calc(100vw * ${isCoffeeOrDrinks ? 1.67 : 1} - ${progress * 20}vh)`
-      );
+      if (isImageExpanded) {
+        // Если уже развернуто и продолжаем тянуть вниз - готовимся к возврату
+        // Добавляем индикатор свайпа
+        if (deltaY > 80 && !document.getElementById('swipe-indicator')) {
+          const indicator = document.createElement('div');
+          indicator.id = 'swipe-indicator';
+          indicator.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md rounded-full px-4 py-2 flex items-center space-x-2 z-50 animate-pulse';
+          indicator.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+            <span class="text-white text-sm">Свайп для возврата</span>
+          `;
+          document.body.appendChild(indicator);
+          
+          // Удаляем индикатор через 2 секунды
+          setTimeout(() => {
+            const indicator = document.getElementById('swipe-indicator');
+            if (indicator) {
+              indicator.style.opacity = '0';
+              setTimeout(() => indicator.remove(), 300);
+            }
+          }, 2000);
+        }
+      } else {
+        // Если еще не развернуто - расширяем фото
+        if (imageRef.current) {
+          const baseHeight = isCoffeeOrDrinks ? 'calc(100vw * 1.13)' : 'calc(100vw * 0.8)';
+          const expandedHeight = isCoffeeOrDrinks ? 'calc(100vw * 1.42)' : '100vw';
+          
+          // Плавное увеличение фото
+          const newHeight = `calc(${baseHeight} + ${progress * 100}px)`;
+          imageRef.current.style.height = newHeight;
+          
+          // Автоматически расширяем, если продвинулись больше чем на 40%
+          if (progress > 0.4) {
+            setIsImageExpanded(true);
+          }
+        }
+      }
     }
   };
 
@@ -791,9 +860,71 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </>
           )}
         </button>
+        
+        {/* Визуализация размера и количества чашек */}
+        {(product.category === 'coffee' || product.category === 'drinks') && (
+          <div className="mt-3 flex justify-center items-center overflow-hidden">
+            <div className="flex items-center justify-center space-x-1 py-2 transition-all">
+              {/* Показываем только первые 5 чашек (или меньше, если количество < 5) */}
+              {Array.from({ length: Math.min(quantity, 5) }, (_, i) => (
+                <div
+                  key={i}
+                  className={`transition-all duration-800 relative flex items-center justify-center ${
+                    i >= quantity - 1 && i > 0 ? 'animate-zoomIn' : ''
+                  }`}
+                  style={{
+                    transitionDelay: `${i * 100}ms`,
+                  }}
+                >
+                  {/* Чашка, размер которой зависит от выбранного размера */}
+                  <svg
+                    className={`transition-all duration-800 ${
+                      selectedSize === 'small' ? 'w-6 h-6' : 
+                      selectedSize === 'medium' ? 'w-8 h-8' : 
+                      'w-10 h-10'
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {selectedSize === 'small' ? (
+                      <path
+                        d="M3,2H21a1,1 0 0,1 1,1v2H2v-2a1,1 0 0,1 1,-1Z M6,5l1,16h10l1,-16Z"
+                        fill={colors.light}
+                        strokeWidth="1"
+                      />
+                    ) : selectedSize === 'medium' ? (
+                      <path
+                        d="M2,3h20v3c0,0 -2,2 -2,5c0,3 2,3 2,8c0,1 -1,2 -2,2h-16c-1,0 -2,-1 -2,-2c0,-5 2,-5 2,-8c0,-3 -2,-5 -2,-5Z"
+                        fill={colors.light}
+                        strokeWidth="1"
+                      />
+                    ) : (
+                      <path
+                        d="M9,3l-3,12c0,0 3,1 6,1c3,0 6,-1 6,-1l-3,-12Z M4,16l2,6h12l2,-6Z"
+                        fill={colors.light}
+                        strokeWidth="1"
+                      />
+                    )}
+                  </svg>
+                </div>
+              ))}
+              
+              {/* Индикатор "+N", если количество > 5 */}
+              {quantity > 5 && (
+                <div className={`ml-1 ${colors.accent} rounded-full px-2 py-1 text-xs font-medium`}>
+                  +{quantity - 5}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       
-      {/* Стили для скрытия полосы прокрутки */}
+      {/* Стили для скрытия полосы прокрутки и анимации zoomIn */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -801,6 +932,19 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        @keyframes zoomIn {
+          from {
+            opacity: 0;
+            transform: scale(0);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-zoomIn {
+          animation: zoomIn 0.4s ease forwards;
         }
       `}</style>
     </div>
