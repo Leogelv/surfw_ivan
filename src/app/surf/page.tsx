@@ -23,7 +23,54 @@ const products: Record<string, { name: string; price: number; size: string; imag
         size: 'medium',
         image: '/surf/americano.png'
     },
-    // Добавьте другие продукты здесь
+    'cappuccino': {
+        name: 'Капучино',
+        price: 350,
+        size: 'medium',
+        image: '/surf/coffee_categ.png'
+    },
+    'iced-latte': {
+        name: 'Айс Латте',
+        price: 380,
+        size: 'medium',
+        image: '/surf/icelatte.png'
+    },
+    'lemonade': {
+        name: 'Лимонад Клубника-Базилик',
+        price: 290,
+        size: 'medium',
+        image: '/surf/lemonade.png'
+    },
+    'green-tea': {
+        name: 'Зеленый чай',
+        price: 270,
+        size: 'medium',
+        image: '/surf/tea_mint.png'
+    },
+    'herbal-tea': {
+        name: 'Травяной чай',
+        price: 290,
+        size: 'medium',
+        image: '/surf/tea_categ.png'
+    },
+    'croissant': {
+        name: 'Круассан',
+        price: 220,
+        size: 'medium',
+        image: '/surf/croissant.png'
+    },
+    'salmon-croissant': {
+        name: 'Круассан с лососем',
+        price: 450,
+        size: 'medium',
+        image: '/surf/salmoncroissant.png'
+    },
+    'panini': {
+        name: 'Панини',
+        price: 380,
+        size: 'medium',
+        image: '/surf/panini.png'
+    }
 };
 
 function SurfApp() {
@@ -252,26 +299,21 @@ function SurfApp() {
         )}
         {currentScreen === 'product' && (
           <ProductScreen 
-            productName={selectedProduct} 
-            onBackClick={() => goToCategories(selectedCategory)} 
+            productName={selectedProduct}
+            onBackClick={() => goToCategories(selectedCategory)}
             onCartClick={goToCart}
             onProfileClick={toggleProfile}
             onLogoClick={goHome}
-            onAddToCart={(id, quantity) => {
-              addToCart(id, quantity);
-              goToCart();
-            }}
+            onAddToCart={addToCart}
             showCart={cartItems.length > 0}
           />
         )}
         {currentScreen === 'cart' && (
           <CartScreen 
             onBackClick={goBack}
-            onOrderComplete={(orderNumber) => {
-              resetCartAndSetOrder(orderNumber);
-              goHome();
-            }}
+            onOrderComplete={resetCartAndSetOrder}
             cartItems={cartItems}
+            setCartItems={setCartItems}
           />
         )}
         {currentScreen === 'orders' && (

@@ -17,6 +17,7 @@ interface CartScreenProps {
   onBackClick: () => void;
   onOrderComplete?: (orderNumber?: string) => void;
   cartItems: CartItem[];
+  setCartItems: (items: CartItem[]) => void;
 }
 
 // Компонент для карточки товара с поддержкой свайпов
@@ -162,7 +163,7 @@ const SwipeableCartItem = ({
 };
 
 // Компонент рекомендаций для пустой корзины
-const EmptyCartRecommendations = () => {
+const EmptyCartRecommendations = ({ onAddToCart }: { onAddToCart: (productId: string) => void }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   
@@ -238,7 +239,10 @@ const EmptyCartRecommendations = () => {
                 
                 <p className="text-sm text-white/70 mb-3 line-clamp-2">{item.description}</p>
                 
-                <button className="w-full py-2 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#A67C52]/20">
+                <button 
+                  onClick={() => onAddToCart(item.id)}
+                  className="w-full py-2 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-lg font-medium text-sm transition-all shadow-lg shadow-[#A67C52]/20"
+                >
                   Добавить в корзину
                 </button>
               </div>
@@ -262,7 +266,7 @@ const EmptyCartRecommendations = () => {
   );
 };
 
-const CartScreen = ({ onBackClick, onOrderComplete, cartItems }: CartScreenProps) => {
+const CartScreen = ({ onBackClick, onOrderComplete, cartItems, setCartItems }: CartScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   
@@ -301,23 +305,69 @@ const CartScreen = ({ onBackClick, onOrderComplete, cartItems }: CartScreenProps
     }
   }, [useBonusPoints, maxBonusToUse]);
 
+  // Изменение количества товара
+  const updateQuantity = (id: string, newQuantity: number) => {
+    haptic.selectionChanged();
+    if (newQuantity < 1) return;
+    
+    // Проверяем, есть ли товар уже в корзине
+    const existingItem = cartItems.find(item => item.id === id);
+    
+    if (existingItem) {
+      // Если товар уже есть, просто обновляем его количество
+      const updatedCartItems = cartItems.map(item => 
+        item.id === id ? { ...item, quantity: newQuantity } : item
+      );
+      // Обновляем корзину в родительском компоненте
+      setCartItems(updatedCartItems);
+    } else {
+      // Если товара нет в корзине, добавляем его
+      // Для поиска товара обычно должен быть API или хранилище продуктов
+      // В данном примере мы просто добавляем товар из рекомендаций
+      const recommendedProducts: Record<string, CartItem> = {
+        'cappuccino': {
+          id: 'cappuccino',
+          name: 'Капучино',
+          price: 350,
+          size: 'medium',
+          image: '/surf/coffee_categ.png',
+          quantity: newQuantity
+        },
+        'americano': {
+          id: 'americano',
+          name: 'Американо',
+          price: 280,
+          size: 'medium',
+          image: '/surf/coffee_categ.png',
+          quantity: newQuantity
+        },
+        'croissant': {
+          id: 'croissant',
+          name: 'Круассан',
+          price: 220,
+          size: 'medium',
+          image: '/surf/croissant.png',
+          quantity: newQuantity
+        }
+      };
+      
+      const newItem = recommendedProducts[id];
+      if (newItem) {
+        // Добавляем товар в корзину
+        const updatedCartItems = [...cartItems, newItem];
+        // Обновляем корзину в родительском компоненте
+        setCartItems(updatedCartItems);
+      }
+    }
+  };
+
   // Удаление товара из корзины
   const removeItem = (id: string) => {
     haptic.impactOccurred('medium');
     // Удаляем товар из cartItems
     const updatedCartItems = cartItems.filter(item => item.id !== id);
-    // Обновляем состояние корзины в родительском компоненте, если необходимо
-  };
-
-  // Изменение количества товара
-  const updateQuantity = (id: string, newQuantity: number) => {
-    haptic.selectionChanged();
-    if (newQuantity < 1) return;
-    // Обновляем количество товара в cartItems
-    const updatedCartItems = cartItems.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
-    // Обновляем состояние корзины в родительском компоненте, если необходимо
+    // Обновляем состояние корзины в родительском компоненте
+    setCartItems(updatedCartItems);
   };
 
   // Переключатель использования бонусов
@@ -439,7 +489,11 @@ const CartScreen = ({ onBackClick, onOrderComplete, cartItems }: CartScreenProps
             </div>
             
             {/* Slider с рекомендациями */}
-            <EmptyCartRecommendations />
+            <EmptyCartRecommendations onAddToCart={(productId) => {
+              // Добавляем товар в корзину с количеством 1
+              updateQuantity(productId, 1);
+              haptic.impactOccurred('medium');
+            }} />
           </div>
         )}
         

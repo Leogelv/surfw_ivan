@@ -398,13 +398,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       
       // Если передан обработчик, используем его
       if (onAddToCart) {
+        // Получаем правильный размер для передачи
+        const sizeLabel = sizeLabels[selectedSize];
+        // Формируем объект, включая все нужные данные: id, количество, размер, изображение
         onAddToCart(productName, quantity);
-      } else {
-        // Иначе просто перейти в корзину
-        setTimeout(() => {
-          onCartClick();
-        }, 300);
       }
+      
+      // В любом случае переходим в корзину
+      setTimeout(() => {
+        onCartClick();
+      }, 300);
     }, 800);
   };
 
