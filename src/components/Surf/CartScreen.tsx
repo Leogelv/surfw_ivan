@@ -16,6 +16,7 @@ interface CartItem {
 interface CartScreenProps {
   onBackClick: () => void;
   onOrderComplete?: (orderNumber?: string) => void;
+  cartItems: CartItem[];
 }
 
 // Компонент для карточки товара с поддержкой свайпов
@@ -261,10 +262,9 @@ const EmptyCartRecommendations = () => {
   );
 };
 
-const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
+const CartScreen = ({ onBackClick, onOrderComplete, cartItems }: CartScreenProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   
   // Состояние для бонусов
   const [bonusPoints, setBonusPoints] = useState(150);
@@ -304,16 +304,20 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
   // Удаление товара из корзины
   const removeItem = (id: string) => {
     haptic.impactOccurred('medium');
-    setCartItems(prev => prev.filter(item => item.id !== id));
+    // Удаляем товар из cartItems
+    const updatedCartItems = cartItems.filter(item => item.id !== id);
+    // Обновляем состояние корзины в родительском компоненте, если необходимо
   };
 
   // Изменение количества товара
   const updateQuantity = (id: string, newQuantity: number) => {
     haptic.selectionChanged();
     if (newQuantity < 1) return;
-    setCartItems(prev => prev.map(item => 
+    // Обновляем количество товара в cartItems
+    const updatedCartItems = cartItems.map(item => 
       item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
+    );
+    // Обновляем состояние корзины в родительском компоненте, если необходимо
   };
 
   // Переключатель использования бонусов

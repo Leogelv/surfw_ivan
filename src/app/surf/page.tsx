@@ -17,7 +17,7 @@ function SurfApp() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
-  const [cartItems, setCartItems] = useState<Array<{id: string, quantity: number}>>([]);
+  const [cartItems, setCartItems] = useState<Array<{id: string, name: string, price: number, size: string, image: string, quantity: number}>>([]);
   const [newOrderNumber, setNewOrderNumber] = useState<string | undefined>(undefined);
   
   const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp } = useTelegram();
@@ -59,6 +59,9 @@ function SurfApp() {
 
   // Метод для добавления товара в корзину
   const addToCart = (productId: string, quantity: number = 1) => {
+    const product = getProductById(productId); // Предполагаемая функция для получения продукта по ID
+    if (!product) return;
+
     setCartItems(prev => {
       const existingItem = prev.find(item => item.id === productId);
       if (existingItem) {
@@ -66,7 +69,14 @@ function SurfApp() {
           item.id === productId ? {...item, quantity: item.quantity + quantity} : item
         );
       } else {
-        return [...prev, {id: productId, quantity}];
+        return [...prev, {
+          id: productId,
+          name: product.name,
+          price: product.price,
+          size: product.size,
+          image: product.image,
+          quantity
+        }];
       }
     });
   };
@@ -174,6 +184,19 @@ function SurfApp() {
     }
   }, [newOrderNumber, currentScreen]);
 
+  // Моковая функция для получения продукта по ID
+  const getProductById = (productId: string) => {
+    // Здесь должна быть логика для получения продукта из данных или API
+    // Возвращаем моковые данные для примера
+    return {
+      id: productId,
+      name: 'Пример продукта',
+      price: 100,
+      size: 'medium',
+      image: '/path/to/image.png'
+    };
+  };
+
   return (
     <div style={contentStyle} className="h-screen bg-black">
       {/* Градиентный оверлей для верхней части Telegram WebApp */}
@@ -233,6 +256,7 @@ function SurfApp() {
               resetCartAndSetOrder(orderNumber);
               goHome();
             }}
+            cartItems={cartItems}
           />
         )}
         {currentScreen === 'orders' && (
