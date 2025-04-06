@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import AnimatedCoffeeCounter from './AnimatedCoffeeCounter';
+import useSafeAreaInsets from '@/hooks/useSafeAreaInsets';
 
 // Использую интерфейс без глобального определения
 interface TelegramWebApp {
@@ -50,6 +51,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   const touchStartY = useRef<number | null>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const prevQuantityRef = useRef<number>(quantity); // Для отслеживания предыдущего значения quantity
+  const lastDeltaY = useRef<number>(0);
+  const swipeBackThreshold = 100; // Порог для свайпа назад
+  
+  // Получаем отступы безопасной зоны
+  const safeAreaInsets = useSafeAreaInsets();
   
   // Обновляем prevQuantityRef.current после рендера
   useEffect(() => {
@@ -447,40 +453,52 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartY.current;
+    lastDeltaY.current = deltaY;
     
     // Проверяем условия для активации возврата через свайп вниз
-    if (isImageExpanded && deltaY > 150 && window.scrollY <= 10) {
-      console.log('Swipe down detected!', deltaY);
-      triggerHapticFeedback('medium');
-      onBackClick(); // Возвращаемся к категории
-      return;
+    if (contentRef.current && contentRef.current.scrollTop <= 0 && deltaY > 70) {
+      // Если пользователь уже в начале списка и тянет вниз
+      if (!isImageExpanded) {
+        setIsImageExpanded(true);
+        triggerHapticFeedback('light');
+      } else if (deltaY > swipeBackThreshold) {
+        // Если фото уже увеличено и продолжает тянуть - готовимся к возврату
+        if (imageRef.current) {
+          imageRef.current.style.transform = `translateY(${deltaY / 2}px) scale(${1 - deltaY / 1000})`;
+        }
+      }
     }
     
     // Расчет нового размера фото при свайпе
     if (deltaY < 0) {
-      // Свайп вверх - увеличиваем фото
-      if (!isImageExpanded) {
-        const progress = Math.min(1, Math.abs(deltaY) / 150);
-        setScrollPosition(deltaY);
-        imageRef.current?.style.setProperty('height', `calc(${getImageHeight()} + ${progress * 20}vh)`);
+      // Свайп вверх - складываем фото
+      if (isImageExpanded) {
+        setIsImageExpanded(false);
       }
     } else if (isImageExpanded) {
-      // Свайп вниз при развернутом фото - уменьшаем
+      // Свайп вниз при развернутом фото
       const progress = Math.min(1, deltaY / 150);
       setScrollPosition(deltaY);
-      
-      const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
-      const baseHeight = isCoffeeOrDrinks ? 'calc(100vw * 1.33)' : 'calc(100vw * 0.8)';
-      
-      imageRef.current?.style.setProperty(
-        'height', 
-        `calc(100vw * ${isCoffeeOrDrinks ? 1.67 : 1} - ${progress * 20}vh)`
-      );
     }
   };
 
   const handleTouchEnd = () => {
+    // Проверяем, нужно ли вернуться назад
+    if (isImageExpanded && lastDeltaY.current > swipeBackThreshold) {
+      triggerHapticFeedback('medium');
+      // Добавляем небольшую задержку для анимации
+      setTimeout(() => {
+        onBackClick();
+      }, 100);
+    }
+    
+    // Сбрасываем стили для элемента с изображением
+    if (imageRef.current) {
+      imageRef.current.style.transform = '';
+    }
+    
     touchStartY.current = null;
+    lastDeltaY.current = 0;
   };
 
   // Получение состава продукта
@@ -527,7 +545,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Кнопка закрытия (вверху) */}
       <button 
         onClick={onBackClick} 
-        className="fixed top-[60px] right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
+        className="fixed z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
+        style={{
+          top: `${Math.max(safeAreaInsets.top, 10)}px`, 
+          right: `${Math.max(safeAreaInsets.right, 16)}px`
+        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -539,6 +561,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         className={`fixed top-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md py-3 px-4 border-b border-white/10 flex justify-center transition-all duration-300 ${
           scrollPosition > 150 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
         }`}
+        style={{ paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top : 0}px` }}
       >
         <h2 className="text-xl font-bold text-white">{product.name}</h2>
       </div>
@@ -548,6 +571,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         ref={contentRef}
         className="flex-1 overflow-y-auto hide-scrollbar" 
         onScroll={handleScroll}
+        style={{ 
+          paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top : 0}px`,
+          paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom : 0}px`
+        }}
       >
         <div className="min-h-full pb-36">
           {/* Фото продукта с возможностью растягивания */}
@@ -777,7 +804,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       </div>
       
       {/* Фиксированная кнопка добавления в корзину */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10">
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10"
+        style={{ paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom + 10 : 10}px` }}
+      >
         <button 
           onClick={addToCart}
           disabled={isAddingToCart}

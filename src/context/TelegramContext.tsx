@@ -11,6 +11,13 @@ interface TelegramUser {
   photo_url?: string;
 }
 
+interface SafeAreaInset {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: {
@@ -37,6 +44,8 @@ interface TelegramWebApp {
   backgroundColor: string;
   isClosingConfirmationEnabled: boolean;
   isVerticalSwipesEnabled: boolean;
+  safeAreaInset?: SafeAreaInset;
+  contentSafeAreaInset?: SafeAreaInset;
   BackButton: {
     isVisible: boolean;
     onClick: () => void;

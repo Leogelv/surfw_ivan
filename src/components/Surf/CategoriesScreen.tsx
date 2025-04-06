@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
+import useSafeAreaInsets from '@/hooks/useSafeAreaInsets';
 
 interface CategoriesScreenProps {
   selectedCategory: string;
@@ -31,6 +32,9 @@ const CategoriesScreen = ({
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [activeProductIndex, setActiveProductIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Получаем отступы безопасной зоны
+  const safeAreaInsets = useSafeAreaInsets();
 
   useEffect(() => {
     setIsLoaded(true);
@@ -161,8 +165,11 @@ const CategoriesScreen = ({
       <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/30 to-transparent z-0 pointer-events-none"></div>
       
       {/* Заголовок категории c выпадающим меню - прикрепленный к верху, усиленный sticky */}
-      <div className="sticky top-0 z-30 w-full px-6 pt-4 pb-2 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5">
-        <div className="flex items-center mt-2">
+      <div 
+        className="sticky top-0 z-30 w-full px-6 pb-2 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5"
+        style={{ paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top + 4 : 16}px` }}
+      >
+        <div className="flex items-center">
           <div className="relative">
             <button 
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
@@ -342,8 +349,13 @@ const CategoriesScreen = ({
       </div>
       
       {/* Фиксированное нижнее меню с логотипом */}
-      <div className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ transitionDelay: '400ms' }}>
+      <div 
+        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        style={{ 
+          paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom + 4 : 16}px`,
+          transitionDelay: '400ms' 
+        }}
+      >
         <div className="flex items-center justify-between">
           {/* Назад на главную */}
           <button className="p-3 relative group" onClick={onHomeClick}>

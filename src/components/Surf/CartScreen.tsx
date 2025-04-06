@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, TouchEvent } from 'react';
 import Image from 'next/image';
 import CheckoutScreen from './CheckoutScreen';
 import useHapticFeedback from '@/hooks/useHapticFeedback';
+import useSafeAreaInsets from '@/hooks/useSafeAreaInsets';
 
 interface CartItem {
   id: string;
@@ -288,6 +289,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
   const [bonusToUse, setBonusToUse] = useState(0);
   
   const haptic = useHapticFeedback();
+  const safeAreaInsets = useSafeAreaInsets();
 
   // Рассчитываем общую сумму
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -391,7 +393,10 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
            }}></div>
            
       {/* Заголовок */}
-      <div className="px-6 pt-4 pb-2 relative z-10 flex items-center">
+      <div 
+        className="px-6 pt-4 pb-2 relative z-10 flex items-center"
+        style={{ paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top + 4 : 16}px` }}
+      >
         <button 
           onClick={() => {
             haptic.buttonClick();
@@ -553,7 +558,10 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       
       {/* Итоговая сумма и кнопка оформления заказа */}
       {cartItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-6 py-4 border-t border-white/10">
+        <div 
+          className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-6 py-4 border-t border-white/10"
+          style={{ paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom + 10 : 16}px` }}
+        >
           <div className="flex justify-between items-center mb-2">
             <span className="text-white/80">Итого:</span>
             <div className="flex flex-col items-end">
