@@ -280,10 +280,10 @@ const CategoriesScreen = ({
                   <div className={`relative ${
                     // Делаем разные высоты для разных категорий
                     product.category === 'food' || selectedCategory === 'food' 
-                      ? 'h-[65vh] max-h-[400px]' // Квадратные для еды
+                      ? 'h-[55vh] max-h-[340px]' // Квадратные для еды (уменьшено с 65vh/400px на ~15%)
                       : isActive 
-                        ? 'h-[85vh] max-h-[450px]' // Вытянутые для кофе/напитков (активная)
-                        : 'h-[75vh] max-h-[400px]' // Вытянутые для кофе/напитков (неактивная)
+                        ? 'h-[72vh] max-h-[380px]' // Вытянутые для кофе/напитков (активная) (уменьшено с 85vh/450px на ~15%)
+                        : 'h-[64vh] max-h-[340px]' // Вытянутые для кофе/напитков (неактивная) (уменьшено с 75vh/400px на ~15%)
                   } w-full transition-all duration-300`}
                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
