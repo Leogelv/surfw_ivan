@@ -25,6 +25,21 @@ function SurfApp() {
   // Количество товаров в корзине
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
+  // Обработчик события смены категории
+  useEffect(() => {
+    const handleCategoryChange = (e: CustomEvent) => {
+      const { category } = e.detail;
+      console.log('Обрабатываем смену категории:', category);
+      setSelectedCategory(category);
+    };
+
+    window.addEventListener('categoriesScreenCategoryChange', handleCategoryChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('categoriesScreenCategoryChange', handleCategoryChange as EventListener);
+    };
+  }, []);
+
   // Метод для сброса корзины и сохранения номера заказа
   const resetCartAndSetOrder = (orderNumber?: string) => {
     setCartItems([]);

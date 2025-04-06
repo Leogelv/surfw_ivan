@@ -87,8 +87,8 @@ const CategoriesScreen = ({
     ],
     drinks: [
       { id: 'lemonade', name: 'Лимонад Клубника-Базилик', price: 290, image: '/surf/lemonade.png', description: 'Освежающий лимонад со свежими ягодами', calories: 90, aspectRatio: '3/5', category: 'drinks' },
-      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5', category: 'drinks' },
-      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_categ.png', description: 'Ароматный травяной чай', calories: 0, aspectRatio: '3/5', category: 'drinks' },
+      { id: 'green-tea', name: 'Зеленый чай', price: 270, image: '/surf/tea_mint.png', description: 'Премиальный зеленый чай', calories: 0, aspectRatio: '3/5', category: 'drinks' },
+      { id: 'herbal-tea', name: 'Травяной чай', price: 290, image: '/surf/tea_lemon.png', description: 'Ароматный травяной чай', calories: 0, aspectRatio: '3/5', category: 'drinks' },
     ],
     food: [
       { id: 'croissant', name: 'Круассан', price: 220, image: '/surf/croissant.png', description: 'Свежеиспеченный круассан', calories: 240, category: 'food' },
@@ -133,14 +133,14 @@ const CategoriesScreen = ({
     if (category !== selectedCategory) {
       // Проверяем, есть ли в пропсах функция для изменения категории
       if (typeof window !== 'undefined') {
-        // Обновляем URL для истории навигации, но без перезагрузки
-        window.history.pushState({}, '', `/#${category}`);
-        
-        // Эмулируем смену категории через URL, чтобы не ломать текущий код SurfApp
+        // Эмулируем смену категории через кастомное событие
         const urlChangeEvent = new CustomEvent('categoriesScreenCategoryChange', { 
           detail: { category } 
         });
         window.dispatchEvent(urlChangeEvent);
+        
+        // Не изменяем URL, просто генерируем событие для обработки на верхнем уровне
+        console.log('Категория изменена на:', category);
       }
     }
   };

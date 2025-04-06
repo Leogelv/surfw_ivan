@@ -626,6 +626,36 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               )}
             </div>
             
+            {/* Выбор размера только для кофе и напитков */}
+            {(product.category === 'coffee' || product.category === 'drinks') && (
+              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+                  style={{ transitionDelay: '150ms' }}>
+                <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Размер:</h3>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  {['small', 'medium', 'large'].map((size) => (
+                    <div 
+                      key={size} 
+                      className={`p-3 rounded-xl border border-white/10 transition-all cursor-pointer ${
+                        selectedSize === size 
+                          ? `${colors.accent} border-white/20 shadow-lg ${colors.shadow}` 
+                          : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                      onClick={() => {
+                        triggerHapticFeedback('light');
+                        setSelectedSize(size as 'small' | 'medium' | 'large');
+                      }}
+                    >
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className={`w-4 h-4 rounded-full ${selectedSize === size ? 'bg-white' : 'bg-white/20'}`}></div>
+                        <span className="text-sm">{sizeLabels[size as keyof typeof sizeLabels]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {/* Модификаторы */}
             {getProductModifiers() && (
               <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
