@@ -167,7 +167,7 @@ const CategoriesScreen = ({
       {/* Заголовок категории c выпадающим меню - прикрепленный к верху, усиленный sticky */}
       <div 
         className="sticky top-0 z-30 w-full px-6 pb-2 bg-gradient-to-b from-[#1D1816] to-[#1D1816]/95 backdrop-blur-md shadow-lg shadow-black/20 border-b border-white/5"
-        style={{ paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top + 4 : 16}px` }}
+        style={{ paddingTop: `${safeAreaInsets.top + 4}px` }}
       >
         <div className="flex items-center">
           <div className="relative">
@@ -352,7 +352,7 @@ const CategoriesScreen = ({
       <div 
         className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-5 py-4 border-t border-white/10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
         style={{ 
-          paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom + 4 : 16}px`,
+          paddingBottom: `${safeAreaInsets.bottom + 4}px`,
           transitionDelay: '400ms' 
         }}
       >

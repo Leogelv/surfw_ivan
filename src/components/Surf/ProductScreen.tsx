@@ -547,12 +547,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         onClick={onBackClick} 
         className="fixed z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
         style={{
-          top: `${Math.max(safeAreaInsets.top, 10)}px`, 
-          right: `${Math.max(safeAreaInsets.right, 16)}px`
+          top: `${safeAreaInsets.top}px`, 
+          left: `${safeAreaInsets.left + 16}px`
         }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
         </svg>
       </button>
       
@@ -561,7 +561,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         className={`fixed top-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md py-3 px-4 border-b border-white/10 flex justify-center transition-all duration-300 ${
           scrollPosition > 150 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'
         }`}
-        style={{ paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top : 0}px` }}
+        style={{ paddingTop: `${safeAreaInsets.top}px` }}
       >
         <h2 className="text-xl font-bold text-white">{product.name}</h2>
       </div>
@@ -572,8 +572,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         className="flex-1 overflow-y-auto hide-scrollbar" 
         onScroll={handleScroll}
         style={{ 
-          paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top : 0}px`,
-          paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom : 0}px`
+          paddingTop: `${safeAreaInsets.top}px`,
+          paddingBottom: `${safeAreaInsets.bottom}px`
         }}
       >
         <div className="min-h-full pb-36">
@@ -806,7 +806,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Фиксированная кнопка добавления в корзину */}
       <div 
         className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10"
-        style={{ paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom + 10 : 10}px` }}
+        style={{ paddingBottom: `${safeAreaInsets.bottom + 10}px` }}
       >
         <button 
           onClick={addToCart}

@@ -395,7 +395,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       {/* Заголовок */}
       <div 
         className="px-6 pt-4 pb-2 relative z-10 flex items-center"
-        style={{ paddingTop: `${safeAreaInsets.top > 0 ? safeAreaInsets.top + 4 : 16}px` }}
+        style={{ paddingTop: `${safeAreaInsets.top + 4}px` }}
       >
         <button 
           onClick={() => {
@@ -560,7 +560,7 @@ const CartScreen = ({ onBackClick, onOrderComplete }: CartScreenProps) => {
       {cartItems.length > 0 && (
         <div 
           className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/90 backdrop-blur-md px-6 py-4 border-t border-white/10"
-          style={{ paddingBottom: `${safeAreaInsets.bottom > 0 ? safeAreaInsets.bottom + 10 : 16}px` }}
+          style={{ paddingBottom: `${safeAreaInsets.bottom + 10}px` }}
         >
           <div className="flex justify-between items-center mb-2">
             <span className="text-white/80">Итого:</span>
