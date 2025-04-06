@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, createContext } from 'react';
 import Image from 'next/image';
 import HomeScreen from '../../components/Surf/HomeScreen';
 import CategoriesScreen from '../../components/Surf/CategoriesScreen';
@@ -9,6 +9,24 @@ import CartScreen from '../../components/Surf/CartScreen';
 import ProfileScreen from '../../components/Surf/ProfileScreen';
 import OrdersScreen from '../../components/Surf/OrdersScreen';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
+
+// Создаем контекст для передачи данных анимации между компонентами
+export const AnimationContext = createContext<{
+  transitionState: {
+    productId: string | null;
+    imagePosition: { top: number; left: number; width: number; height: number } | null;
+    scrollPosition: number;
+    isAnimating: boolean;
+  };
+  captureImagePosition: (
+    productId: string, 
+    position: { top: number; left: number; width: number; height: number }, 
+    scrollPosition: number
+  ) => void;
+}>({
+  transitionState: { productId: null, imagePosition: null, scrollPosition: 0, isAnimating: false },
+  captureImagePosition: () => {}
+});
 
 function SurfApp() {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'categories' | 'product' | 'cart' | 'orders'>('home');
@@ -19,6 +37,14 @@ function SurfApp() {
   const [previousScreen, setPreviousScreen] = useState<'home' | 'categories' | 'product' | 'orders'>('home');
   const [cartItems, setCartItems] = useState<Array<{id: string, quantity: number}>>([]);
   const [newOrderNumber, setNewOrderNumber] = useState<string | undefined>(undefined);
+  
+  // Состояния для плавной анимации перехода
+  const [animationState, setAnimationState] = useState({
+    productId: null as string | null,
+    imagePosition: null as { top: number; left: number; width: number; height: number } | null,
+    scrollPosition: 0,
+    isAnimating: false
+  });
   
   const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp } = useTelegram();
 
@@ -55,6 +81,21 @@ function SurfApp() {
     if (orderNumber) {
       setNewOrderNumber(orderNumber);
     }
+  };
+
+  // Метод для захвата позиции изображения для плавной анимации
+  const captureImagePosition = (
+    productId: string, 
+    position: { top: number; left: number; width: number; height: number },
+    scrollPosition: number
+  ) => {
+    setAnimationState(prev => ({
+      ...prev,
+      productId,
+      imagePosition: position,
+      scrollPosition,
+      isAnimating: true
+    }));
   };
 
   // Метод для добавления товара в корзину
@@ -107,18 +148,35 @@ function SurfApp() {
     }
   }, [isFullScreenEnabled, telegramHeaderPadding, currentScreen]);
 
+  // Улучшенный transitionTo с учетом анимаций
   const transitionTo = (screen: 'home' | 'categories' | 'product' | 'cart' | 'orders', callback?: () => void) => {
     setIsTransitioning(true);
     if ((screen === 'cart' || screen === 'orders') && currentScreen !== 'cart' && currentScreen !== 'orders') {
       setPreviousScreen(currentScreen);
     }
+    
+    // Если переход от категорий к продукту и есть информация о позиции изображения,
+    // мы позволяем произойти плавной анимации
+    const isAnimatedTransition = currentScreen === 'categories' && screen === 'product' && animationState.imagePosition;
+    
+    // Задержка для завершения анимации
+    const delay = isAnimatedTransition ? 450 : 300;
+    
     setTimeout(() => {
       if (callback) callback();
       setCurrentScreen(screen);
+      
+      // Если это был анимированный переход, через некоторое время сбрасываем флаг анимации
+      if (isAnimatedTransition) {
+        setTimeout(() => {
+          setAnimationState(prev => ({ ...prev, isAnimating: false }));
+        }, 500);
+      }
+      
       setTimeout(() => {
         setIsTransitioning(false);
       }, 50);
-    }, 300);
+    }, delay);
   };
 
   const goToCategories = (category?: string) => {
@@ -174,84 +232,153 @@ function SurfApp() {
     }
   }, [newOrderNumber, currentScreen]);
 
-  return (
-    <div style={contentStyle} className="h-screen bg-black">
-      {/* Градиентный оверлей для верхней части Telegram WebApp */}
-      {isFullScreenEnabled && typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && (
-        <div 
-          className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
+  // Анимированная заглушка для перехода между экранами
+  const TransitionImage = () => {
+    if (!animationState.isAnimating || !animationState.imagePosition) return null;
+    
+    // Позиция изображения на начальном экране
+    const startPosition = animationState.imagePosition;
+    
+    // Финальная позиция (верхняя часть экрана продукта)
+    const finalPosition = {
+      top: 0,
+      left: 0, 
+      width: window.innerWidth,
+      height: window.innerWidth * 1.42, // Соотношение как в ProductScreen
+    };
+    
+    // Стиль для анимации
+    const transitionStyle = {
+      position: 'fixed',
+      top: `${startPosition.top - animationState.scrollPosition}px`,
+      left: `${startPosition.left}px`,
+      width: `${startPosition.width}px`,
+      height: `${startPosition.height}px`,
+      zIndex: 1000,
+      transition: 'all 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+      opacity: 1,
+      borderRadius: '16px',
+      overflow: 'hidden',
+      transform: 'translateZ(0)',
+      animation: 'fadeOut 450ms ease-out forwards',
+    } as React.CSSProperties;
+    
+    useEffect(() => {
+      if (animationState.isAnimating) {
+        // Запускаем анимацию перемещения
+        requestAnimationFrame(() => {
+          const element = document.getElementById('transition-image');
+          if (element) {
+            element.style.top = `${0}px`;
+            element.style.left = `${0}px`;
+            element.style.width = `${finalPosition.width}px`;
+            element.style.height = `${finalPosition.height}px`;
+            element.style.borderRadius = '0px';
+          }
+        });
+      }
+    }, [animationState.isAnimating]);
+    
+    return (
+      <div id="transition-image" style={transitionStyle}>
+        <img 
+          src={`/surf/${animationState.productId}.png`} 
+          alt="Transition"
           style={{
-            height: `${telegramHeaderPadding}px`,
-            background: 'var(--telegram-header-gradient)'
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center'
           }}
-        ></div>
-      )}
-      <div className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-        {currentScreen === 'home' && (
-          <HomeScreen 
-            onCategoryClick={goToCategories} 
-            onMenuClick={goToCategories} 
-            onCartClick={goToCart} 
-            onProfileClick={toggleProfile}
-            onLogoClick={goHome}
-            onOrdersClick={goToOrders}
-            cartItemCount={cartItemCount}
-            showCart={cartItems.length > 0}
-          />
-        )}
-        {currentScreen === 'categories' && (
-          <CategoriesScreen 
-            selectedCategory={selectedCategory} 
-            onProductClick={goToProduct} 
-            onHomeClick={goHome} 
-            onCartClick={goToCart}
-            onProfileClick={toggleProfile}
-            onLogoClick={goHome}
-            onOrdersClick={goToOrders}
-            cartItemCount={cartItemCount}
-            showCart={cartItems.length > 0}
-          />
-        )}
-        {currentScreen === 'product' && (
-          <ProductScreen 
-            productName={selectedProduct} 
-            onBackClick={() => goToCategories(selectedCategory)} 
-            onCartClick={goToCart}
-            onProfileClick={toggleProfile}
-            onLogoClick={goHome}
-            onAddToCart={(id, quantity) => {
-              addToCart(id, quantity);
-              goToCart();
+        />
+      </div>
+    );
+  };
+
+  return (
+    <AnimationContext.Provider value={{ transitionState: animationState, captureImagePosition }}>
+      <div style={contentStyle} className="h-screen bg-black">
+        {/* Градиентный оверлей для верхней части Telegram WebApp */}
+        {isFullScreenEnabled && typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && (
+          <div 
+            className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
+            style={{
+              height: `${telegramHeaderPadding}px`,
+              background: 'var(--telegram-header-gradient)'
             }}
-            showCart={cartItems.length > 0}
-          />
+          ></div>
         )}
-        {currentScreen === 'cart' && (
-          <CartScreen 
-            onBackClick={goBack}
-            onOrderComplete={(orderNumber) => {
-              resetCartAndSetOrder(orderNumber);
-              goHome();
-            }}
-          />
-        )}
-        {currentScreen === 'orders' && (
-          <OrdersScreen 
-            onBackClick={goBack}
-            newOrderNumber={newOrderNumber}
+        <div className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+          {currentScreen === 'home' && (
+            <HomeScreen 
+              onCategoryClick={goToCategories} 
+              onMenuClick={goToCategories} 
+              onCartClick={goToCart} 
+              onProfileClick={toggleProfile}
+              onLogoClick={goHome}
+              onOrdersClick={goToOrders}
+              cartItemCount={cartItemCount}
+              showCart={cartItems.length > 0}
+            />
+          )}
+          {currentScreen === 'categories' && (
+            <CategoriesScreen 
+              selectedCategory={selectedCategory} 
+              onProductClick={goToProduct} 
+              onHomeClick={goHome} 
+              onCartClick={goToCart}
+              onProfileClick={toggleProfile}
+              onLogoClick={goHome}
+              onOrdersClick={goToOrders}
+              cartItemCount={cartItemCount}
+              showCart={cartItems.length > 0}
+            />
+          )}
+          {currentScreen === 'product' && (
+            <ProductScreen 
+              productName={selectedProduct} 
+              onBackClick={() => goToCategories(selectedCategory)} 
+              onCartClick={goToCart}
+              onProfileClick={toggleProfile}
+              onLogoClick={goHome}
+              onAddToCart={(id, quantity) => {
+                addToCart(id, quantity);
+                goToCart();
+              }}
+              showCart={cartItems.length > 0}
+              animatedEntry={animationState.isAnimating}
+            />
+          )}
+          {currentScreen === 'cart' && (
+            <CartScreen 
+              onBackClick={goBack}
+              onOrderComplete={(orderNumber) => {
+                resetCartAndSetOrder(orderNumber);
+                goHome();
+              }}
+            />
+          )}
+          {currentScreen === 'orders' && (
+            <OrdersScreen 
+              onBackClick={goBack}
+              newOrderNumber={newOrderNumber}
+            />
+          )}
+        </div>
+
+        {/* Анимированное изображение для перехода */}
+        <TransitionImage />
+
+        {showProfile && (
+          <ProfileScreen 
+            onClose={toggleProfile} 
+            onHomeClick={goHome}
+            onCartClick={goToCart}
+            onOrdersClick={goToOrders}
           />
         )}
       </div>
-
-      {showProfile && (
-        <ProfileScreen 
-          onClose={toggleProfile} 
-          onHomeClick={goHome}
-          onCartClick={goToCart}
-          onOrdersClick={goToOrders}
-        />
-      )}
-    </div>
+    </AnimationContext.Provider>
   );
 }
 

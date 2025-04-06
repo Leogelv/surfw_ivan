@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import Image from 'next/image';
+import { AnimationContext } from '@/app/surf/page';
 
 // Использую интерфейс без глобального определения
 interface TelegramWebApp {
@@ -29,9 +30,19 @@ interface ProductScreenProps {
   onLogoClick: () => void;
   onAddToCart?: (productId: string, quantity: number) => void;
   showCart?: boolean; // Флаг для отображения иконки корзины
+  animatedEntry?: boolean; // Флаг для анимированного входа на страницу
 }
 
-const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick, onAddToCart, showCart = true }: ProductScreenProps) => {
+const ProductScreen = ({ 
+  productName, 
+  onBackClick, 
+  onCartClick, 
+  onProfileClick, 
+  onLogoClick, 
+  onAddToCart, 
+  showCart = true,
+  animatedEntry = false 
+}: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -49,14 +60,18 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   const touchStartY = useRef<number | null>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   
+  // Используем контекст анимации
+  const animationContext = useContext(AnimationContext);
+  
   // Анимация загрузки
   useEffect(() => {
+    // Задержка для показа анимации перехода при animatedEntry = true
     const timer = setTimeout(() => {
       setIsLoaded(true);
-    }, 100);
+    }, animatedEntry ? 450 : 100);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [animatedEntry]);
 
   // Сворачивание изображения при скролле
   useEffect(() => {
@@ -581,7 +596,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Кнопка закрытия (вверху) */}
       <button 
         onClick={onBackClick} 
-        className="fixed top-[60px] right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
+        className={`fixed top-[60px] right-4 z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg transition-opacity duration-500 ${
+          animatedEntry ? 'opacity-0' : 'opacity-100'
+        }`}
+        style={{
+          transitionDelay: animatedEntry ? '200ms' : '0ms'
+        }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -600,15 +620,25 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Основное содержимое с отступом сверху для лучшего отображения */}
       <div 
         ref={contentRef}
-        className="flex-1 overflow-y-auto hide-scrollbar" 
+        className={`flex-1 overflow-y-auto hide-scrollbar transition-opacity duration-500 ${
+          animatedEntry ? 'opacity-0' : 'opacity-100'
+        }`}
+        style={{
+          transitionDelay: animatedEntry ? '0ms' : '200ms'
+        }}
         onScroll={handleScroll}
       >
         <div className="min-h-full pb-36">
           {/* Фото продукта с возможностью растягивания */}
           <div 
             ref={imageRef}
-            className="w-full relative overflow-hidden transition-all duration-300 ease-out"
-            style={{ height: getImageHeight() }}
+            className={`w-full relative overflow-hidden transition-all duration-300 ease-out ${
+              animatedEntry ? 'opacity-0' : 'opacity-100'
+            }`}
+            style={{ 
+              height: getImageHeight(),
+              transitionDelay: animatedEntry ? '0ms' : '300ms'
+            }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -642,7 +672,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           </div>
           
           {/* Контент продукта с нахлестом на фото */}
-          <div className="relative -mt-12 bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10">
+          <div className={`relative -mt-12 bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-opacity duration-500 ${
+            animatedEntry ? 'opacity-0' : 'opacity-100'
+          }`}
+          style={{
+            transitionDelay: animatedEntry ? '0ms' : '400ms'
+          }}>
             {/* Название и цена */}
             <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="flex justify-between items-start">

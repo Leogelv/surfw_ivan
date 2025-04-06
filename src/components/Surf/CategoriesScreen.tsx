@@ -1,5 +1,6 @@
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
+import { AnimationContext } from '@/app/surf/page';
 
 interface CategoriesScreenProps {
   selectedCategory: string;
@@ -35,6 +36,12 @@ const CategoriesScreen = ({
   const [isChangingCategory, setIsChangingCategory] = useState(false);
   const [previousCategory, setPreviousCategory] = useState<string>('');
   const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
+  
+  // Refs для изображений продуктов для анимации перехода
+  const productImageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Получаем контекст анимации
+  const animationContext = useContext(AnimationContext);
 
   useEffect(() => {
     // Если изменилась категория, запускаем эффект смены категории
@@ -182,6 +189,41 @@ const CategoriesScreen = ({
     }
   };
 
+  // Обработчик клика на продукт с захватом позиции изображения
+  const handleProductClick = (productId: string, event?: React.MouseEvent) => {
+    // Если открыто выпадающее меню, не обрабатываем клик
+    if (showCategoryDropdown) return;
+    
+    // Получаем ref элемента с изображением
+    const imageElement = productImageRefs.current[productId];
+    
+    if (imageElement) {
+      // Получаем размеры и позицию элемента
+      const rect = imageElement.getBoundingClientRect();
+      const scrollPos = scrollContainerRef.current?.scrollLeft || 0;
+      
+      // Сохраняем информацию в контексте анимации
+      animationContext.captureImagePosition(
+        productId,
+        {
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height
+        },
+        scrollPos
+      );
+      
+      // Небольшая задержка перед переходом для подготовки анимации
+      setTimeout(() => {
+        onProductClick(productId);
+      }, 50);
+    } else {
+      // Если не смогли получить ref, просто переходим к продукту
+      onProductClick(productId);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-b from-[#1D1816] via-[#2C2320] to-[#1D1816] overflow-hidden">
       {/* Верхний декоративный эффект - только для верхней части, не на весь экран */}
@@ -302,7 +344,7 @@ const CategoriesScreen = ({
                   if (showCategoryDropdown) return; // Игнорировать клики при открытом меню
                   scrollToCard(index);
                   if (index === activeProductIndex) {
-                    onProductClick(product.id);
+                    handleProductClick(product.id);
                   }
                 }}
               >
@@ -320,15 +362,21 @@ const CategoriesScreen = ({
                   
                   {/* Изображение продукта с уменьшенной высотой */}
                   {/* НАСТРОЙКА ВЫСОТЫ КАРТОЧЕК: меняйте значения h-[XXvh] для изменения высоты */}
-                  <div className={`relative ${
-                    // Делаем разные высоты для разных категорий
-                    product.category === 'food' || selectedCategory === 'food' 
-                      ? 'h-[65vh] max-h-[400px]' // Квадратные для еды
-                      : isActive 
-                        ? 'h-[85vh] max-h-[450px]' // Вытянутые для кофе/напитков (активная)
-                        : 'h-[75vh] max-h-[400px]' // Вытянутые для кофе/напитков (неактивная)
-                  } w-full transition-all duration-300`}
-                      style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
+                  <div 
+                    className={`relative ${
+                      // Делаем разные высоты для разных категорий
+                      product.category === 'food' || selectedCategory === 'food' 
+                        ? 'h-[65vh] max-h-[400px]' // Квадратные для еды
+                        : isActive 
+                          ? 'h-[85vh] max-h-[450px]' // Вытянутые для кофе/напитков (активная)
+                          : 'h-[75vh] max-h-[400px]' // Вытянутые для кофе/напитков (неактивная)
+                    } w-full transition-all duration-300`}
+                    style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}
+                    ref={(element) => {
+                      // Сохраняем ref в нашем объекте
+                      productImageRefs.current[product.id] = element;
+                    }}
+                  >
                     
                     {/* Скелетон лоадер для изображения */}
                     {!isImageLoaded && (
@@ -373,7 +421,7 @@ const CategoriesScreen = ({
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        onProductClick(product.id);
+                        handleProductClick(product.id, e);
                       }} 
                       className={`w-full py-3 rounded-full text-white font-medium transition-all hover:scale-105 active:scale-95 flex items-center justify-between px-5 border border-white/10 ${
                         selectedCategory === 'coffee' ? 'bg-gradient-to-r from-[#A67C52]/90 to-[#A67C52]/70 hover:shadow-lg hover:shadow-[#A67C52]/30' :
