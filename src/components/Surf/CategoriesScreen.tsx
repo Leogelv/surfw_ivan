@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { useState, useEffect, useRef, useContext } from 'react';
-import { AnimationContext } from '@/app/surf/page';
+import { AnimationContext } from '@/context/AnimationContext';
 
 interface CategoriesScreenProps {
   selectedCategory: string;

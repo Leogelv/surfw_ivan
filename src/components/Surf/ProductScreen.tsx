@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import Image from 'next/image';
-import { AnimationContext } from '@/app/surf/page';
+import { AnimationContext } from '@/context/AnimationContext';
 
 // Использую интерфейс без глобального определения
 interface TelegramWebApp {
