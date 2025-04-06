@@ -899,25 +899,35 @@ const ProductScreen = ({
         {/* Визуализация размера и количества чашек */}
         {(product.category === 'coffee' || product.category === 'drinks') && (
           <div className="mt-3 flex justify-center items-center overflow-hidden">
-            <div className="flex items-center justify-center space-x-1 py-2 transition-all">
+            {/* Волнистый путь SVG для анимации */}
+            <svg className="absolute invisible" width="0" height="0">
+              <defs>
+                <path id="wavyPath" d="M0,2 Q5,-2 10,2 T20,2 T30,2 T40,2 T50,2" />
+              </defs>
+            </svg>
+            
+            <div className="flex items-center justify-center relative py-2 transition-all">
               {/* Показываем только первые 5 чашек (или меньше, если количество < 5) */}
               {Array.from({ length: Math.min(quantity, 5) }, (_, i) => (
                 <div
                   key={i}
-                  className={`transition-all duration-800 relative flex items-center justify-center ${
+                  className={`transition-all duration-500 relative flex items-center justify-center ${
                     i >= quantity - 1 && i > 0 ? 'animate-zoomIn' : ''
+                  } ${
+                    quantity > 2 && i > 0 ? 'animate-float' : ''
                   }`}
                   style={{
                     transitionDelay: `${i * 100}ms`,
+                    animationDelay: `${i * 0.2}s`,
                   }}
                 >
-                  {/* Чашка, размер которой зависит от выбранного размера */}
+                  {/* Используем для всех размеров одну и ту же иконку (маленькую чашку) */}
                   <svg
-                    className={`transition-all duration-800 ${
+                    className={`transition-all duration-500 ${
                       selectedSize === 'small' ? 'w-6 h-6' : 
                       selectedSize === 'medium' ? 'w-8 h-8' : 
                       'w-10 h-10'
-                    }`}
+                    } ${quantity > 2 && i > 0 ? 'animate-pulse-opacity' : ''}`}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -925,25 +935,11 @@ const ProductScreen = ({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    {selectedSize === 'small' ? (
-                      <path
-                        d="M3,2H21a1,1 0 0,1 1,1v2H2v-2a1,1 0 0,1 1,-1Z M6,5l1,16h10l1,-16Z"
-                        fill={colors.light}
-                        strokeWidth="1"
-                      />
-                    ) : selectedSize === 'medium' ? (
-                      <path
-                        d="M2,3h20v3c0,0 -2,2 -2,5c0,3 2,3 2,8c0,1 -1,2 -2,2h-16c-1,0 -2,-1 -2,-2c0,-5 2,-5 2,-8c0,-3 -2,-5 -2,-5Z"
-                        fill={colors.light}
-                        strokeWidth="1"
-                      />
-                    ) : (
-                      <path
-                        d="M9,3l-3,12c0,0 3,1 6,1c3,0 6,-1 6,-1l-3,-12Z M4,16l2,6h12l2,-6Z"
-                        fill={colors.light}
-                        strokeWidth="1"
-                      />
-                    )}
+                    <path
+                      d="M3,2H21a1,1 0 0,1 1,1v2H2v-2a1,1 0 0,1 1,-1Z M6,5l1,16h10l1,-16Z"
+                      fill={quantity > 2 && i > 0 ? colors.accent : colors.light}
+                      strokeWidth="1"
+                    />
                   </svg>
                 </div>
               ))}
@@ -959,7 +955,7 @@ const ProductScreen = ({
         )}
       </div>
       
-      {/* Стили для скрытия полосы прокрутки и анимации zoomIn */}
+      {/* Стили для скрытия полосы прокрутки и анимаций */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -980,6 +976,26 @@ const ProductScreen = ({
         }
         .animate-zoomIn {
           animation: zoomIn 0.4s ease forwards;
+        }
+        
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          25% { transform: translateY(-2px); }
+          50% { transform: translateY(0px); }
+          75% { transform: translateY(2px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-opacity {
+          0% { opacity: 1; }
+          50% { opacity: 0.6; }
+          100% { opacity: 1; }
+        }
+        .animate-pulse-opacity {
+          animation: pulse-opacity 2s ease-in-out infinite;
         }
       `}</style>
     </div>
