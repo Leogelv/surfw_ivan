@@ -31,12 +31,38 @@ const CategoriesScreen = ({
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [activeProductIndex, setActiveProductIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Добавляем состояние для эффектов категорий и анимаций
+  const [isChangingCategory, setIsChangingCategory] = useState(false);
+  const [previousCategory, setPreviousCategory] = useState<string>('');
+  const [imagesLoaded, setImagesLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    // Если изменилась категория, запускаем эффект смены категории
+    if (previousCategory && previousCategory !== selectedCategory) {
+      setIsChangingCategory(true);
+      setTimeout(() => {
+        setIsChangingCategory(false);
+      }, 1000); // Продолжительность анимации
+    }
+    
+    // Обновляем предыдущую категорию
+    setPreviousCategory(selectedCategory);
+    
     setIsLoaded(true);
+    // Сброс состояния имиджей при смене категории
+    setImagesLoaded({});
+    
     // Сброс состояния при изменении категории
     return () => setIsLoaded(false);
-  }, [selectedCategory]);
+  }, [selectedCategory, previousCategory]);
+
+  // Обработчик загрузки изображения
+  const handleImageLoad = (productId: string) => {
+    setImagesLoaded(prev => ({
+      ...prev,
+      [productId]: true
+    }));
+  };
 
   // Получаем название категории
   const getCategoryTitle = (category: string): string => {
@@ -131,6 +157,9 @@ const CategoriesScreen = ({
   const selectCategory = (category: string) => {
     setShowCategoryDropdown(false);
     if (category !== selectedCategory) {
+      // Запускаем эффект смены категории
+      setIsChangingCategory(true);
+      
       // Проверяем, есть ли в пропсах функция для изменения категории
       if (typeof window !== 'undefined') {
         // Обновляем URL для истории навигации, но без перезагрузки и без перенаправления
@@ -144,6 +173,11 @@ const CategoriesScreen = ({
         window.dispatchEvent(urlChangeEvent);
         
         console.log('Категория изменена на:', category);
+        
+        // Сбрасываем флаг смены категории через таймаут
+        setTimeout(() => {
+          setIsChangingCategory(false);
+        }, 1000);
       }
     }
   };
@@ -168,10 +202,12 @@ const CategoriesScreen = ({
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
               className="text-3xl font-bold text-white mr-2 flex items-center"
             >
-              {getCategoryTitle(selectedCategory)}
+              <span className={`transition-all duration-500 ${isChangingCategory ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>
+                {getCategoryTitle(selectedCategory)}
+              </span>
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                className={`ml-2 h-4 w-4 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`}
+                className={`ml-2 h-4 w-4 transition-transform duration-300 ${showCategoryDropdown ? 'rotate-180' : ''}`}
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor"
@@ -181,7 +217,7 @@ const CategoriesScreen = ({
               <div className={`ml-2 w-2 h-2 rounded-full animate-pulse ${colors.accent}`}></div>
             </button>
           </div>
-          <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r ${colors.wave}`}></div>
+          <div className={`h-[2px] flex-grow rounded-full bg-gradient-to-r transition-all duration-500 ${colors.wave} ${isChangingCategory ? 'scale-x-0 opacity-0' : 'scale-x-100 opacity-100'}`}></div>
         </div>
         
         {/* Выпадающий список категорий с абсолютным позиционированием относительно sticky-хедера */}
@@ -194,14 +230,16 @@ const CategoriesScreen = ({
                   <button
                     key={category}
                     onClick={() => selectCategory(category)}
-                    className={`py-2 px-3 rounded-lg transition-all ${
+                    className={`py-2 px-3 rounded-lg transition-all duration-300 transform ${
                       category === selectedCategory 
-                        ? `bg-gradient-to-r ${catColors.wave} text-white`
-                        : 'bg-white/5 hover:bg-white/10 text-white/80'
+                        ? `bg-gradient-to-r ${catColors.wave} text-white scale-105`
+                        : 'bg-white/5 hover:bg-white/10 hover:scale-102 text-white/80'
                     }`}
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-2xl mb-1">{getCategoryEmoji(category)}</span>
+                      <span className={`text-2xl mb-1 transition-transform duration-300 ${category === selectedCategory ? 'scale-110' : ''}`}>
+                        {getCategoryEmoji(category)}
+                      </span>
                       <span className="text-sm">{getCategoryTitle(category)}</span>
                     </div>
                   </button>
@@ -212,10 +250,21 @@ const CategoriesScreen = ({
         )}
       </div>
 
+      {/* Добавляем эффект перехода при смене категории */}
+      {isChangingCategory && (
+        <div className="fixed inset-0 z-40 pointer-events-none">
+          <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-${
+            selectedCategory === 'coffee' ? '[#A67C52]' :
+            selectedCategory === 'drinks' ? '[#8D6E63]' : 
+            '[#A1887F]'
+          }/10 to-transparent animate-swipe-right`}></div>
+        </div>
+      )}
+
       {/* Горизонтальная лента продуктов с эффектом залипания */}
       <div className={`flex-1 overflow-hidden relative px-0 pb-24 z-10 transition-opacity duration-300 ${showCategoryDropdown ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
         {/* Добавляем сочное фоновое свечение в зависимости от категории */}
-        <div className={`absolute -top-20 left-1/2 transform -translate-x-1/2 w-[140%] h-[300px] rounded-full blur-3xl z-0 pointer-events-none ${
+        <div className={`absolute -top-20 left-1/2 transform -translate-x-1/2 w-[140%] h-[300px] rounded-full blur-3xl z-0 pointer-events-none transition-colors duration-700 ${
           selectedCategory === 'coffee' ? 'bg-gradient-radial from-[#A67C52]/30 via-[#5D4037]/20 to-transparent' :
           selectedCategory === 'drinks' ? 'bg-gradient-radial from-[#8D6E63]/30 via-[#5D4037]/20 to-transparent' :
           'bg-gradient-radial from-[#A1887F]/30 via-[#5D4037]/20 to-transparent'
@@ -235,11 +284,12 @@ const CategoriesScreen = ({
         >
           {categoryProducts.map((product, index) => {
             const isActive = index === activeProductIndex;
+            const isImageLoaded = imagesLoaded[product.id] || false;
             
             return (
               <div 
                 key={product.id} 
-                className={`flex-shrink-0 w-[80%] max-w-[85vw] snap-center mx-[2.5%] transition-all duration-300 ${
+                className={`flex-shrink-0 w-[80%] max-w-[85vw] snap-center mx-[2.5%] transition-all duration-500 ${
                   isActive 
                     ? 'scale-[1.03] opacity-100 z-20 translate-y-0' 
                     : 'scale-95 opacity-80 z-10 translate-y-2'
@@ -279,12 +329,24 @@ const CategoriesScreen = ({
                         : 'h-[75vh] max-h-[400px]' // Вытянутые для кофе/напитков (неактивная)
                   } w-full transition-all duration-300`}
                       style={product.aspectRatio ? { aspectRatio: product.aspectRatio } : {}}>
+                    
+                    {/* Скелетон лоадер для изображения */}
+                    {!isImageLoaded && (
+                      <div className="absolute inset-0 bg-gradient-to-b from-[#1D1816] to-[#2A2118] animate-pulse flex flex-col items-center justify-center">
+                        <div className={`w-16 h-16 ${colors.accent} opacity-30 rounded-full relative animate-ping-slow`}>
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent rounded-full"></div>
+                        </div>
+                        <div className="mt-4 text-white/30 text-sm animate-pulse">Загрузка...</div>
+                      </div>
+                    )}
+                    
                     <div className={`absolute inset-0 bg-gradient-to-br ${colors.wave} mix-blend-overlay opacity-60 z-10`}></div>
                     <Image
                       src={product.image}
                       alt={product.name}
                       fill
-                      className={`object-cover object-center transition-transform duration-500 hover:scale-110`}
+                      className={`object-cover object-center transition-all duration-500 hover:scale-110 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                      onLoad={() => handleImageLoad(product.id)}
                     />
                     <div className="absolute inset-0 bg-gradient-to-tr from-black/60 to-transparent"></div>
                     
@@ -389,7 +451,7 @@ const CategoriesScreen = ({
         </div>
       </div>
       
-      {/* Стили для скрытия полосы прокрутки */}
+      {/* Стили для скрытия полосы прокрутки и добавляем анимации */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -397,6 +459,25 @@ const CategoriesScreen = ({
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        @keyframes swipe-right {
+          0% { transform: translateX(-100%); opacity: 0.1; }
+          50% { transform: translateX(0); opacity: 0.2; }
+          100% { transform: translateX(100%); opacity: 0; }
+        }
+        .animate-swipe-right {
+          animation: swipe-right 1s ease-in-out;
+        }
+        @keyframes ping-slow {
+          0% { transform: scale(0.95); opacity: 0.8; }
+          50% { transform: scale(1.05); opacity: 0.5; }
+          100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .animate-ping-slow {
+          animation: ping-slow 2s ease-in-out infinite;
+        }
+        .hover\:scale-102:hover {
+          transform: scale(1.02);
         }
       `}</style>
     </div>
