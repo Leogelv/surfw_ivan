@@ -30,7 +30,16 @@ function SurfApp() {
     const handleCategoryChange = (e: CustomEvent) => {
       const { category } = e.detail;
       console.log('Обрабатываем смену категории:', category);
-      setSelectedCategory(category);
+      
+      // Если мы не на экране категорий, нужно сначала перейти на него
+      if (currentScreen !== 'categories') {
+        transitionTo('categories', () => {
+          setSelectedCategory(category);
+        });
+      } else {
+        // Если уже на экране категорий, просто меняем выбранную категорию
+        setSelectedCategory(category);
+      }
     };
 
     window.addEventListener('categoriesScreenCategoryChange', handleCategoryChange as EventListener);
@@ -38,7 +47,7 @@ function SurfApp() {
     return () => {
       window.removeEventListener('categoriesScreenCategoryChange', handleCategoryChange as EventListener);
     };
-  }, []);
+  }, [currentScreen]); // Теперь зависим от currentScreen
 
   // Метод для сброса корзины и сохранения номера заказа
   const resetCartAndSetOrder = (orderNumber?: string) => {

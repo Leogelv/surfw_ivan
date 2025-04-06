@@ -133,13 +133,16 @@ const CategoriesScreen = ({
     if (category !== selectedCategory) {
       // Проверяем, есть ли в пропсах функция для изменения категории
       if (typeof window !== 'undefined') {
+        // Обновляем URL для истории навигации, но без перезагрузки и без перенаправления
+        // Используем replaceState вместо pushState, чтобы не создавать новую запись в истории
+        window.history.replaceState({}, '', `${window.location.pathname}#${category}`);
+        
         // Эмулируем смену категории через кастомное событие
         const urlChangeEvent = new CustomEvent('categoriesScreenCategoryChange', { 
           detail: { category } 
         });
         window.dispatchEvent(urlChangeEvent);
         
-        // Не изменяем URL, просто генерируем событие для обработки на верхнем уровне
         console.log('Категория изменена на:', category);
       }
     }
