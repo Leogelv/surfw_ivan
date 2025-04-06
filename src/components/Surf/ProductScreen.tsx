@@ -569,10 +569,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         }}
       >
         <div className="min-h-full pb-36">
-          {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
+          {/* Фото продукта с эффектом залипания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className="w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out"
+            className="w-full overflow-hidden transition-all duration-300 ease-out sticky top-0 left-0 right-0 z-20"
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -610,10 +610,10 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
           </div>
           
-          {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
+          {/* Контент продукта - теперь начинается с отступом равным высоте фото, но на 15px выше */}
           <div 
             className="relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10"
-            style={{ marginTop: getImageHeight() }}
+            style={{ marginTop: `calc(${getImageHeight()} - 15px)` }}
           >
             {/* Название и цена */}
             <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
@@ -836,11 +836,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           )}
         </button>
         
-        {/* Анимированные чашечки внизу */}
+        {/* Анимированные чашечки внизу - передаем модификаторы */}
         <AnimatedCoffeeCounter 
           quantity={quantity} 
           selectedSize={selectedSize} 
           accentColor={colors.button.split(' ')[0].replace('from-', '')}
+          modifiers={{
+            milk: selectedMilk,
+            syrups: selectedSyrup,
+            extraShot: extraShot
+          }}
+          productCategory={product.category || 'coffee'}
         />
       </div>
       

@@ -112,7 +112,7 @@ const HomeScreen = ({
           onMouseLeave={() => handleCategoryHover(null)}
         >
           <Image
-            src="/surf/coffee_categ.png"
+            src="/surf/coffee_cover.png"
             alt="Кофе"
             fill
             className={`object-cover transition-transform duration-700 
@@ -157,7 +157,7 @@ const HomeScreen = ({
           onMouseLeave={() => handleCategoryHover(null)}
         >
           <Image
-            src="/surf/tea_categ.png"
+            src="/surf/drinks_cover.png"
             alt="Напитки"
             fill
             className={`object-cover transition-transform duration-700 
@@ -201,7 +201,7 @@ const HomeScreen = ({
           onMouseLeave={() => handleCategoryHover(null)}
         >
           <Image
-            src="/surf/food_categ.png"
+            src="/surf/food_cover.png"
             alt="Еда"
             fill
             className={`object-cover transition-transform duration-700 
