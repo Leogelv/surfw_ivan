@@ -542,13 +542,13 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       {/* Круговой градиент по центру */}
       <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-radial from-[#8B5A2B]/20 to-transparent opacity-70 z-0"></div>
       
-      {/* Кнопка закрытия (вверху) */}
+      {/* Кнопка закрытия (вверху) - Фиксированная */}
       <button 
         onClick={onBackClick} 
         className="fixed z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
         style={{
-          top: '50px', 
-          left: '16px'
+          top: `${safeAreaInsets.top + 20}px`, 
+          left: `${safeAreaInsets.left + 16}px`
         }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -556,21 +556,20 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         </svg>
       </button>
       
-      {/* Основное содержимое с отступом сверху для лучшего отображения */}
+      {/* Основное содержимое, начинается под изображением */}
       <div 
         ref={contentRef}
-        className="flex-1 overflow-y-auto hide-scrollbar" 
+        className="flex-1 overflow-y-auto hide-scrollbar relative z-10"
         onScroll={handleScroll}
         style={{ 
-          paddingTop: `${safeAreaInsets.top}px`,
           paddingBottom: `${safeAreaInsets.bottom}px`
         }}
       >
         <div className="min-h-full pb-36">
-          {/* Фото продукта с возможностью растягивания */}
+          {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className="w-full relative overflow-hidden transition-all duration-300 ease-out"
+            className="w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out"
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -584,17 +583,21 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               fill
               priority
               sizes="100vw"
-              className={`object-cover object-center transition-transform duration-700 ${
-                isImageExpanded ? 'scale-110' : 'scale-100'
-              }`}
+              className={`object-cover object-center transition-transform duration-700 ${isImageExpanded ? 'scale-110' : 'scale-100'}`}
             />
             
             {/* Градиент на фото снизу */}
             <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#1D1816] to-transparent z-10"></div>
             
-            {/* Калории в правом верхнем углу */}
+            {/* Калории в правом верхнем углу - Фиксированные */}
             {product.calories && (
-              <div className="absolute top-16 right-3 z-20 flex items-center space-x-1 bg-black/60 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg">
+              <div 
+                className="fixed z-50 flex items-center space-x-1 bg-black/60 backdrop-blur-md rounded-full py-1 px-3 border border-white/10 shadow-lg"
+                style={{
+                  top: `${safeAreaInsets.top + 20}px`, 
+                  right: `${safeAreaInsets.right + 16}px`
+                }}
+              >
                 <svg className={`w-4 h-4 ${colors.accent}`} viewBox="0 0 24 24" fill="currentColor">
                   <path d="M11 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H11V21Z" />
                   <path d="M13 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H13V21Z" fillOpacity="0.3" />
@@ -604,8 +607,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
           </div>
           
-          {/* Контент продукта с нахлестом на фото */}
-          <div className="relative -mt-12 bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10">
+          {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
+          <div 
+            className="relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10"
+            style={{ marginTop: getImageHeight() }}
+          >
             {/* Название и цена */}
             <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="flex justify-between items-start">
