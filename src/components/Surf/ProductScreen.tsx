@@ -547,8 +547,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         onClick={onBackClick} 
         className="fixed z-50 p-3 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-lg"
         style={{
-          top: `${safeAreaInsets.top}px`, 
-          left: `${safeAreaInsets.left + 16}px`
+          top: '30px', 
+          left: '16px'
         }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
