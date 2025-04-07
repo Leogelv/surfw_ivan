@@ -94,20 +94,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   useEffect(() => {
     const handleScroll = () => {
       if (contentRef.current) {
-        // Если scrollTop < 0, это означает что пользователь тянет экран вниз
+        // Теперь только следим за позицией скролла, но не меняем состояние фото
         const position = contentRef.current.scrollTop;
         setScrollPosition(position);
         
-        // Если пользователь начал скроллить контент вверх, сворачиваем изображение
-        if (position > 20 && isImageExpanded) {
-          setIsImageExpanded(false);
-        }
-        
-        // Если пользователь тянет экран вниз сильно когда уже в начале списка, 
-        // разворачиваем изображение
-        if (position <= 0 && !isImageExpanded && position < -30) {
-          setIsImageExpanded(true);
-        }
+        // Удаляем изменение размера фото при скролле
+        // Фото всегда остается расширенным
       }
     };
 
@@ -433,21 +425,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     // Для категорий кофе и напитков делаем вытянутую форму (3:5, высота = 1.67 * ширина)
     const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
     
-    if (isImageExpanded) {
-      return isCoffeeOrDrinks ? 'calc(100vw * 1.67)' : '110vw'; // Увеличиваем с 1.42 до 1.67 для полного отображения
-    }
-    
-    // Определяем базовую высоту в зависимости от категории
-    const baseHeight = isCoffeeOrDrinks 
-      ? 'calc(100vw * 1.2)' // Увеличиваем с 1.13 до 1.2
-      : 'calc(100vw * 0.85)'; // Увеличиваем с 0.8 до 0.85
-    
-    // Если скролл имеет отрицательное значение (тянут вниз), расширяем фото
-    if (scrollPosition < -50) {
-      return isCoffeeOrDrinks ? 'calc(100vw * 1.67)' : '110vw';
-    }
-    
-    return baseHeight;
+    // Всегда возвращаем полный размер, фото не меняется при скролле
+    return isCoffeeOrDrinks ? 'calc(100vw * 1.67)' : '110vw';
   };
 
   // Обработчики для свайпа изображения
@@ -475,26 +454,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     
     // Проверяем условия для активации возврата через свайп вниз
     if (contentRef.current && contentRef.current.scrollTop <= 0 && deltaY > 70) {
-      // Если пользователь уже в начале списка и тянет вниз
-      if (!isImageExpanded) {
-        setIsImageExpanded(true);
-        triggerHapticFeedback('light');
-      } else if (deltaY > swipeBackThreshold) {
-        // Если фото уже увеличено и продолжает тянуть - готовимся к возврату
+      // Если фото уже увеличено и продолжает тянуть - готовимся к возврату
+      if (deltaY > swipeBackThreshold) {
         if (imageRef.current) {
           imageRef.current.style.transform = `translateY(${deltaY / 2}px) scale(${1 - deltaY / 1500})`;
         }
       }
     }
     
-    // Расчет нового размера фото при свайпе
-    if (deltaY < 0) {
-      // Свайп вверх - складываем фото
-      if (isImageExpanded) {
-        setIsImageExpanded(false);
-      }
-    } else if (isImageExpanded) {
-      // Свайп вниз при развернутом фото
+    // Упрощаем логику свайпа - фото всегда остается развернутым
+    if (deltaY > 0 && contentRef.current && contentRef.current.scrollTop <= 0) {
+      // Только при свайпе вниз в начале списка
       const progress = Math.min(1, deltaY / 150);
       setScrollPosition(deltaY);
     }
@@ -587,7 +557,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className="w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out"
+            className="w-full fixed top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out z-5"
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
