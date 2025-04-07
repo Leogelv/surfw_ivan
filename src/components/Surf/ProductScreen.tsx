@@ -36,7 +36,6 @@ interface ProductScreenProps {
 const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick, onAddToCart, showCart = true }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isButtonVisible, setIsButtonVisible] = useState(false); // Новый стейт для анимации кнопки
   const [quantity, setQuantity] = useState(1);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -47,8 +46,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   const [selectedFoodOptions, setSelectedFoodOptions] = useState<string[]>([]);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  
+  // Состояния для анимаций
+  const [isCardVisible, setIsCardVisible] = useState(false);
+  const [isButtonVisible, setIsButtonVisible] = useState(false);
+  
   const contentRef = useRef<HTMLDivElement>(null);
-  const [triggerAnimate, setTriggerAnimate] = useState(false);
   const touchStartY = useRef<number | null>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const prevQuantityRef = useRef<number>(quantity); // Для отслеживания предыдущего значения quantity
@@ -69,19 +72,25 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   
   // Анимация загрузки
   useEffect(() => {
-    // Первая анимация - загрузка контента
-    const loadTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 100);
-
-    // Вторая анимация - появление кнопки
-    const buttonTimer = setTimeout(() => {
-      setIsButtonVisible(true);
-    }, 2000); // 2 секунды = 1с на первую анимацию + 1с задержка
-
+    
+    // Запускаем анимацию появления карточки через 1 секунду
+    const cardTimer = setTimeout(() => {
+      setIsCardVisible(true);
+      
+      // Запускаем анимацию появления кнопки через 1 секунду после карточки
+      const buttonTimer = setTimeout(() => {
+        setIsButtonVisible(true);
+      }, 1000);
+      
+      return () => clearTimeout(buttonTimer);
+    }, 1000);
+    
     return () => {
-      clearTimeout(loadTimer);
-      clearTimeout(buttonTimer);
+      clearTimeout(timer);
+      clearTimeout(cardTimer);
     };
   }, []);
 
@@ -579,13 +588,16 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         }}
       >
         <div className="min-h-full pb-36">
-          {/* Фото продукта с возможностью растягивания */}
+          {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className={`w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-1000 ease-out ${
-              isLoaded ? 'scale-100' : 'scale-105'
-            }`}
-            style={{ height: getImageHeight() }}
+            className="w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out"
+            style={{ 
+              height: getImageHeight(),
+              transform: isCardVisible ? 'translateY(0)' : 'translateY(-20px)',
+              opacity: isCardVisible ? 1 : 0.9,
+              transition: 'transform 1.2s ease-out, opacity 1s ease-out, height 0.3s ease-out'
+            }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -622,17 +634,21 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
           </div>
           
-          {/* Контент продукта - наезжает на фотку сверху */}
+          {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
           <div 
-            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-all duration-1000 ease-out`}
+            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transform transition-all duration-1000 ease-out ${isCardVisible ? 'translate-y-0' : 'translate-y-full'}`}
             style={{ 
-              marginTop: getImageHeight(),
-              transform: isLoaded ? 'translateY(0)' : 'translateY(-70%)',
-              opacity: isLoaded ? '1' : '0.9'
+              marginTop: `calc(${getImageHeight()} - 150px)`,
+              transitionDelay: '0.1s',
+              transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)'
             }}
           >
+            {/* Декоративная полоса для перетаскивания вверху */}
+            <div className="w-16 h-1 bg-white/20 rounded-full mx-auto -mt-4 mb-4"></div>
+            
             {/* Название и цена */}
-            <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className={`mb-5 transition-all duration-700 delay-100 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                style={{ transitionDelay: isCardVisible ? '0.3s' : '0s' }}>
               <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold relative">
                   {/* Декоративные элементы для названия продукта */}
@@ -664,8 +680,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </div>
             
             {/* Описание продукта */}
-            <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                style={{ transitionDelay: '100ms' }}>
+            <div className={`mb-6 transition-all duration-700 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                style={{ transitionDelay: isCardVisible ? '0.4s' : '0s' }}>
               <p className="text-white/80 mb-1">{product.description}</p>
               
               {/* Ингредиенты */}
@@ -685,8 +701,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Выбор размера только для кофе и напитков */}
             {(product.category === 'coffee' || product.category === 'drinks') && (
-              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                  style={{ transitionDelay: '150ms' }}>
+              <div className={`mb-6 transition-all duration-700 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                  style={{ transitionDelay: isCardVisible ? '0.5s' : '0s' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Размер:</h3>
                 
                 <div className="grid grid-cols-3 gap-3">
@@ -715,8 +731,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Модификаторы */}
             {getProductModifiers() && (
-              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                  style={{ transitionDelay: '200ms' }}>
+              <div className={`mb-6 transition-all duration-700 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                  style={{ transitionDelay: isCardVisible ? '0.6s' : '0s' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Дополнительно:</h3>
                 
                 {/* Различные настройки продукта */}
@@ -746,8 +762,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Опции для еды */}
             {product.category === 'food' && (
-              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                  style={{ transitionDelay: '300ms' }}>
+              <div className={`mb-6 transition-all duration-700 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                  style={{ transitionDelay: isCardVisible ? '0.7s' : '0s' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Опции приготовления:</h3>
                 
                 <div className="space-y-3">
@@ -785,8 +801,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
             
             {/* Выбор количества */}
-            <div className={`mb-10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-                style={{ transitionDelay: '400ms' }}>
+            <div className={`mb-10 transition-all duration-700 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+                style={{ transitionDelay: isCardVisible ? '0.8s' : '0s' }}>
               <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Количество:</h3>
               
               <div className="flex items-center justify-between bg-white/5 rounded-xl p-2 border border-white/10">
@@ -820,16 +836,18 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       
       {/* Фиксированная кнопка добавления в корзину */}
       <div 
-        className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-all duration-700 ease-out"
+        className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transform transition-all duration-1000 ease-out"
         style={{ 
           paddingBottom: `${safeAreaInsets.bottom + 10}px`,
-          transform: isButtonVisible ? 'translateY(0)' : 'translateY(100%)',
-          opacity: isButtonVisible ? '1' : '0'
+          opacity: isButtonVisible ? 1 : 0,
+          transform: isButtonVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+          transitionDelay: '0.2s',
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
         <button 
           onClick={addToCart}
-          disabled={isAddingToCart}
+          disabled={isAddingToCart || !isButtonVisible}
           className={`w-full py-4 bg-[#A67C52] hover:bg-[#B98D6F] text-white rounded-xl font-bold text-lg shadow-md shadow-[#A67C52]/20 flex items-center justify-center transition-all relative overflow-hidden group ${
             isAddingToCart ? 'opacity-80' : ''
           }`}
@@ -847,7 +865,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           ) : (
             <>
               <span className="z-10 flex items-center">
-                <span>Добавить в корзину</span>
+                <span className={`transition-all duration-500 ${isButtonVisible ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: '0.3s' }}>Добавить в корзину</span>
                 <svg className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19,7V11H5.83L9.41,7.41L8,6L2,12L8,18L9.41,16.58L5.83,13H21V7H19Z" transform="rotate(180 12 12)"/>
                 </svg>
@@ -864,7 +882,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         />
       </div>
       
-      {/* Стили для анимаций */}
+      {/* Стили для скрытия полосы прокрутки */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
