@@ -68,24 +68,31 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     return () => clearTimeout(timeoutId);
   }, [quantity]);
   
-  // Анимация загрузки
+  // Анимация загрузки и автоскролл
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 100);
     
-    // Добавляем таймеры для появления плашки и кнопки
-    const plateTimer = setTimeout(() => {
-      setIsPlateVisible(true);
+    // Добавляем автоскролл страницы вместо анимации плашки
+    const scrollTimer = setTimeout(() => {
+      if (contentRef.current) {
+        // Плавный скролл на 300px
+        contentRef.current.scrollTo({
+          top: 300,
+          behavior: 'smooth'
+        });
+      }
     }, 1000);
     
+    // Таймер для появления кнопки
     const buttonTimer = setTimeout(() => {
       setIsButtonVisible(true);
     }, 2000);
     
     return () => {
       clearTimeout(timer);
-      clearTimeout(plateTimer);
+      clearTimeout(scrollTimer);
       clearTimeout(buttonTimer);
     }
   }, []);
@@ -597,11 +604,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           
           {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
           <div 
-            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-all duration-1000 ease-out`}
+            className="relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10"
             style={{ 
-              marginTop: `calc(${getImageHeight()} - 60px)`, // Уменьшаем значение, чтобы плашка перекрывала изображение на 60px
-              transform: isPlateVisible ? 'translateY(calc(-100vh + 150px))' : 'translateY(0%)',
-              maxHeight: 'calc(100vh - 50px)'
+              marginTop: `calc(${getImageHeight()} - 60px)` // Уменьшаем значение, чтобы плашка перекрывала изображение на 60px
             }}
           >
             {/* Название и цена */}
