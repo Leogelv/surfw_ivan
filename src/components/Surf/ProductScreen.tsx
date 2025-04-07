@@ -36,6 +36,7 @@ interface ProductScreenProps {
 const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, onLogoClick, onAddToCart, showCart = true }: ProductScreenProps) => {
   const [selectedSize, setSelectedSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isButtonVisible, setIsButtonVisible] = useState(false); // Новый стейт для анимации кнопки
   const [quantity, setQuantity] = useState(1);
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -68,11 +69,20 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   
   // Анимация загрузки
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Первая анимация - загрузка контента
+    const loadTimer = setTimeout(() => {
       setIsLoaded(true);
     }, 100);
-    
-    return () => clearTimeout(timer);
+
+    // Вторая анимация - появление кнопки
+    const buttonTimer = setTimeout(() => {
+      setIsButtonVisible(true);
+    }, 2000); // 2 секунды = 1с на первую анимацию + 1с задержка
+
+    return () => {
+      clearTimeout(loadTimer);
+      clearTimeout(buttonTimer);
+    };
   }, []);
 
   // Сворачивание изображения при скролле
@@ -572,7 +582,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className="w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out"
+            className={`w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-1000 ease-out ${
+              isLoaded ? 'translate-y-0 scale-100' : 'translate-y-[-10%] scale-110'
+            }`}
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -612,7 +624,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           
           {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
           <div 
-            className="relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10"
+            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-all duration-1000 ease-out ${
+              isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-[50%] opacity-0'
+            }`}
             style={{ marginTop: getImageHeight() }}
           >
             {/* Название и цена */}
@@ -804,7 +818,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       
       {/* Фиксированная кнопка добавления в корзину */}
       <div 
-        className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10"
+        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-all duration-700 ease-out ${
+          isButtonVisible ? 'translate-y-0 opacity-100' : 'translate-y-[100%] opacity-0'
+        }`}
         style={{ paddingBottom: `${safeAreaInsets.bottom + 10}px` }}
       >
         <button 
@@ -852,6 +868,27 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        
+        /* Добавляем новые стили для анимаций */
+        .translate-y-0 {
+          transform: translateY(0);
+        }
+        
+        .translate-y-50 {
+          transform: translateY(50%);
+        }
+        
+        .translate-y-100 {
+          transform: translateY(100%);
+        }
+        
+        .scale-110 {
+          transform: scale(1.1);
+        }
+        
+        .scale-100 {
+          transform: scale(1);
         }
       `}</style>
     </div>
