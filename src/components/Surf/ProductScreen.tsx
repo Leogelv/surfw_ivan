@@ -627,9 +627,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           
           {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
           <div 
-            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-transform duration-1000 ease-out ${isPlateVisible ? 'translate-y-[-4%]' : 'translate-y-[0%]'}`}
+            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-all duration-1000 ease-out`}
             style={{ 
-              marginTop: `calc(${getImageHeight()} - 60px)` // Уменьшаем значение, чтобы плашка перекрывала изображение на 60px
+              marginTop: `calc(${getImageHeight()} - 60px)`, // Уменьшаем значение, чтобы плашка перекрывала изображение на 60px
+              transform: isPlateVisible ? 'translateY(calc(-100vh + 150px))' : 'translateY(0%)',
+              maxHeight: 'calc(100vh - 50px)'
             }}
           >
             {/* Название и цена */}
