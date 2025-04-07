@@ -579,11 +579,11 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         }}
       >
         <div className="min-h-full pb-36">
-          {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
+          {/* Фото продукта с возможностью растягивания */}
           <div 
             ref={imageRef}
             className={`w-full absolute top-0 left-0 right-0 overflow-hidden transition-all duration-1000 ease-out ${
-              isLoaded ? 'translate-y-0 scale-100' : 'translate-y-[-10%] scale-110'
+              isLoaded ? 'scale-100' : 'scale-105'
             }`}
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
@@ -622,12 +622,14 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
           </div>
           
-          {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
+          {/* Контент продукта - наезжает на фотку сверху */}
           <div 
-            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-all duration-1000 ease-out ${
-              isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-[50%] opacity-0'
-            }`}
-            style={{ marginTop: getImageHeight() }}
+            className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transition-all duration-1000 ease-out`}
+            style={{ 
+              marginTop: getImageHeight(),
+              transform: isLoaded ? 'translateY(0)' : 'translateY(-70%)',
+              opacity: isLoaded ? '1' : '0.9'
+            }}
           >
             {/* Название и цена */}
             <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
@@ -818,10 +820,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       
       {/* Фиксированная кнопка добавления в корзину */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-all duration-700 ease-out ${
-          isButtonVisible ? 'translate-y-0 opacity-100' : 'translate-y-[100%] opacity-0'
-        }`}
-        style={{ paddingBottom: `${safeAreaInsets.bottom + 10}px` }}
+        className="fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-all duration-700 ease-out"
+        style={{ 
+          paddingBottom: `${safeAreaInsets.bottom + 10}px`,
+          transform: isButtonVisible ? 'translateY(0)' : 'translateY(100%)',
+          opacity: isButtonVisible ? '1' : '0'
+        }}
       >
         <button 
           onClick={addToCart}
@@ -860,7 +864,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         />
       </div>
       
-      {/* Стили для скрытия полосы прокрутки */}
+      {/* Стили для анимаций */}
       <style jsx global>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -868,27 +872,6 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
-        }
-        
-        /* Добавляем новые стили для анимаций */
-        .translate-y-0 {
-          transform: translateY(0);
-        }
-        
-        .translate-y-50 {
-          transform: translateY(50%);
-        }
-        
-        .translate-y-100 {
-          transform: translateY(100%);
-        }
-        
-        .scale-110 {
-          transform: scale(1.1);
-        }
-        
-        .scale-100 {
-          transform: scale(1);
         }
       `}</style>
     </div>
