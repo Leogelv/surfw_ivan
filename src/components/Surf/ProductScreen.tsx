@@ -77,9 +77,9 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     // Добавляем автоскролл страницы вместо анимации плашки
     const scrollTimer = setTimeout(() => {
       if (contentRef.current) {
-        // Плавный скролл на 300px
+        // Плавный скролл на 200px
         contentRef.current.scrollTo({
-          top: 300,
+          top: 200,
           behavior: 'smooth'
         });
       }
@@ -429,11 +429,8 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
 
   // Расчет высоты фото в зависимости от прокрутки
   const getImageHeight = () => {
-    // Для категорий кофе и напитков делаем вытянутую форму (3:5, высота = 1.67 * ширина)
-    const isCoffeeOrDrinks = product.category === 'coffee' || product.category === 'drinks';
-    
-    // Всегда возвращаем полный размер, фото не меняется при скролле
-    return isCoffeeOrDrinks ? 'calc(100vw * 1.67)' : '110vw';
+    // Возвращаем фиксированную высоту в 60% высоты видимой области
+    return '60vh';
   };
 
   // Обработчики для свайпа изображения
@@ -564,7 +561,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className="w-full fixed top-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out z-5"
+            className="w-full fixed top-0 left-0 right-0 overflow-hidden transition-all duration-800 ease-in-out z-5"
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -578,7 +575,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               fill
               priority
               sizes="100vw"
-              className={`object-cover object-center transition-transform duration-700 ${isImageExpanded ? 'scale-110' : 'scale-100'}`}
+              className={`object-cover object-center transition-transform duration-800 ease-in-out ${isImageExpanded ? 'scale-110' : 'scale-100'}`}
             />
             
             {/* Градиент на фото снизу */}
@@ -610,7 +607,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             }}
           >
             {/* Название и цена */}
-            <div className={`mb-5 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className={`mb-5 transition-all duration-800 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold relative">
                   {/* Декоративные элементы для названия продукта */}
@@ -642,7 +639,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </div>
             
             {/* Описание продукта */}
-            <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            <div className={`mb-6 transition-all duration-800 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ transitionDelay: '100ms' }}>
               <p className="text-white/80 mb-1">{product.description}</p>
               
@@ -663,7 +660,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Выбор размера только для кофе и напитков */}
             {(product.category === 'coffee' || product.category === 'drinks') && (
-              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              <div className={`mb-6 transition-all duration-800 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: '150ms' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Размер:</h3>
                 
@@ -693,7 +690,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Модификаторы */}
             {getProductModifiers() && (
-              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              <div className={`mb-6 transition-all duration-800 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: '200ms' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Дополнительно:</h3>
                 
@@ -724,7 +721,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Опции для еды */}
             {product.category === 'food' && (
-              <div className={`mb-6 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              <div className={`mb-6 transition-all duration-800 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: '300ms' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Опции приготовления:</h3>
                 
@@ -763,7 +760,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
             
             {/* Выбор количества */}
-            <div className={`mb-10 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            <div className={`mb-10 transition-all duration-800 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ transitionDelay: '400ms' }}>
               <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Количество:</h3>
               
@@ -798,7 +795,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       
       {/* Фиксированная кнопка добавления в корзину */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-opacity duration-500 ${isButtonVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-opacity duration-800 ease-in-out ${isButtonVisible ? 'opacity-100' : 'opacity-0'}`}
         style={{ paddingBottom: `${safeAreaInsets.bottom + 10}px` }}
       >
         <button 
