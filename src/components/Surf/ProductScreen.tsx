@@ -50,13 +50,17 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
   // Состояния для анимаций
   const [isCardVisible, setIsCardVisible] = useState(false);
   const [isButtonVisible, setIsButtonVisible] = useState(false);
+  const [cardTranslateY, setCardTranslateY] = useState(0); // Добавляем состояние для перемещения карточки при свайпе
+  const [isBackThresholdReached, setIsBackThresholdReached] = useState(false); // Новое состояние для отслеживания порога возврата
   
   const contentRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number | null>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null); // Добавляем ссылку на карточку для прямого управления
   const prevQuantityRef = useRef<number>(quantity); // Для отслеживания предыдущего значения quantity
   const lastDeltaY = useRef<number>(0);
   const swipeBackThreshold = 100; // Порог для свайпа назад
+  const expandPhotoThreshold = 50; // Порог для раскрытия фото
   
   // Получаем отступы безопасной зоны
   const safeAreaInsets = useSafeAreaInsets();
@@ -478,45 +482,126 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
     lastDeltaY.current = deltaY;
     
     // Проверяем условия для активации возврата через свайп вниз
-    if (contentRef.current && contentRef.current.scrollTop <= 0 && deltaY > 70) {
-      // Если пользователь уже в начале списка и тянет вниз
-      if (!isImageExpanded) {
-        setIsImageExpanded(true);
-        triggerHapticFeedback('light');
-      } else if (deltaY > swipeBackThreshold) {
-        // Если фото уже увеличено и продолжает тянуть - готовимся к возврату
+    if (contentRef.current && contentRef.current.scrollTop <= 0) {
+      // Первый шаг: начинаем двигать карточку вниз при небольшом свайпе
+      if (deltaY > 0 && deltaY < expandPhotoThreshold) {
+        // Перемещаем карточку вниз пропорционально движению
+        const moveY = Math.min(deltaY * 0.8, 120); // Увеличил коэффициент для более отзывчивого свайпа
+        setCardTranslateY(moveY);
+        
+        // Одновременно делаем фото чуть больше с помощью CSS-transform
         if (imageRef.current) {
-          imageRef.current.style.transform = `translateY(${deltaY / 2}px) scale(${1 - deltaY / 1000})`;
+          const scale = 1 + (deltaY * 0.001); // Небольшое увеличение масштаба
+          imageRef.current.style.transform = `scale(${scale})`;
+        }
+      }
+      
+      // Второй шаг: если достигли порога раскрытия фото, фиксируем состояние
+      if (deltaY >= expandPhotoThreshold && !isImageExpanded) {
+        setIsImageExpanded(true);
+        setCardTranslateY(0); // Сбрасываем перемещение карточки
+        triggerHapticFeedback('light');
+        
+        // Анимируем переход при раскрытии фото
+        if (imageRef.current) {
+          imageRef.current.style.transition = 'transform 0.3s ease-out';
+          imageRef.current.style.transform = 'scale(1.05)';
+          
+          // Сбрасываем transition после анимации
+          setTimeout(() => {
+            if (imageRef.current) {
+              imageRef.current.style.transition = '';
+            }
+          }, 300);
+        }
+      } 
+      
+      // Третий шаг: если фото уже расширено и продолжает тянуть дальше до порога возврата
+      if (isImageExpanded) {
+        // Обновляем состояние достижения порога для возврата
+        setIsBackThresholdReached(deltaY > swipeBackThreshold);
+        
+        // Подготовка к возврату на экран категорий - добавляем трансформацию для эффекта выхода
+        if (imageRef.current) {
+          const scale = Math.max(0.9, 1 - deltaY / 800); // Сделал более плавное уменьшение
+          imageRef.current.style.transform = `translateY(${deltaY / 3}px) scale(${scale})`;
+          
+          // Если достигли порога для возврата, добавляем эффект размытия для намека
+          if (deltaY > swipeBackThreshold) {
+            imageRef.current.style.filter = `blur(${Math.min((deltaY - swipeBackThreshold) / 100, 3)}px)`;
+          } else {
+            imageRef.current.style.filter = '';
+          }
         }
       }
     }
     
-    // Расчет нового размера фото при свайпе
-    if (deltaY < 0) {
-      // Свайп вверх - складываем фото
-      if (isImageExpanded) {
-        setIsImageExpanded(false);
+    // Если свайп вверх и фото было расширено - сворачиваем его
+    if (deltaY < -30 && isImageExpanded) {
+      setIsImageExpanded(false);
+      setIsBackThresholdReached(false); // Сбрасываем состояние порога
+      
+      // Анимируем переход при сворачивании фото
+      if (imageRef.current) {
+        imageRef.current.style.transition = 'transform 0.3s ease-out, filter 0.3s ease-out';
+        imageRef.current.style.transform = 'scale(1)';
+        imageRef.current.style.filter = '';
+        
+        // Сбрасываем transition после анимации
+        setTimeout(() => {
+          if (imageRef.current) {
+            imageRef.current.style.transition = '';
+          }
+        }, 300);
       }
-    } else if (isImageExpanded) {
-      // Свайп вниз при развернутом фото
-      const progress = Math.min(1, deltaY / 150);
-      setScrollPosition(deltaY);
     }
   };
 
   const handleTouchEnd = () => {
-    // Проверяем, нужно ли вернуться назад
+    // Сначала проверяем, была ли карточка просто немного сдвинута вниз (но не до порога раскрытия фото)
+    if (cardTranslateY > 0 && !isImageExpanded) {
+      // Возвращаем карточку в исходное положение с плавной анимацией
+      setCardTranslateY(0);
+      
+      // Возвращаем фото в исходный размер
+      if (imageRef.current) {
+        imageRef.current.style.transition = 'transform 0.3s ease-out, filter 0.3s ease-out';
+        imageRef.current.style.transform = 'scale(1)';
+        imageRef.current.style.filter = '';
+        
+        // Сбрасываем transition после анимации
+        setTimeout(() => {
+          if (imageRef.current) {
+            imageRef.current.style.transition = '';
+          }
+        }, 300);
+      }
+    }
+    
+    // Сбрасываем состояние достижения порога
+    setIsBackThresholdReached(false);
+    
+    // Проверяем, нужно ли вернуться назад на экран категорий
     if (isImageExpanded && lastDeltaY.current > swipeBackThreshold) {
       triggerHapticFeedback('medium');
       // Добавляем небольшую задержку для анимации
       setTimeout(() => {
         onBackClick();
       }, 100);
-    }
-    
-    // Сбрасываем стили для элемента с изображением
-    if (imageRef.current) {
-      imageRef.current.style.transform = '';
+    } else if (isImageExpanded) {
+      // Если мы расширили фото, но не достаточно для возврата - делаем его нормального размера
+      if (imageRef.current) {
+        imageRef.current.style.transition = 'transform 0.3s ease-out, filter 0.3s ease-out';
+        imageRef.current.style.transform = 'scale(1.05)'; // Небольшое увеличение для эффекта расширения
+        imageRef.current.style.filter = '';
+        
+        // Сбрасываем transition после анимации
+        setTimeout(() => {
+          if (imageRef.current) {
+            imageRef.current.style.transition = '';
+          }
+        }, 300);
+      }
     }
     
     touchStartY.current = null;
@@ -616,6 +701,25 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             {/* Градиент на фото снизу */}
             <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-[#1D1816] to-transparent z-10"></div>
             
+            {/* Индикатор для возврата к категориям - показывается только при полностью открытой фотографии */}
+            {isImageExpanded && (
+              <div className="absolute top-6 left-0 right-0 flex justify-center items-center z-30 pointer-events-none animate-fadeIn">
+                <div className={`bg-black/40 backdrop-blur-md px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg border border-white/10 transition-all ${
+                  isBackThresholdReached ? 'bg-black/60 scale-105 border-white/20' : ''
+                }`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                  </svg>
+                  <span className="text-sm text-white">
+                    {isBackThresholdReached 
+                      ? 'Отпустите, чтобы вернуться к меню' 
+                      : 'Потяните вниз для возврата к меню'
+                    }
+                  </span>
+                </div>
+              </div>
+            )}
+            
             {/* Калории в правом верхнем углу - Фиксированные */}
             {product.calories && (
               <div 
@@ -636,15 +740,40 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           
           {/* Контент продукта - теперь начинается с отступом равным высоте фото */}
           <div 
+            ref={cardRef}
             className={`relative bg-gradient-to-b from-[#1D1816] to-[#242019] rounded-t-[2rem] px-6 pt-8 z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.25)] border-t border-white/10 transform transition-all duration-1000 ease-out ${isCardVisible ? 'translate-y-0' : 'translate-y-full'}`}
             style={{ 
-              marginTop: `calc(${getImageHeight()} - 150px)`,
+              marginTop: `calc(${getImageHeight()} - 250px)`, // Увеличили перекрытие с 150px до 250px (~15% больше)
+              transform: cardTranslateY > 0 ? `translateY(${cardTranslateY}px)` : undefined,
               transitionDelay: '0.1s',
-              transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)'
+              transition: cardTranslateY > 0 
+                ? 'transform 0.1s ease-out' // Быстрая реакция для drag
+                : 'transform 1s cubic-bezier(0.22, 1, 0.36, 1), opacity 1s cubic-bezier(0.22, 1, 0.36, 1)' // Плавный transition для анимации
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            {/* Декоративная полоса для перетаскивания вверху */}
-            <div className="w-16 h-1 bg-white/20 rounded-full mx-auto -mt-4 mb-4"></div>
+            {/* Декоративная полоса для перетаскивания вверху с анимацией */}
+            <div className="flex flex-col items-center justify-center -mt-5 mb-3 pointer-events-none">
+              <div className={`w-10 h-1 bg-white/20 rounded-full mb-1 transition-all ${cardTranslateY > 0 ? 'w-12 bg-white/40' : ''}`}></div>
+              <div className={`w-16 h-1 bg-white/20 rounded-full mb-2 transition-all ${cardTranslateY > 0 ? 'w-20 bg-white/30' : ''}`}></div>
+              
+              {/* Подсказка для свайпа - появляется только при перетаскивании */}
+              <div 
+                className={`text-xs text-white/50 transition-opacity duration-200 flex items-center ${
+                  cardTranslateY > 5 ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                </svg>
+                {cardTranslateY > expandPhotoThreshold / 2
+                  ? 'Отпустите, чтобы увидеть фото'
+                  : 'Потяните вниз для просмотра фото'
+                }
+              </div>
+            </div>
             
             {/* Название и цена */}
             <div className={`mb-5 transition-all duration-700 delay-100 ${isCardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
@@ -890,6 +1019,15 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out forwards;
         }
       `}</style>
     </div>
