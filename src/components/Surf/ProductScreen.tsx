@@ -83,12 +83,12 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           behavior: 'smooth'
         });
       }
-    }, 1500); // Увеличиваем задержку с 1000 до 1500 мс
+    }, 2000); // Увеличиваем задержку до 2 секунд
     
     // Таймер для появления кнопки
     const buttonTimer = setTimeout(() => {
       setIsButtonVisible(true);
-    }, 2500); // Увеличиваем задержку для кнопки тоже
+    }, 3000); // Увеличиваем задержку до 3 секунд
     
     return () => {
       clearTimeout(timer);
@@ -561,7 +561,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
           {/* Фото продукта с возможностью растягивания - занимает всю ширину и начинается от верха */}
           <div 
             ref={imageRef}
-            className="w-full fixed top-0 left-0 right-0 overflow-hidden transition-all duration-1200 ease-in-out z-5"
+            className="w-full fixed top-0 left-0 right-0 overflow-hidden transition-all duration-[1600ms] ease-in-out z-5"
             style={{ height: getImageHeight() }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -575,7 +575,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
               fill
               priority
               sizes="100vw"
-              className={`object-cover object-center transition-transform duration-1200 ease-in-out ${isImageExpanded ? 'scale-110' : 'scale-100'}`}
+              className={`object-cover object-center transition-transform duration-[1600ms] ease-in-out ${isImageExpanded ? 'scale-110' : 'scale-100'}`}
             />
             
             {/* Градиент на фото снизу */}
@@ -607,7 +607,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             }}
           >
             {/* Название и цена */}
-            <div className={`mb-5 transition-all duration-1200 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className={`mb-5 transition-all duration-[1600ms] ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
               <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold relative">
                   {/* Декоративные элементы для названия продукта */}
@@ -639,7 +639,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             </div>
             
             {/* Описание продукта */}
-            <div className={`mb-6 transition-all duration-1200 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            <div className={`mb-6 transition-all duration-[1600ms] ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ transitionDelay: '100ms' }}>
               <p className="text-white/80 mb-1">{product.description}</p>
               
@@ -660,7 +660,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Выбор размера только для кофе и напитков */}
             {(product.category === 'coffee' || product.category === 'drinks') && (
-              <div className={`mb-6 transition-all duration-1200 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              <div className={`mb-6 transition-all duration-[1600ms] ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: '150ms' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Размер:</h3>
                 
@@ -690,7 +690,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Модификаторы */}
             {getProductModifiers() && (
-              <div className={`mb-6 transition-all duration-1200 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              <div className={`mb-6 transition-all duration-[1600ms] ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: '200ms' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Дополнительно:</h3>
                 
@@ -721,7 +721,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             
             {/* Опции для еды */}
             {product.category === 'food' && (
-              <div className={`mb-6 transition-all duration-1200 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+              <div className={`mb-6 transition-all duration-[1600ms] ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                   style={{ transitionDelay: '300ms' }}>
                 <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Опции приготовления:</h3>
                 
@@ -760,7 +760,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
             )}
             
             {/* Выбор количества */}
-            <div className={`mb-10 transition-all duration-1200 ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            <div className={`mb-10 transition-all duration-[1600ms] ease-in-out ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
                 style={{ transitionDelay: '400ms' }}>
               <h3 className="text-white/60 text-sm uppercase mb-3 tracking-wider font-medium">Количество:</h3>
               
@@ -795,7 +795,7 @@ const ProductScreen = ({ productName, onBackClick, onCartClick, onProfileClick, 
       
       {/* Фиксированная кнопка добавления в корзину */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-opacity duration-1200 ease-in-out ${isButtonVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed bottom-0 left-0 right-0 z-30 bg-[#1D1816]/95 backdrop-blur-md px-6 py-5 border-t border-white/10 transition-all duration-[1600ms] ease-in-out ${isButtonVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
         style={{ paddingBottom: `${safeAreaInsets.bottom + 10}px` }}
       >
         <button 
