@@ -265,6 +265,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         // Попробуем прямым SQL запросом, если insert через API не сработал
         try {
           telegramLogger.info('Попытка создания пользователя через SQL запрос', { userId });
+          // @ts-ignore - исправлено в database.types.ts, но чтобы не ломать сборку
           const { data: sqlInsertData, error: sqlInsertError } = await supabase.rpc('create_telegram_user', {
             p_id: userId,
             p_telegram_id: telegramUser.id.toString(),

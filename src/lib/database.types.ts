@@ -245,6 +245,17 @@ export interface Database {
           bot_token: string
         }
         Returns: boolean
+      },
+      create_telegram_user: {
+        Args: {
+          p_id: string
+          p_telegram_id: string
+          p_first_name: string
+          p_last_name?: string
+          p_username?: string
+          p_photo_url?: string
+        }
+        Returns: boolean
       }
     },
     Enums: {}
