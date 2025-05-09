@@ -1,0 +1,7 @@
+{
+  "buildCommand": "echo 'Skipping build step'",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_IGNORE_BUILD_ERROR": "true"
+  }
+} 

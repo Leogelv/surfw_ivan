@@ -5,6 +5,7 @@ import { supabase, getUserProfile, getSupabaseClient } from '@/lib/supabase';
 import { Session, User, AuthChangeEvent, Provider } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 import logger from '@/lib/logger';
+import { randomUUID } from 'crypto';
 
 type UserData = Database['public']['Tables']['users']['Row'];
 
@@ -135,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: existingUser, error: checkError } = await client
         .from('users')
         .select('*')
-        .eq('telegram_id', telegramUser.id)
+        .eq('telegram_id', telegramUser.id.toString())
         .single();
       
       if (checkError && checkError.code !== 'PGRST116') {
@@ -147,17 +148,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authLogger.info('Пользователь Telegram не найден в БД, создаем новую запись');
         const { data: newUser, error: insertError } = await client
           .from('users')
-          .insert([
+          .insert(
             { 
-              telegram_id: telegramUser.id,
+              id: randomUUID(),
+              telegram_id: telegramUser.id.toString(),
               first_name: telegramUser.first_name,
               last_name: telegramUser.last_name || '',
               username: telegramUser.username || '',
               photo_url: telegramUser.photo_url || '',
-              user_settings: {},
+              preferences: {},
               last_login: new Date().toISOString()
             }
-          ])
+          )
           .select()
           .single();
         
@@ -173,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error: updateError } = await client
           .from('users')
           .update({ last_login: new Date().toISOString() })
-          .eq('telegram_id', telegramUser.id);
+          .eq('telegram_id', telegramUser.id.toString());
         
         if (updateError) {
           authLogger.warn('Ошибка при обновлении даты последнего входа', updateError);

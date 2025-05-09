@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import logger from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
+import { randomUUID } from 'crypto';
 
 interface TelegramUser {
   id: number;
@@ -157,7 +158,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('*')
-        .eq('telegram_id', telegramUser.id)
+        .eq('telegram_id', telegramUser.id.toString())
         .single();
       
       if (checkError && checkError.code !== 'PGRST116') {
@@ -173,17 +174,18 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       // Создаем нового пользователя
       const { data: newUser, error: insertError } = await supabase
         .from('users')
-        .insert([
+        .insert(
           { 
-            telegram_id: telegramUser.id,
+            id: randomUUID(),
+            telegram_id: telegramUser.id.toString(),
             first_name: telegramUser.first_name,
             last_name: telegramUser.last_name || '',
             username: telegramUser.username || '',
             photo_url: telegramUser.photo_url || '',
-            user_settings: {},
+            preferences: {},
             last_login: new Date().toISOString()
           }
-        ])
+        )
         .select()
         .single();
       
