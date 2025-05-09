@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { getSupabaseClient } from '@/lib/supabase';
 import { useTelegram } from './TelegramContext';
 import logger from '@/lib/logger';
+import { v4 as uuidv4 } from 'uuid';
 
 // Типы данных
 interface User {
@@ -62,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('users')
         .select('*')
         .eq('telegram_id', telegramData.id.toString())
-        .single();
+        .maybeSingle();
       
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError) {
         authLogger.error('Ошибка при проверке существования пользователя', fetchError);
         throw fetchError;
       }
@@ -76,8 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         first_name: telegramData.first_name || '',
         last_name: telegramData.last_name || '',
         photo_url: telegramData.photo_url || '',
-        auth_date: telegramData.auth_date || Math.floor(Date.now() / 1000),
-        updated_at: new Date().toISOString()
+        auth_date: telegramData.auth_date ? parseInt(telegramData.auth_date.toString()) : Math.floor(Date.now() / 1000),
+        updated_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
       };
 
       let result;
@@ -101,19 +103,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authLogger.info('Пользователь успешно обновлен', { userId: result.id });
       } else {
         authLogger.info('Создание нового пользователя');
+        // Генерируем UUID для нового пользователя
+        const newUserId = uuidv4();
+        
         const { data, error: insertError } = await supabase
           .from('users')
-          .insert({ ...userData, created_at: new Date().toISOString() })
+          .insert({ 
+            id: newUserId,
+            ...userData, 
+            created_at: new Date().toISOString(),
+            last_login: new Date().toISOString()
+          })
           .select()
           .single();
         
         if (insertError) {
           authLogger.error('Ошибка при создании пользователя', insertError);
-          throw insertError;
+          
+          // Если ошибка связана с constraint, попробуем еще раз получить пользователя
+          // Он мог быть создан, но возникла ошибка при возврате данных
+          if (insertError.code === '23505') { // duplicate key value violates unique constraint
+            authLogger.info('Пользователь, возможно, уже существует. Пробуем получить его данные');
+            const { data: retryUser, error: retryError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('telegram_id', telegramData.id.toString())
+              .single();
+            
+            if (retryError) {
+              authLogger.error('Не удалось получить данные после повторной попытки', retryError);
+              throw retryError;
+            }
+            
+            authLogger.info('Пользователь найден после повторной попытки', { userId: retryUser.id });
+            result = retryUser;
+          } else {
+            throw insertError;
+          }
+        } else {
+          result = data;
+          authLogger.info('Пользователь успешно создан', { userId: result.id });
+          
+          // Создадим настройки пользователя, если есть такая таблица
+          try {
+            const { count, error: settingsCountError } = await supabase
+              .from('user_settings')
+              .select('*', { count: 'exact', head: true });
+            
+            if (!settingsCountError) {
+              // Таблица существует, создаем запись настроек
+              const settingsData = {
+                id: uuidv4(),
+                user_id: result.id,
+                notification_enabled: true,
+                theme: 'light',
+                last_updated: new Date().toISOString()
+              };
+              
+              const { error: settingsError } = await supabase
+                .from('user_settings')
+                .insert(settingsData);
+              
+              if (settingsError) {
+                authLogger.error('Ошибка при создании настроек пользователя', settingsError);
+              } else {
+                authLogger.info('Настройки пользователя успешно созданы');
+              }
+            }
+          } catch (settingsError) {
+            authLogger.error('Ошибка при работе с таблицей user_settings', settingsError);
+          }
         }
-        
-        result = data;
-        authLogger.info('Пользователь успешно создан', { userId: result.id });
       }
       
       return result;
