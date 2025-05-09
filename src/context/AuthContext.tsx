@@ -1,6 +1,8 @@
+'use client';
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase, getUserProfile } from '@/lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthChangeEvent, Provider } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 
 type UserData = Database['public']['Tables']['users']['Row'];
@@ -53,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Подписка на изменения сессии
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event: AuthChangeEvent, newSession: Session | null) => {
         setSession(newSession);
         setUser(newSession?.user || null);
         
@@ -97,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'telegram',
+        provider: 'telegram' as Provider,
         options: {
           queryParams: {
             auth_data: JSON.stringify(telegramUser)

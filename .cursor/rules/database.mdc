@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+we have env with 
+
+NEXT_PUBLIC_IGNORE_BUILD_ERROR=true
+SUPABASE_PROJECT_ID=umgioqmcytxkspbrbaww
+SUPABASE_ANON_KEY=set in env
+SUPABASE_PROJECT_URL=https://umgioqmcytxkspbrbaww.supabase.co
+
+also we HAVE supabase MCP server inside project

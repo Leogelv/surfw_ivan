@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, Provider } from '@supabase/supabase-js';
 import { Database } from './database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -9,7 +9,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 // Функция для авторизации через Telegram
 export const handleTelegramAuth = async (telegramUser: any) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'telegram',
+    provider: 'telegram' as Provider,
     options: {
       queryParams: {
         auth_data: JSON.stringify(telegramUser)
@@ -73,6 +73,7 @@ export const getUserStats = async () => {
       checkDate.setHours(0, 0, 0, 0);
       
       const hasActivityOnDay = streakData.some(item => {
+        if (!item.started_at) return false;
         const itemDate = new Date(item.started_at);
         itemDate.setHours(0, 0, 0, 0);
         return itemDate.getTime() === checkDate.getTime();
