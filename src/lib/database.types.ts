@@ -9,255 +9,125 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      users: {
-        Row: {
-          id: string
-          username: string | null
-          telegram_id: string | null
-          telegram_username: string | null
-          avatar_url: string | null
-          preferences: Json | null
-          created_at: string | null
-          updated_at: string | null
-          first_name: string | null
-          last_name: string | null
-          last_login: string | null
-          photo_url: string | null
-          telegram_auth_date: string | null
-          telegram_hash: string | null
-        }
-        Insert: {
-          id: string
-          username?: string | null
-          telegram_id?: string | null
-          telegram_username?: string | null
-          avatar_url?: string | null
-          preferences?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-          first_name?: string | null
-          last_name?: string | null
-          last_login?: string | null
-          photo_url?: string | null
-          telegram_auth_date?: string | null
-          telegram_hash?: string | null
-        }
-        Update: {
-          id?: string
-          username?: string | null
-          telegram_id?: string | null
-          telegram_username?: string | null
-          avatar_url?: string | null
-          preferences?: Json | null
-          created_at?: string | null
-          updated_at?: string | null
-          first_name?: string | null
-          last_name?: string | null
-          last_login?: string | null
-          photo_url?: string | null
-          telegram_auth_date?: string | null
-          telegram_hash?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "users_id_fkey"
-            columns: ["id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
       logs: {
         Row: {
           id: string
           level: string
           message: string
           module: string
-          user_id: string | null
           data: Json | null
-          created_at: string | null
-          metadata: Json | null
+          user_id: string | null
+          created_at: string
         }
         Insert: {
           id?: string
           level: string
           message: string
           module: string
-          user_id?: string | null
           data?: Json | null
-          created_at?: string | null
-          metadata?: Json | null
+          user_id?: string | null
+          created_at?: string
         }
         Update: {
           id?: string
           level?: string
           message?: string
           module?: string
-          user_id?: string | null
           data?: Json | null
-          created_at?: string | null
-          metadata?: Json | null
+          user_id?: string | null
+          created_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "logs_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
-      user_settings: {
-        Row: {
-          user_id: string
-          notifications_enabled: boolean | null
-          language: string | null
-          theme: string | null
-          auto_play: boolean | null
-          settings: Json | null
-          updated_at: string | null
-        }
-        Insert: {
-          user_id: string
-          notifications_enabled?: boolean | null
-          language?: string | null
-          theme?: string | null
-          auto_play?: boolean | null
-          settings?: Json | null
-          updated_at?: string | null
-        }
-        Update: {
-          user_id?: string
-          notifications_enabled?: boolean | null
-          language?: string | null
-          theme?: string | null
-          auto_play?: boolean | null
-          settings?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_settings_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
-      view_history: {
+      }
+      users: {
         Row: {
           id: string
-          user_id: string | null
-          content_id: string | null
-          started_at: string | null
-          ended_at: string | null
-          duration: number | null
-          completion_percentage: number | null
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          content_id?: string | null
-          started_at?: string | null
-          ended_at?: string | null
-          duration?: number | null
-          completion_percentage?: number | null
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          content_id?: string | null
-          started_at?: string | null
-          ended_at?: string | null
-          duration?: number | null
-          completion_percentage?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "view_history_user_id_fkey"
-            columns: ["user_id"]
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "view_history_content_id_fkey"
-            columns: ["content_id"]
-            referencedRelation: "contents"
-            referencedColumns: ["id"]
-          }
-        ]
-      },
-      quizlogic: {
-        Row: {
-          id: string
-          type: string
-          duration: string | null
-          goal: string
-          approach: string | null
-          content_type: string
-          content_url: string
-          title: string
-          description: string | null
+          telegram_id: string | null
+          username: string | null
+          first_name: string | null
+          last_name: string | null
+          photo_url: string | null
+          auth_date: number | null
+          preferences: Json | null
           created_at: string | null
           updated_at: string | null
+          last_login: string | null
         }
         Insert: {
           id?: string
-          type: string
-          duration?: string | null
-          goal: string
-          approach?: string | null
-          content_type: string
-          content_url: string
-          title: string
-          description?: string | null
+          telegram_id?: string | null
+          username?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          photo_url?: string | null
+          auth_date?: number | null
+          preferences?: Json | null
           created_at?: string | null
           updated_at?: string | null
+          last_login?: string | null
         }
         Update: {
           id?: string
-          type?: string
-          duration?: string | null
-          goal?: string
-          approach?: string | null
-          content_type?: string
-          content_url?: string
-          title?: string
-          description?: string | null
+          telegram_id?: string | null
+          username?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          photo_url?: string | null
+          auth_date?: number | null
+          preferences?: Json | null
           created_at?: string | null
           updated_at?: string | null
+          last_login?: string | null
         }
-        Relationships: []
       }
-    },
-    Views: {},
+      user_settings: {
+        Row: {
+          id: string
+          user_id: string
+          notification_enabled: boolean
+          theme: string
+          last_updated: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          notification_enabled?: boolean
+          theme?: string
+          last_updated?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          notification_enabled?: boolean
+          theme?: string
+          last_updated?: string
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      telegram_auth_user: {
-        Args: {
-          auth_data: Json
-          bot_token: string
-        }
-        Returns: Json
-      },
-      verify_telegram_auth: {
-        Args: {
-          auth_data: Json
-          bot_token: string
-        }
-        Returns: boolean
-      },
       create_telegram_user: {
         Args: {
           p_id: string
           p_telegram_id: string
           p_first_name: string
-          p_last_name?: string
-          p_username?: string
-          p_photo_url?: string
+          p_last_name: string
+          p_username: string
+          p_photo_url: string
         }
-        Returns: boolean
+        Returns: {
+          id: string
+          telegram_id: string
+          first_name: string
+          last_name: string
+          username: string
+          photo_url: string
+        }
       }
-    },
-    Enums: {}
+    }
+    Enums: {
+      [_ in never]: never
+    }
   }
 } 

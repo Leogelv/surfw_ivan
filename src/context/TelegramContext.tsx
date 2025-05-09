@@ -112,6 +112,8 @@ interface TelegramContextType {
   telegramHeaderPadding: number;
   enableFullScreen: () => void;
   initializeTelegramApp: () => void;
+  telegramUser: TelegramUser | null;
+  initData: string | null;
 }
 
 // Создаем логгер для контекста Telegram
@@ -125,6 +127,8 @@ const TelegramContext = createContext<TelegramContextType>({
   telegramHeaderPadding: 100,
   enableFullScreen: () => {},
   initializeTelegramApp: () => {},
+  telegramUser: null,
+  initData: null,
 });
 
 // Хук для использования контекста
@@ -479,6 +483,8 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     telegramHeaderPadding: safeAreaInsetTop,
     enableFullScreen,
     initializeTelegramApp,
+    telegramUser: user,
+    initData: webApp?.initData || null,
   };
 
   return (

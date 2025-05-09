@@ -8,6 +8,22 @@
   --telegram-header-padding: 0px;
   --telegram-header-gradient: none;
   --letter-spacing: -0.025em;
+  
+  /* Telegram SafeArea отступы */
+  --tg-safe-area-top: 0px;
+  --tg-safe-area-right: 0px;
+  --tg-safe-area-bottom: 0px;
+  --tg-safe-area-left: 0px;
+  
+  /* Content SafeArea отступы */
+  --tg-content-safe-area-top: 0px;
+  --tg-content-safe-area-right: 0px;
+  --tg-content-safe-area-bottom: 0px;
+  --tg-content-safe-area-left: 0px;
+  
+  /* Viewport размеры */
+  --tg-viewport-height: 100vh;
+  --tg-viewport-stable-height: 100vh;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,4 +38,16 @@ body {
   background: var(--background);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
   letter-spacing: var(--letter-spacing);
+  padding-top: var(--tg-safe-area-top);
+  padding-right: var(--tg-safe-area-right);
+  padding-bottom: var(--tg-safe-area-bottom);
+  padding-left: var(--tg-safe-area-left);
+}
+
+/* Основной контейнер с учетом content safe area */
+.main-container {
+  padding-top: var(--tg-content-safe-area-top);
+  padding-right: var(--tg-content-safe-area-right);
+  padding-bottom: var(--tg-content-safe-area-bottom);
+  padding-left: var(--tg-content-safe-area-left);
 }
