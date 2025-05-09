@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel:yolo": "NEXT_PUBLIC_IGNORE_BUILD_ERROR=true NODE_OPTIONS=--max-old-space-size=4096 vercel deploy --no-verify"
+    "vercel:yolo": "NEXT_PUBLIC_IGNORE_BUILD_ERROR=true NODE_OPTIONS=--max-old-space-size=4096 vercel deploy"
   },
   "dependencies": {
     "@iconify/react": "^5.2.0",
