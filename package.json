@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "vercel:yolo": "NEXT_PUBLIC_IGNORE_BUILD_ERROR=true vercel"
   },
   "dependencies": {
     "@iconify/react": "^5.2.0",
