@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
 import logger from '@/lib/logger';
+import ProfileScreen from '@/components/screens/ProfileScreen';
 
 function YogaApp() {
   const { userData, isLoading: authLoading } = useAuth();
@@ -110,11 +111,29 @@ function YogaApp() {
 
   const toggleProfile = () => {
     setShowProfile(prev => !prev);
-    appLogger.info('Переключение профиля');
+    appLogger.info('Переключение профиля', { newState: !showProfile }, user?.id?.toString());
+  };
+
+  const handleHomeClick = () => {
+    setActiveTab('home');
+    setShowProfile(false);
+    appLogger.info('Переход на главную', null, user?.id?.toString());
+  };
+
+  const handleCartClick = () => {
+    setActiveTab('cart');
+    setShowProfile(false);
+    appLogger.info('Переход в корзину', null, user?.id?.toString());
+  };
+
+  const handleOrdersClick = () => {
+    setActiveTab('orders');
+    setShowProfile(false);
+    appLogger.info('Переход в заказы', null, user?.id?.toString());
   };
 
   const contentStyle = {
-    paddingTop: 'var(--telegram-header-padding)',
+    paddingTop: isFullScreenEnabled ? `${telegramHeaderPadding}px` : '0',
     transition: 'padding-top 0.3s ease'
   };
 
@@ -130,6 +149,18 @@ function YogaApp() {
       appLogger.info('Данные пользователя из Auth получены', { userData });
     }
   }, [user, userData, appLogger]);
+
+  // Если отображается профиль, показываем компонент ProfileScreen
+  if (showProfile) {
+    return (
+      <ProfileScreen 
+        onClose={() => setShowProfile(false)}
+        onHomeClick={handleHomeClick}
+        onCartClick={handleCartClick}
+        onOrdersClick={handleOrdersClick}
+      />
+    );
+  }
 
   return (
     <div style={contentStyle} className="h-screen bg-zinc-100 flex flex-col">
@@ -241,7 +272,7 @@ function YogaApp() {
           className={`flex flex-col items-center py-3 ${activeTab === 'home' ? 'text-black' : 'text-gray-400'}`}
           onClick={() => {
             setActiveTab('home');
-            appLogger.info('Переход на вкладку Главная');
+            appLogger.info('Переход на вкладку Главная', null, user?.id?.toString());
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -295,22 +326,13 @@ function YogaApp() {
           className={`flex flex-col items-center py-3 ${activeTab === 'profile' ? 'text-black' : 'text-gray-400'}`}
           onClick={() => {
             setActiveTab('profile');
-            appLogger.info('Переход на вкладку Профиль');
+            toggleProfile();
+            appLogger.info('Переход в профиль', null, user?.id?.toString());
           }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 15C15.3137 15 18 12.3137 18 9C18 5.68629 15.3137 3 12 3C8.68629 3 6 5.68629 6 9C6 12.3137 8.68629 15 12 15Z" 
-              stroke={activeTab === 'profile' ? 'black' : 'currentColor'} 
-              strokeWidth="1.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
-            <path d="M2.90625 20.2491C3.82834 18.6531 5.1542 17.3278 6.75064 16.4064C8.34708 15.485 10.1579 15 12.0011 15C13.8444 15 15.6552 15.4851 17.2516 16.4066C18.848 17.3281 20.1738 18.6533 21.0959 20.2494" 
-              stroke={activeTab === 'profile' ? 'black' : 'currentColor'} 
-              strokeWidth="1.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            />
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" 
+              fill={activeTab === 'profile' ? 'black' : 'currentColor'} />
           </svg>
           <span className="text-xs mt-1">Профиль</span>
         </button>

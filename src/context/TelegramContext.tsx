@@ -151,7 +151,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     }
 
     try {
-      telegramLogger.info('Попытка создания пользователя в Supabase', { telegramUser });
+      telegramLogger.info('Попытка создания пользователя в Supabase', { telegramUser }, telegramUser.id.toString());
       const supabase = getSupabaseClient();
       
       // Проверяем существует ли пользователь
@@ -162,16 +162,35 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         .single();
       
       if (checkError && checkError.code !== 'PGRST116') {
-        telegramLogger.error('Ошибка при проверке пользователя в Supabase', checkError);
+        telegramLogger.error('Ошибка при проверке пользователя в Supabase', checkError, telegramUser.id.toString());
         return;
       }
       
       if (existingUser) {
-        telegramLogger.info('Пользователь уже существует в Supabase', { existingUser });
+        telegramLogger.info('Пользователь уже существует в Supabase, обновляем данные', { existingUser }, telegramUser.id.toString());
+        
+        // Обновляем данные пользователя
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name || '',
+            username: telegramUser.username || '',
+            photo_url: telegramUser.photo_url || '',
+            last_login: new Date().toISOString()
+          })
+          .eq('telegram_id', telegramUser.id.toString());
+        
+        if (updateError) {
+          telegramLogger.error('Ошибка при обновлении пользователя в Supabase', updateError, telegramUser.id.toString());
+        } else {
+          telegramLogger.info('Данные пользователя успешно обновлены в Supabase', null, telegramUser.id.toString());
+        }
+        
         return;
       }
       
-      // Создаем нового пользователя
+      // Создаем нового пользователя (без указания id, пусть Supabase сам сгенерирует)
       const { data: newUser, error: insertError } = await supabase
         .from('users')
         .insert(
@@ -183,20 +202,36 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
             username: telegramUser.username || '',
             photo_url: telegramUser.photo_url || '',
             preferences: {},
-            last_login: new Date().toISOString()
+            last_login: new Date().toISOString(),
+            telegram_auth_date: new Date().toISOString()
           }
         )
         .select()
         .single();
       
       if (insertError) {
-        telegramLogger.error('Ошибка при создании пользователя в Supabase', insertError);
+        telegramLogger.error('Ошибка при создании пользователя в Supabase', insertError, telegramUser.id.toString());
+        console.error('SQL Error:', insertError);
         return;
       }
       
-      telegramLogger.info('Пользователь успешно создан в Supabase', { newUser });
+      telegramLogger.info('Пользователь успешно создан в Supabase', { newUser }, telegramUser.id.toString());
+      
+      // Создаем запись в user_settings для этого пользователя
+      if (newUser) {
+        const { error: settingsError } = await supabase
+          .from('user_settings')
+          .insert({ user_id: newUser.id });
+        
+        if (settingsError) {
+          telegramLogger.error('Ошибка при создании настроек пользователя', settingsError, telegramUser.id.toString());
+        } else {
+          telegramLogger.info('Настройки пользователя созданы', null, telegramUser.id.toString());
+        }
+      }
     } catch (error) {
-      telegramLogger.error('Исключение при создании пользователя в Supabase', error);
+      telegramLogger.error('Исключение при создании пользователя в Supabase', error, telegramUser.id.toString());
+      console.error('Exception:', error);
     }
   };
 

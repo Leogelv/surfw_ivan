@@ -66,7 +66,47 @@ export interface Database {
             referencedColumns: ["id"]
           }
         ]
-      }
+      },
+      logs: {
+        Row: {
+          id: string
+          level: string
+          message: string
+          module: string
+          user_id: string | null
+          data: Json | null
+          created_at: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          level: string
+          message: string
+          module: string
+          user_id?: string | null
+          data?: Json | null
+          created_at?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          level?: string
+          message?: string
+          module?: string
+          user_id?: string | null
+          data?: Json | null
+          created_at?: string | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
       user_settings: {
         Row: {
           user_id: string
@@ -103,7 +143,7 @@ export interface Database {
             referencedColumns: ["id"]
           }
         ]
-      }
+      },
       view_history: {
         Row: {
           id: string
@@ -146,7 +186,7 @@ export interface Database {
             referencedColumns: ["id"]
           }
         ]
-      }
+      },
       quizlogic: {
         Row: {
           id: string
@@ -189,8 +229,8 @@ export interface Database {
         }
         Relationships: []
       }
-    }
-    Views: {}
+    },
+    Views: {},
     Functions: {
       telegram_auth_user: {
         Args: {
@@ -198,7 +238,7 @@ export interface Database {
           bot_token: string
         }
         Returns: Json
-      }
+      },
       verify_telegram_auth: {
         Args: {
           auth_data: Json
@@ -206,7 +246,7 @@ export interface Database {
         }
         Returns: boolean
       }
-    }
+    },
     Enums: {}
   }
 } 
