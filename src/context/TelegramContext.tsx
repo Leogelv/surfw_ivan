@@ -141,7 +141,19 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [isFullScreenEnabled, setIsFullScreenEnabled] = useState(false);
-  const [telegramHeaderPadding] = useState(100);
+  const [safeAreaInsetTop, setSafeAreaInsetTop] = useState(0);
+
+  // Обновление значения safeAreaInsetTop при изменении webApp
+  useEffect(() => {
+    if (webApp && webApp.safeAreaInset) {
+      setSafeAreaInsetTop(webApp.safeAreaInset.top);
+      telegramLogger.debug('Установлен safeAreaInsetTop из Telegram WebApp', { top: webApp.safeAreaInset.top });
+    } else {
+      // Значение по умолчанию, если safeAreaInset не доступен
+      setSafeAreaInsetTop(50);
+      telegramLogger.debug('Установлен safeAreaInsetTop по умолчанию: 50px');
+    }
+  }, [webApp]);
 
   // Функция для создания пользователя в Supabase
   const createUserInSupabase = async (telegramUser: TelegramUser) => {
@@ -154,14 +166,36 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       telegramLogger.info('Попытка создания пользователя в Supabase', { telegramUser }, telegramUser.id.toString());
       const supabase = getSupabaseClient();
       
+      // Проверка политик доступа для таблицы users
+      try {
+        telegramLogger.debug('Проверка доступности таблицы users');
+        const { count, error: countError } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true });
+          
+        if (countError) {
+          telegramLogger.error('Ошибка при проверке доступа к таблице users', 
+            { error: countError, message: countError.message, details: countError.details },
+            telegramUser.id.toString()
+          );
+          // Если не можем даже получить count, есть проблемы с доступом
+          return;
+        }
+        
+        telegramLogger.info('Таблица users доступна, количество записей', { count }, telegramUser.id.toString());
+      } catch (checkTableError) {
+        telegramLogger.error('Исключение при проверке таблицы users', checkTableError, telegramUser.id.toString());
+      }
+      
       // Проверяем существует ли пользователь
+      telegramLogger.debug('Поиск пользователя по telegram_id', { telegram_id: telegramUser.id.toString() });
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
-        .select('*')
+        .select('id, telegram_id, username, first_name, last_name')
         .eq('telegram_id', telegramUser.id.toString())
-        .single();
+        .maybeSingle(); // используем maybeSingle вместо single чтобы избежать ошибки, если пользователя нет
       
-      if (checkError && checkError.code !== 'PGRST116') {
+      if (checkError) {
         telegramLogger.error('Ошибка при проверке пользователя в Supabase', 
           { error: checkError, details: checkError.details, code: checkError.code, message: checkError.message }, 
           telegramUser.id.toString()
@@ -196,25 +230,29 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         return;
       }
       
+      // Генерируем уникальный ID для нового пользователя
       const userId = randomUUID();
       telegramLogger.info('Генерация ID для нового пользователя', { userId }, telegramUser.id.toString());
+      
+      // Подготовка данных пользователя
+      const userData = { 
+        id: userId,
+        telegram_id: telegramUser.id.toString(),
+        first_name: telegramUser.first_name,
+        last_name: telegramUser.last_name || '',
+        username: telegramUser.username || '',
+        photo_url: telegramUser.photo_url || '',
+        preferences: {},
+        last_login: new Date().toISOString(),
+        telegram_auth_date: new Date().toISOString()
+      };
+      
+      telegramLogger.debug('Подготовлены данные для создания пользователя', userData);
       
       // Создаем нового пользователя
       const { data: newUser, error: insertError } = await supabase
         .from('users')
-        .insert(
-          { 
-            id: userId,
-            telegram_id: telegramUser.id.toString(),
-            first_name: telegramUser.first_name,
-            last_name: telegramUser.last_name || '',
-            username: telegramUser.username || '',
-            photo_url: telegramUser.photo_url || '',
-            preferences: {},
-            last_login: new Date().toISOString(),
-            telegram_auth_date: new Date().toISOString()
-          }
-        )
+        .insert(userData)
         .select()
         .single();
       
@@ -223,25 +261,67 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
           { error: insertError, details: insertError.details, code: insertError.code, message: insertError.message, userId }, 
           telegramUser.id.toString()
         );
+        
+        // Попробуем прямым SQL запросом, если insert через API не сработал
+        try {
+          telegramLogger.info('Попытка создания пользователя через SQL запрос', { userId });
+          const { data: sqlInsertData, error: sqlInsertError } = await supabase.rpc('create_telegram_user', {
+            p_id: userId,
+            p_telegram_id: telegramUser.id.toString(),
+            p_first_name: telegramUser.first_name,
+            p_last_name: telegramUser.last_name || '',
+            p_username: telegramUser.username || '',
+            p_photo_url: telegramUser.photo_url || ''
+          });
+          
+          if (sqlInsertError) {
+            telegramLogger.error('Ошибка при создании пользователя через SQL', 
+              { error: sqlInsertError, message: sqlInsertError.message },
+              telegramUser.id.toString()
+            );
+          } else {
+            telegramLogger.info('Пользователь успешно создан через SQL запрос', { result: sqlInsertData });
+          }
+        } catch (sqlError) {
+          telegramLogger.error('Исключение при выполнении SQL запроса', sqlError, telegramUser.id.toString());
+        }
+        
         return;
       }
       
       telegramLogger.info('Пользователь успешно создан в Supabase', { newUser }, telegramUser.id.toString());
       
-      // Создаем запись в user_settings для этого пользователя
-      if (newUser) {
-        const { error: settingsError } = await supabase
+      // Проверяем существование таблицы user_settings
+      try {
+        const { count: settingsCount, error: settingsCountError } = await supabase
           .from('user_settings')
-          .insert({ user_id: newUser.id });
-        
-        if (settingsError) {
-          telegramLogger.error('Ошибка при создании настроек пользователя', 
-            { error: settingsError, details: settingsError.details, code: settingsError.code, message: settingsError.message }, 
+          .select('*', { count: 'exact', head: true });
+          
+        if (settingsCountError) {
+          telegramLogger.warn('Ошибка при проверке таблицы user_settings, возможно таблица не существует', 
+            { error: settingsCountError },
             telegramUser.id.toString()
           );
-        } else {
-          telegramLogger.info('Настройки пользователя созданы', null, telegramUser.id.toString());
+          return; // Не создаем настройки, если таблица не существует
         }
+        
+        // Создаем запись в user_settings для этого пользователя
+        if (newUser) {
+          const { error: settingsError } = await supabase
+            .from('user_settings')
+            .insert({ user_id: newUser.id });
+          
+          if (settingsError) {
+            telegramLogger.error('Ошибка при создании настроек пользователя', 
+              { error: settingsError, details: settingsError.details, code: settingsError.code, message: settingsError.message }, 
+              telegramUser.id.toString()
+            );
+          } else {
+            telegramLogger.info('Настройки пользователя созданы', null, telegramUser.id.toString());
+          }
+        }
+      } catch (settingsError) {
+        telegramLogger.error('Исключение при работе с таблицей user_settings', settingsError, telegramUser.id.toString());
       }
     } catch (error) {
       telegramLogger.error('Исключение при создании пользователя в Supabase', error, telegramUser.id.toString());
@@ -251,6 +331,8 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
 
   // Инициализация Telegram WebApp
   useEffect(() => {
+    let cleanup = () => {};
+    
     // Проверяем, доступен ли Telegram WebApp
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
       const tgWebApp = window.Telegram.WebApp;
@@ -258,6 +340,34 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       
       // Устанавливаем данные WebApp и пользователя
       setWebApp(tgWebApp as unknown as TelegramWebApp);
+      
+      // Добавляем обработчик события viewport_changed
+      const handleViewportChanged = (event: MessageEvent) => {
+        if (
+          event.data && 
+          typeof event.data === 'object' && 
+          'event_name' in event.data && 
+          event.data.event_name === 'viewport_changed' && 
+          'params' in event.data && 
+          event.data.params.safe_area_inset
+        ) {
+          const { safe_area_inset } = event.data.params;
+          telegramLogger.info('Получено событие viewport_changed с обновленными значениями safe_area_inset', safe_area_inset);
+          
+          // Обновляем значение safeAreaInsetTop
+          if (safe_area_inset.top !== undefined) {
+            setSafeAreaInsetTop(safe_area_inset.top);
+            telegramLogger.debug('Обновлен safeAreaInsetTop из события viewport_changed', { top: safe_area_inset.top });
+          }
+        }
+      };
+      
+      window.addEventListener('message', handleViewportChanged);
+      
+      // Установка функции очистки
+      cleanup = () => {
+        window.removeEventListener('message', handleViewportChanged);
+      };
       
       // Если в инициализационных данных есть пользователь, используем его
       if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
@@ -288,6 +398,9 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       // Создаем или обновляем пользователя в Supabase
       createUserInSupabase(mockTelegramUser);
     }
+    
+    // Возвращаем функцию очистки
+    return cleanup;
   }, []);
 
   // Функция для включения полноэкранного режима
@@ -362,7 +475,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     user,
     webApp,
     isFullScreenEnabled,
-    telegramHeaderPadding,
+    telegramHeaderPadding: safeAreaInsetTop,
     enableFullScreen,
     initializeTelegramApp,
   };
