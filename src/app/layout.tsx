@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import Script from 'next/script'
 import { TelegramProvider } from '@/context/TelegramContext'
 import TelegramViewportStyle from '@/components/TelegramViewportStyle'
+import { AuthProvider } from '@/context/AuthContext'
 
 // Используем только Inter, убираем Bebas_Neue
 const inter = Inter({ 
@@ -12,9 +13,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Surf Coffee',
-  description: 'Мобильное приложение Surf Coffee',
-  themeColor: '#0A0908'
+  title: 'Практики',
+  description: 'Медитативные, телесные и дыхательные практики для повышения осознанности',
+  themeColor: '#ffffff'
 }
 
 export default function RootLayout({
@@ -28,10 +29,12 @@ export default function RootLayout({
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
       <body className={`${inter.variable} font-sans`}>
-        <TelegramProvider>
-          <TelegramViewportStyle />
-          {children}
-        </TelegramProvider>
+        <AuthProvider>
+          <TelegramProvider>
+            <TelegramViewportStyle />
+            {children}
+          </TelegramProvider>
+        </AuthProvider>
       </body>
     </html>
   )

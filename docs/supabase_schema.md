@@ -1,15 +1,60 @@
-# SQL для таблицы quizlogic в Supabase
+# Структура базы данных Supabase
 
-## Создание таблицы
+## Таблица users (для авторизации)
 
 ```sql
--- Создание таблицы quizlogic
+CREATE TABLE public.users (
+    id uuid PRIMARY KEY REFERENCES auth.users(id),
+    username text,
+    telegram_id text UNIQUE,
+    telegram_username text,
+    avatar_url text,
+    preferences jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    first_name text,
+    last_name text,
+    last_login timestamp with time zone,
+    photo_url text
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- Политика доступа к своим данным
+CREATE POLICY "Users can view and update their own data"
+    ON public.users
+    FOR ALL
+    USING (auth.uid() = id)
+    WITH CHECK (auth.uid() = id);
+```
+
+## Таблица user_settings
+
+```sql
+CREATE TABLE public.user_settings (
+    user_id uuid PRIMARY KEY REFERENCES public.users(id),
+    notifications_enabled boolean DEFAULT true,
+    language text DEFAULT 'ru'::text,
+    theme text DEFAULT 'dark'::text,
+    auto_play boolean DEFAULT true,
+    settings jsonb DEFAULT '{}'::jsonb,
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица quizlogic
+
+```sql
 CREATE TABLE public.quizlogic (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     type VARCHAR(50) NOT NULL,
-    duration INTEGER NOT NULL,
+    duration VARCHAR(50),  -- Может быть NULL для некоторых типов практик
     goal VARCHAR(50) NOT NULL,
-    approach VARCHAR(50) NOT NULL,
+    approach VARCHAR(50),  -- Может быть NULL для не-медитативных практик
     content_type VARCHAR(50) NOT NULL,
     content_url TEXT NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -20,17 +65,6 @@ CREATE TABLE public.quizlogic (
 
 -- Включение Row Level Security
 ALTER TABLE public.quizlogic ENABLE ROW LEVEL SECURITY;
-
--- Создание политики доступа для чтения данных (анонимные пользователи могут читать)
-CREATE POLICY "Allow anonymous read access" 
-    ON public.quizlogic 
-    FOR SELECT 
-    USING (true);
-
--- Создание политики доступа для изменения данных (только авторизованные администраторы)
-CREATE POLICY "Allow admin full access" 
-    ON public.quizlogic 
-    USING (auth.role() = 'authenticated' AND auth.email() IN ('admin@example.com'));
 
 -- Создание индексов для повышения производительности запросов
 CREATE INDEX idx_quizlogic_type ON public.quizlogic(type);
@@ -53,73 +87,312 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 ```
 
-## Примеры запросов для работы с таблицей
+## Таблица content_types
 
 ```sql
--- Запрос для получения всех доступных типов практик
-SELECT DISTINCT type FROM public.quizlogic;
-
--- Запрос для получения доступных длительностей для конкретного типа практики
-SELECT DISTINCT duration 
-FROM public.quizlogic 
-WHERE type = 'meditation'
-ORDER BY duration ASC;
-
--- Запрос для получения целей, доступных для выбранного типа практики
-SELECT DISTINCT goal 
-FROM public.quizlogic 
-WHERE type = 'meditation';
-
--- Запрос для получения практики на основе всех выбранных параметров
-SELECT * 
-FROM public.quizlogic 
-WHERE type = 'meditation' 
-AND duration = 10 
-AND goal = 'relaxation' 
-AND approach = 'guided';
-
--- Запрос для получения ближайшей по параметрам практики, если точного совпадения нет
-SELECT * 
-FROM public.quizlogic 
-WHERE type = 'meditation' 
-ORDER BY 
-  CASE WHEN duration = 10 THEN 0 ELSE ABS(duration - 10) END,
-  CASE WHEN goal = 'relaxation' THEN 0 ELSE 1 END,
-  CASE WHEN approach = 'guided' THEN 0 ELSE 1 END
-LIMIT 1;
+CREATE TABLE public.content_types (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name text NOT NULL,
+    slug text NOT NULL UNIQUE,
+    description text,
+    created_at timestamp with time zone DEFAULT now()
+);
 ```
 
-## Примеры данных для заполнения таблицы
+## Таблица categories
 
 ```sql
--- Медитативные практики
-INSERT INTO public.quizlogic (type, duration, goal, approach, content_type, content_url, title, description)
-VALUES
-  ('meditation', 5, 'relaxation', 'guided', 'video', 'https://example.com/videos/quick_relaxation.mp4', 'Быстрая релаксация', 'Короткая медитация для быстрого расслабления'),
-  ('meditation', 10, 'relaxation', 'guided', 'video', 'https://example.com/videos/guided_relaxation.mp4', 'Медитация для расслабления', 'Медитация с гидом для глубокого расслабления'),
-  ('meditation', 15, 'relaxation', 'self-practice', 'audio', 'https://example.com/audio/relaxation_background.mp3', 'Самостоятельная релаксация', 'Фоновая музыка для самостоятельной медитации'),
-  ('meditation', 10, 'focus', 'guided', 'video', 'https://example.com/videos/focus_meditation.mp4', 'Медитация для концентрации', 'Улучшение внимания и концентрации'),
-  ('meditation', 15, 'focus', 'self-practice', 'audio', 'https://example.com/audio/focus_sound.mp3', 'Практика концентрации', 'Звуковое сопровождение для самостоятельной практики концентрации'),
-  ('meditation', 20, 'stress-relief', 'guided', 'video', 'https://example.com/videos/stress_relief.mp4', 'Снятие стресса', 'Медитация для снятия накопленного стресса'),
-  ('meditation', 30, 'stress-relief', 'self-practice', 'audio', 'https://example.com/audio/calm_mind.mp3', 'Спокойствие ума', 'Длительная практика для глубокого спокойствия');
+CREATE TABLE public.categories (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name text NOT NULL,
+    slug text NOT NULL UNIQUE,
+    description text,
+    icon text,
+    color text,
+    display_order integer DEFAULT 0,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+```
 
--- Дыхательные практики
-INSERT INTO public.quizlogic (type, duration, goal, approach, content_type, content_url, title, description)
-VALUES
-  ('breathing', 5, 'calm', 'guided', 'video', 'https://example.com/videos/quick_breathing.mp4', 'Быстрое дыхание', 'Короткая дыхательная техника для быстрого успокоения'),
-  ('breathing', 10, 'calm', 'guided', 'video', 'https://example.com/videos/calm_breathing.mp4', 'Дыхание для спокойствия', 'Дыхательная практика с инструктором'),
-  ('breathing', 10, 'energy', 'guided', 'video', 'https://example.com/videos/energy_breathing.mp4', 'Энергетическое дыхание', 'Дыхательная техника для повышения энергии'),
-  ('breathing', 15, 'energy', 'self-practice', 'audio', 'https://example.com/audio/energizing_breath.mp3', 'Самостоятельная энергетическая практика', 'Фоновое сопровождение для энергетического дыхания'),
-  ('breathing', 10, 'endurance', 'guided', 'video', 'https://example.com/videos/endurance_breathing.mp4', 'Дыхание для выносливости', 'Дыхательные упражнения для повышения выносливости'),
-  ('breathing', 15, 'endurance', 'self-practice', 'audio', 'https://example.com/audio/stamina_breath.mp3', 'Практика выносливости', 'Самостоятельная дыхательная практика для выносливости');
+## Таблица tags
 
--- Телесные практики
-INSERT INTO public.quizlogic (type, duration, goal, approach, content_type, content_url, title, description)
-VALUES
-  ('physical', 10, 'stretching', 'guided', 'video', 'https://example.com/videos/stretching.mp4', 'Растяжка всего тела', 'Гид по растяжке всех групп мышц'),
-  ('physical', 15, 'stretching', 'self-practice', 'audio', 'https://example.com/audio/stretch_routine.mp3', 'Самостоятельная растяжка', 'Звуковое сопровождение для самостоятельной растяжки'),
-  ('physical', 20, 'strength', 'guided', 'video', 'https://example.com/videos/strength_training.mp4', 'Укрепление мышц', 'Практика для укрепления основных групп мышц'),
-  ('physical', 30, 'strength', 'self-practice', 'audio', 'https://example.com/audio/strength_routine.mp3', 'Самостоятельное укрепление', 'Звуковое сопровождение для самостоятельных упражнений'),
-  ('physical', 15, 'energy', 'guided', 'video', 'https://example.com/videos/energy_movement.mp4', 'Энергетические движения', 'Практика для повышения энергии через движение'),
-  ('physical', 20, 'energy', 'self-practice', 'audio', 'https://example.com/audio/energetic_flow.mp3', 'Энергетический поток', 'Самостоятельная практика для повышения энергии');
+```sql
+CREATE TABLE public.tags (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name text NOT NULL,
+    slug text NOT NULL UNIQUE,
+    category_id uuid REFERENCES public.categories(id),
+    parent_tag_id uuid REFERENCES public.tags(id),
+    display_order integer DEFAULT 0,
+    created_at timestamp with time zone DEFAULT now()
+);
+```
+
+## Таблица contents
+
+```sql
+CREATE TABLE public.contents (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    title text NOT NULL,
+    subtitle text,
+    description text,
+    duration integer NOT NULL,
+    thumbnail_url text,
+    background_image_url text,
+    content_type_id uuid NOT NULL REFERENCES public.content_types(id),
+    category_id uuid NOT NULL REFERENCES public.categories(id),
+    difficulty_level text CHECK (difficulty_level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text])),
+    kinescope_id text,
+    audio_file_path text,
+    is_premium boolean DEFAULT false,
+    is_featured boolean DEFAULT false,
+    display_order integer DEFAULT 0,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+```
+
+## Таблица content_tags
+
+```sql
+CREATE TABLE public.content_tags (
+    content_id uuid REFERENCES public.contents(id),
+    tag_id uuid REFERENCES public.tags(id),
+    PRIMARY KEY (content_id, tag_id)
+);
+```
+
+## Таблица related_contents
+
+```sql
+CREATE TABLE public.related_contents (
+    content_id uuid REFERENCES public.contents(id),
+    related_content_id uuid REFERENCES public.contents(id),
+    relation_type text DEFAULT 'related'::text,
+    display_order integer DEFAULT 0,
+    PRIMARY KEY (content_id, related_content_id)
+);
+```
+
+## Таблица favorites
+
+```sql
+CREATE TABLE public.favorites (
+    user_id uuid REFERENCES public.users(id),
+    content_id uuid REFERENCES public.contents(id),
+    created_at timestamp with time zone DEFAULT now(),
+    PRIMARY KEY (user_id, content_id)
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица progress
+
+```sql
+CREATE TABLE public.progress (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id uuid REFERENCES public.users(id),
+    content_id uuid REFERENCES public.contents(id),
+    position integer DEFAULT 0,
+    completed boolean DEFAULT false,
+    completion_count integer DEFAULT 0,
+    last_accessed timestamp with time zone DEFAULT now(),
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.progress ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица view_history
+
+```sql
+CREATE TABLE public.view_history (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id uuid REFERENCES public.users(id),
+    content_id uuid REFERENCES public.contents(id),
+    started_at timestamp with time zone DEFAULT now(),
+    ended_at timestamp with time zone,
+    duration integer,
+    completion_percentage double precision
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.view_history ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица ratings
+
+```sql
+CREATE TABLE public.ratings (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id uuid REFERENCES public.users(id),
+    content_id uuid REFERENCES public.contents(id),
+    rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица schedules
+
+```sql
+CREATE TABLE public.schedules (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id uuid REFERENCES public.users(id),
+    content_id uuid REFERENCES public.contents(id),
+    scheduled_date timestamp with time zone NOT NULL,
+    completed boolean DEFAULT false,
+    reminder boolean DEFAULT true,
+    reminder_time integer DEFAULT 15,
+    recurring text,
+    recurring_days integer[],
+    end_date timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.schedules ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица notifications
+
+```sql
+CREATE TABLE public.notifications (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id uuid REFERENCES public.users(id),
+    title text NOT NULL,
+    message text NOT NULL,
+    type text NOT NULL,
+    related_id uuid,
+    is_read boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT now(),
+    read_at timestamp with time zone
+);
+
+-- Включение Row Level Security
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+```
+
+## Таблица collections
+
+```sql
+CREATE TABLE public.collections (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    title text NOT NULL,
+    description text,
+    thumbnail_url text,
+    is_featured boolean DEFAULT false,
+    is_premium boolean DEFAULT false,
+    display_order integer DEFAULT 0,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+```
+
+## Таблица collection_contents
+
+```sql
+CREATE TABLE public.collection_contents (
+    collection_id uuid REFERENCES public.collections(id),
+    content_id uuid REFERENCES public.contents(id),
+    display_order integer DEFAULT 0,
+    PRIMARY KEY (collection_id, content_id)
+);
+```
+
+## Таблица agent_notes
+
+```sql
+CREATE TABLE public.agent_notes (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    title text NOT NULL,
+    content text NOT NULL,
+    tags text[] DEFAULT '{}'::text[],
+    category text,
+    priority text DEFAULT 'normal'::text,
+    status text DEFAULT 'active'::text,
+    related_files text[] DEFAULT '{}'::text[],
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now(),
+    is_important boolean DEFAULT false,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    context text
+);
+
+COMMENT ON TABLE public.agent_notes IS 'Таблица для хранения заметок AI ассистента по проекту';
+
+-- Включение Row Level Security
+ALTER TABLE public.agent_notes ENABLE ROW LEVEL SECURITY;
+```
+
+## Примеры запросов для работы с авторизацией
+
+```sql
+-- Регистрация нового пользователя через Supabase Auth
+-- Выполняется через Supabase Auth API на клиенте
+
+-- Создание триггера для автоматического создания записи в users при регистрации
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.users (id, username, created_at, updated_at)
+    VALUES (new.id, new.email, new.created_at, new.updated_at);
+    
+    INSERT INTO public.user_settings (user_id)
+    VALUES (new.id);
+    
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Получение информации о текущем пользователе
+SELECT * FROM public.users WHERE id = auth.uid();
+
+-- Обновление настроек пользователя
+UPDATE public.user_settings 
+SET theme = 'light', language = 'en', updated_at = now()
+WHERE user_id = auth.uid();
+```
+
+## Примеры запросов для работы с контентом и квизом
+
+```sql
+-- Получение всех типов контента
+SELECT * FROM public.content_types;
+
+-- Получение всех категорий
+SELECT * FROM public.categories ORDER BY display_order;
+
+-- Получение всех практик определенного типа
+SELECT * FROM public.quizlogic WHERE type = 'meditation';
+
+-- Получение пользовательского прогресса по конкретной практике
+SELECT * FROM public.progress 
+WHERE user_id = auth.uid() AND content_id = '00000000-0000-0000-0000-000000000000';
+
+-- Добавление практики в избранное
+INSERT INTO public.favorites (user_id, content_id)
+VALUES (auth.uid(), '00000000-0000-0000-0000-000000000000');
+
+-- Получение истории просмотров пользователя
+SELECT vh.*, c.title, c.thumbnail_url
+FROM public.view_history vh
+JOIN public.contents c ON vh.content_id = c.id
+WHERE vh.user_id = auth.uid()
+ORDER BY vh.started_at DESC;
 ``` 

@@ -6,24 +6,36 @@
 src/
 ├── components/
 │   ├── Quiz/
-│   │   ├── QuizScreen.tsx           # Основной контейнер для квиза
-│   │   ├── ChoosePracticeScreen.tsx # Экран выбора типа практики
-│   │   ├── PracticeTimeScreen.tsx   # Экран выбора длительности
-│   │   ├── PracticeGoalScreen.tsx   # Экран выбора цели
-│   │   ├── PracticeApproachScreen.tsx # Экран выбора подхода
-│   │   ├── ResultScreen.tsx         # Экран с результатом подбора
+│   │   ├── PracticeSelectionScreen.tsx # Основной экран выбора практики
+│   │   ├── HowItWorksScreen.tsx        # Экран с информацией о работе квиза
+│   │   │
+│   │   ├── ShortPracticeGoalScreen.tsx # Экран выбора цели для "До 7 мин"
+│   │   │
+│   │   ├── PhysicalTimeScreen.tsx      # Экран выбора длительности телесной практики
+│   │   ├── ShortPhysicalGoalScreen.tsx # Экран выбора цели для короткой телесной практики
+│   │   ├── LongPhysicalGoalScreen.tsx  # Экран выбора цели для длинной телесной практики
+│   │   │
+│   │   ├── BreathingGoalScreen.tsx     # Экран выбора цели для дыхательной практики
+│   │   │
+│   │   ├── MeditationApproachScreen.tsx # Экран выбора подхода к медитации
+│   │   ├── SelfGuidedTimePicker.tsx    # Экран выбора времени для самостоятельной медитации
+│   │   ├── ConcentrationObjectScreen.tsx # Экран выбора объекта концентрации
+│   │   ├── GuidedMeditationThemeScreen.tsx # Экран выбора темы для медитации
+│   │   ├── GuidedMeditationGoalScreen.tsx # Экран выбора цели для медитации
+│   │   │
 │   │   ├── ui/                      # UI компоненты для квиза
 │   │   │   ├── OptionCard.tsx       # Карточка с опцией выбора
-│   │   │   ├── ProgressIndicator.tsx # Индикатор прогресса квиза
-│   │   │   ├── NavigationButtons.tsx # Кнопки навигации (Назад/Далее)
+│   │   │   ├── NavigationButtons.tsx # Кнопки навигации (Назад)
 │   │   │   └── TimeSelector.tsx     # Селектор времени практики
 │   │   └── hooks/                   # Хуки для квиза
 │   │       ├── useQuizNavigation.ts # Хук для навигации по квизу
 │   │       └── useQuizOptions.ts    # Хук для загрузки опций квиза
+│   │
 │   ├── Player/
 │   │   ├── Player.tsx               # Универсальный плеер
-│   │   ├── MeditationMode.tsx       # Режим медитации
-│   │   ├── VideoMode.tsx            # Режим видео
+│   │   ├── MeditationTimerMode.tsx  # Режим медитации с таймером (для самостоятельной)
+│   │   ├── MeditationAudioMode.tsx  # Режим медитации с аудио (с сопровождением)
+│   │   ├── VideoMode.tsx            # Режим видео (для телесных и дыхательных)
 │   │   ├── ui/                      # UI компоненты для плеера
 │   │   │   ├── PlayButton.tsx       # Кнопка воспроизведения
 │   │   │   ├── Timer.tsx            # Таймер для медитации
@@ -34,6 +46,10 @@ src/
 │   │       ├── usePlayerControls.ts # Хук для управления плеером
 │   │       ├── useTimer.ts          # Хук для работы с таймером
 │   │       └── useAudioPlayer.ts    # Хук для управления аудио
+│   │
+│   └── MainPage/
+│       └── PracticeButton.tsx        # Кнопка "Выбрать практику" на главной странице
+│
 ├── context/
 │   ├── QuizContext.tsx              # Контекст для состояния квиза
 │   └── PlayerContext.tsx            # Контекст для управления плеером
@@ -45,139 +61,230 @@ src/
 
 ## Детали компонентов квиза
 
-### QuizScreen
-Основной контейнер для квиза, управляет навигацией между экранами.
+### PracticeSelectionScreen
+Основной экран выбора типа практики с четырьмя опциями.
 
 ```tsx
-// QuizScreen.tsx
-import { useState } from 'react';
-import { useQuizContext } from '@/context/QuizContext';
-import ChoosePracticeScreen from './ChoosePracticeScreen';
-import PracticeTimeScreen from './PracticeTimeScreen';
-import PracticeGoalScreen from './PracticeGoalScreen';
-import PracticeApproachScreen from './PracticeApproachScreen';
-import ResultScreen from './ResultScreen';
-import ProgressIndicator from './ui/ProgressIndicator';
-
-const QuizScreen = () => {
-  const { currentStep, setCurrentStep } = useQuizContext();
-  
-  // Отображение экрана в зависимости от текущего шага
-  const renderCurrentScreen = () => {
-    switch (currentStep) {
-      case 1:
-        return <ChoosePracticeScreen />;
-      case 2:
-        return <PracticeTimeScreen />;
-      case 3:
-        return <PracticeGoalScreen />;
-      case 4:
-        return <PracticeApproachScreen />;
-      case 5:
-        return <ResultScreen />;
-      default:
-        return <ChoosePracticeScreen />;
-    }
-  };
-  
-  return (
-    <div className="quiz-container">
-      <ProgressIndicator currentStep={currentStep} totalSteps={5} />
-      {renderCurrentScreen()}
-    </div>
-  );
-};
-
-export default QuizScreen;
-```
-
-### Экраны выбора опций
-Каждый экран квиза отвечает за выбор одного параметра и обновление контекста.
-
-```tsx
-// ChoosePracticeScreen.tsx (пример)
+// PracticeSelectionScreen.tsx
 import { useEffect, useState } from 'react';
 import { useQuizContext } from '@/context/QuizContext';
 import { supabase } from '@/lib/supabase';
 import OptionCard from './ui/OptionCard';
 import NavigationButtons from './ui/NavigationButtons';
+import { useRouter } from 'next/router';
 
-const ChoosePracticeScreen = () => {
-  const { quizState, updateQuizState, goToNextStep } = useQuizContext();
-  const [practiceTypes, setPracticeTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Загрузка типов практик из Supabase
-  useEffect(() => {
-    const fetchPracticeTypes = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('quizlogic')
-          .select('type')
-          .distinct();
-          
-        if (error) throw error;
-        
-        setPracticeTypes(data.map(item => item.type));
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching practice types:', error);
-        setLoading(false);
-      }
-    };
-    
-    fetchPracticeTypes();
-  }, []);
+const PracticeSelectionScreen = () => {
+  const { quizState, updateQuizState, setCurrentBranch } = useQuizContext();
+  const router = useRouter();
   
   // Обработчик выбора типа практики
   const handleSelectType = (type) => {
     updateQuizState({ type });
+    
+    // Перенаправление на соответствующий экран в зависимости от выбора
+    switch (type) {
+      case 'short_7_min':
+        setCurrentBranch('short');
+        router.push('/quiz/short-goal');
+        break;
+      case 'physical':
+        setCurrentBranch('physical');
+        router.push('/quiz/physical-time');
+        break;
+      case 'breathing':
+        setCurrentBranch('breathing');
+        router.push('/quiz/breathing-goal');
+        break;
+      case 'meditation':
+        setCurrentBranch('meditation');
+        router.push('/quiz/meditation-approach');
+        break;
+    }
+  };
+  
+  // Переход к экрану "Как это работает"
+  const handleHowItWorks = () => {
+    router.push('/quiz/how-it-works');
+  };
+  
+  // Возврат на главную страницу
+  const handleBack = () => {
+    router.push('/');
   };
   
   return (
-    <div className="practice-screen">
-      <h2>Выберите тип практики</h2>
+    <div className="practice-selection-screen">
+      <h2>Выбор практики</h2>
+      
+      <div className="options-grid">
+        <OptionCard
+          title="До 7 мин"
+          description="Быстрые практики, которые можно выполнить за несколько минут"
+          isSelected={quizState.type === 'short_7_min'}
+          onSelect={() => handleSelectType('short_7_min')}
+        />
+        <OptionCard
+          title="Телесная"
+          description="Практики для работы с телом и физическим состоянием"
+          isSelected={quizState.type === 'physical'}
+          onSelect={() => handleSelectType('physical')}
+        />
+        <OptionCard
+          title="Дыхательная"
+          description="Практики для контроля дыхания и улучшения состояния"
+          isSelected={quizState.type === 'breathing'}
+          onSelect={() => handleSelectType('breathing')}
+        />
+        <OptionCard
+          title="Медитация"
+          description="Медитативные практики для работы с сознанием"
+          isSelected={quizState.type === 'meditation'}
+          onSelect={() => handleSelectType('meditation')}
+        />
+      </div>
+      
+      <button 
+        className="how-it-works-button"
+        onClick={handleHowItWorks}
+      >
+        Как это работает?
+      </button>
+      
+      <NavigationButtons
+        onBack={handleBack}
+        showNext={false}
+      />
+    </div>
+  );
+};
+
+export default PracticeSelectionScreen;
+```
+
+### Примеры компонентов различных веток
+
+#### ShortPracticeGoalScreen (Ветка "До 7 мин")
+
+```tsx
+// ShortPracticeGoalScreen.tsx
+import { useEffect, useState } from 'react';
+import { useQuizContext } from '@/context/QuizContext';
+import { supabase } from '@/lib/supabase';
+import OptionCard from './ui/OptionCard';
+import NavigationButtons from './ui/NavigationButtons';
+import { useRouter } from 'next/router';
+
+const ShortPracticeGoalScreen = () => {
+  const { quizState, updateQuizState } = useQuizContext();
+  const [goals, setGoals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  
+  // Загрузка доступных целей для короткой практики
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('quizlogic')
+          .select('goal')
+          .eq('type', 'short_7_min')
+          .distinct();
+          
+        if (error) throw error;
+        
+        setGoals(data.map(item => item.goal));
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching goals:', error);
+        setLoading(false);
+      }
+    };
+    
+    fetchGoals();
+  }, []);
+  
+  // Обработчик выбора цели
+  const handleSelectGoal = async (goal) => {
+    updateQuizState({ goal });
+    
+    // Получение практики на основе выбранных параметров
+    try {
+      const { data, error } = await supabase
+        .from('quizlogic')
+        .select('*')
+        .eq('type', 'short_7_min')
+        .eq('goal', goal);
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        // Выбор случайной практики из доступных
+        const randomIndex = Math.floor(Math.random() * data.length);
+        updateQuizState({ selectedPractice: data[randomIndex] });
+        
+        // Перенаправление на страницу плеера
+        router.push('/player');
+      }
+    } catch (error) {
+      console.error('Error finding practice:', error);
+    }
+  };
+  
+  // Возврат к экрану выбора практики
+  const handleBack = () => {
+    router.push('/quiz');
+  };
+  
+  return (
+    <div className="short-goal-screen">
+      <h2>Выберите цель</h2>
       
       {loading ? (
         <div>Загрузка...</div>
       ) : (
         <div className="options-grid">
-          {practiceTypes.map((type) => (
+          {goals.map((goal) => (
             <OptionCard
-              key={type}
-              title={type === 'meditation' ? 'Медитативная' : type === 'breathing' ? 'Дыхательная' : 'Телесная'}
-              description={getDescriptionForType(type)}
-              isSelected={quizState.type === type}
-              onSelect={() => handleSelectType(type)}
+              key={goal}
+              title={getGoalTitle(goal)}
+              description={getGoalDescription(goal)}
+              isSelected={quizState.goal === goal}
+              onSelect={() => handleSelectGoal(goal)}
             />
           ))}
         </div>
       )}
       
       <NavigationButtons
-        onNext={goToNextStep}
-        disableNext={!quizState.type}
-        showBack={false}
+        onBack={handleBack}
+        showNext={false}
       />
     </div>
   );
 };
 
-// Вспомогательная функция для получения описания типа практики
-const getDescriptionForType = (type) => {
-  switch (type) {
-    case 'meditation':
-      return 'Медитативные практики для успокоения ума';
-    case 'breathing':
-      return 'Дыхательные техники для контроля эмоций';
-    case 'physical':
-      return 'Телесные практики для укрепления тела';
-    default:
-      return '';
+// Вспомогательные функции для отображения заголовков и описаний
+const getGoalTitle = (goal) => {
+  switch (goal) {
+    case 'energize': return 'Взбодриться';
+    case 'relax_sleep': return 'Расслабиться / для сна';
+    case 'stretch': return 'Потянуться';
+    case 'focus': return 'Сфокусироваться';
+    default: return goal;
   }
 };
 
-export default ChoosePracticeScreen;
+const getGoalDescription = (goal) => {
+  switch (goal) {
+    case 'energize': return 'Практики для быстрого повышения энергии';
+    case 'relax_sleep': return 'Практики для расслабления и подготовки ко сну';
+    case 'stretch': return 'Практики для разминки и растяжки мышц';
+    case 'focus': return 'Практики для улучшения концентрации внимания';
+    default: return '';
+  }
+};
+
+export default ShortPracticeGoalScreen;
 ```
 
 ## Детали компонентов плеера
@@ -190,13 +297,15 @@ export default ChoosePracticeScreen;
 import { useEffect } from 'react';
 import { usePlayerContext } from '@/context/PlayerContext';
 import { useQuizContext } from '@/context/QuizContext';
-import MeditationMode from './MeditationMode';
+import MeditationTimerMode from './MeditationTimerMode';
+import MeditationAudioMode from './MeditationAudioMode';
 import VideoMode from './VideoMode';
 import PlayButton from './ui/PlayButton';
 import VolumeControl from './ui/VolumeControl';
+import { useRouter } from 'next/router';
 
 const Player = () => {
-  const { selectedPractice } = useQuizContext();
+  const { selectedPractice, currentBranch } = useQuizContext();
   const { 
     isPlaying, 
     setIsPlaying, 
@@ -205,6 +314,7 @@ const Player = () => {
     contentLoaded,
     setContentLoaded
   } = usePlayerContext();
+  const router = useRouter();
   
   useEffect(() => {
     if (selectedPractice) {
@@ -223,9 +333,40 @@ const Player = () => {
       case 'video':
         return <VideoMode url={selectedPractice.content_url} />;
       case 'audio':
-        return <MeditationMode duration={selectedPractice.duration} audioUrl={selectedPractice.content_url} />;
+        return <MeditationAudioMode url={selectedPractice.content_url} />;
+      case 'timer':
+        return <MeditationTimerMode duration={selectedPractice.duration} />;
       default:
-        return <MeditationMode duration={selectedPractice.duration} />;
+        return <MeditationTimerMode duration="10 минут" />;
+    }
+  };
+  
+  // Возврат к выбору практики (разные пути в зависимости от ветки)
+  const handleChooseAnotherPractice = () => {
+    switch (currentBranch) {
+      case 'short':
+        router.push('/quiz/short-goal');
+        break;
+      case 'physical':
+        // Возврат к экрану цели для телесной практики
+        if (selectedPractice.duration === 'до 20 минут') {
+          router.push('/quiz/short-physical-goal');
+        } else {
+          router.push('/quiz/long-physical-goal');
+        }
+        break;
+      case 'breathing':
+        router.push('/quiz/breathing-goal');
+        break;
+      case 'meditation':
+        if (selectedPractice.approach === 'self-guided') {
+          router.push('/quiz/concentration-object');
+        } else {
+          router.push('/quiz/guided-meditation-goal');
+        }
+        break;
+      default:
+        router.push('/quiz');
     }
   };
   
@@ -242,6 +383,15 @@ const Player = () => {
         <PlayButton isPlaying={isPlaying} onClick={() => setIsPlaying(!isPlaying)} />
         <VolumeControl volume={volume} onChange={setVolume} />
       </div>
+      
+      <button 
+        className="another-practice-button"
+        onClick={handleChooseAnotherPractice}
+      >
+        {selectedPractice.type === 'meditation' && selectedPractice.approach === 'guided' 
+          ? 'Другая медитация' 
+          : 'Другая практика'}
+      </button>
     </div>
   );
 };
@@ -249,45 +399,18 @@ const Player = () => {
 export default Player;
 ```
 
-### Режим медитации
-Компонент для отображения таймера и управления медитативной практикой.
+### Режим медитации с таймером
+Компонент для отображения таймера и управления самостоятельной медитативной практикой.
 
 ```tsx
-// MeditationMode.tsx
+// MeditationTimerMode.tsx
 import { useEffect, useState } from 'react';
 import { usePlayerContext } from '@/context/PlayerContext';
 import Timer from './ui/Timer';
 
-const MeditationMode = ({ duration, audioUrl }) => {
-  const { isPlaying, volume } = usePlayerContext();
-  const [timeRemaining, setTimeRemaining] = useState(duration * 60); // в секундах
-  const [audio, setAudio] = useState(null);
-  
-  // Инициализация аудио
-  useEffect(() => {
-    if (audioUrl) {
-      const audioElement = new Audio(audioUrl);
-      audioElement.loop = true;
-      audioElement.volume = volume;
-      setAudio(audioElement);
-      
-      return () => {
-        audioElement.pause();
-        audioElement.src = '';
-      };
-    }
-  }, [audioUrl, volume]);
-  
-  // Управление воспроизведением аудио
-  useEffect(() => {
-    if (audio) {
-      if (isPlaying) {
-        audio.play().catch(e => console.error('Error playing audio:', e));
-      } else {
-        audio.pause();
-      }
-    }
-  }, [isPlaying, audio]);
+const MeditationTimerMode = ({ duration }) => {
+  const { isPlaying } = usePlayerContext();
+  const [timeRemaining, setTimeRemaining] = useState(convertDurationToSeconds(duration));
   
   // Управление таймером
   useEffect(() => {
@@ -299,13 +422,10 @@ const MeditationMode = ({ duration, audioUrl }) => {
       }, 1000);
     } else if (timeRemaining === 0) {
       // Практика завершена
-      if (audio) {
-        audio.pause();
-      }
     }
     
     return () => clearInterval(interval);
-  }, [isPlaying, timeRemaining, audio]);
+  }, [isPlaying, timeRemaining]);
   
   // Форматирование времени
   const formatTime = (seconds) => {
@@ -315,16 +435,20 @@ const MeditationMode = ({ duration, audioUrl }) => {
   };
   
   return (
-    <div className="meditation-mode">
+    <div className="meditation-timer-mode">
+      <div className="meditation-instruction">
+        <p>Закройте глаза и сфокусируйтесь на себе</p>
+      </div>
+      
       <Timer 
         timeRemaining={timeRemaining} 
-        totalTime={duration * 60} 
+        totalTime={convertDurationToSeconds(duration)} 
         formattedTime={formatTime(timeRemaining)} 
       />
       
       <div className="meditation-message">
         {timeRemaining > 0 ? (
-          <p>Сосредоточьтесь на своем дыхании...</p>
+          <p>Сосредоточьтесь на выбранном объекте концентрации...</p>
         ) : (
           <p>Практика завершена</p>
         )}
@@ -333,88 +457,108 @@ const MeditationMode = ({ duration, audioUrl }) => {
   );
 };
 
-export default MeditationMode;
+// Вспомогательная функция для конвертации строки с длительностью в секунды
+const convertDurationToSeconds = (duration) => {
+  if (typeof duration === 'number') return duration * 60;
+  
+  const match = duration.match(/(\d+)/);
+  if (match) {
+    return parseInt(match[1], 10) * 60;
+  }
+  
+  return 10 * 60; // По умолчанию 10 минут
+};
+
+export default MeditationTimerMode;
 ```
 
-### Режим видео
-Компонент для отображения видео-контента и управления видео-плеером.
+### Режим медитации с аудио
+Компонент для отображения аудио-плеера для медитаций с сопровождением.
 
 ```tsx
-// VideoMode.tsx
-import { useRef, useEffect } from 'react';
+// MeditationAudioMode.tsx
+import { useEffect, useRef, useState } from 'react';
 import { usePlayerContext } from '@/context/PlayerContext';
 import ProgressBar from './ui/ProgressBar';
-import FullscreenButton from './ui/FullscreenButton';
 
-const VideoMode = ({ url }) => {
-  const { isPlaying, volume, setCurrentTime, duration, setDuration } = usePlayerContext();
-  const videoRef = useRef(null);
+const MeditationAudioMode = ({ url }) => {
+  const { isPlaying, volume, setCurrentTime, setDuration } = usePlayerContext();
+  const audioRef = useRef(null);
+  const [progress, setProgress] = useState(0);
   
-  // Синхронизация состояния плеера с видео
+  // Синхронизация состояния плеера с аудио
   useEffect(() => {
-    if (videoRef.current) {
+    if (audioRef.current) {
       if (isPlaying) {
-        videoRef.current.play().catch(e => console.error('Error playing video:', e));
+        audioRef.current.play().catch(e => console.error('Error playing audio:', e));
       } else {
-        videoRef.current.pause();
+        audioRef.current.pause();
       }
     }
   }, [isPlaying]);
   
   // Обновление громкости
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.volume = volume;
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
     }
   }, [volume]);
   
-  // Обработчики событий видео
+  // Обработчики событий аудио
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
+    if (audioRef.current) {
+      const currentTime = audioRef.current.currentTime;
+      const duration = audioRef.current.duration;
+      setCurrentTime(currentTime);
+      setProgress((currentTime / duration) * 100);
     }
   };
   
   const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
     }
   };
   
-  // Переключение в полноэкранный режим
-  const toggleFullscreen = () => {
-    if (videoRef.current) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        videoRef.current.requestFullscreen();
-      }
+  // Функция для перемотки аудио
+  const handleSeek = (e) => {
+    const progressBar = e.currentTarget;
+    const rect = progressBar.getBoundingClientRect();
+    const pos = (e.clientX - rect.left) / rect.width;
+    
+    if (audioRef.current) {
+      const newTime = pos * audioRef.current.duration;
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+      setProgress(pos * 100);
     }
   };
   
   return (
-    <div className="video-mode">
-      <div className="video-container">
-        <video
-          ref={videoRef}
-          src={url}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onClick={() => toggleFullscreen()}
-        />
-        
-        <ProgressBar />
-        <FullscreenButton onClick={toggleFullscreen} />
+    <div className="meditation-audio-mode">
+      <audio
+        ref={audioRef}
+        src={url}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        hidden
+      />
+      
+      <div className="meditation-visual">
+        <div className="meditation-icon">
+          {/* Иконка или визуализация для аудио-медитации */}
+          <div className="meditation-waves"></div>
+        </div>
       </div>
       
-      <div className="video-info">
-        <p>Следуйте инструкциям в видео для выполнения практики</p>
+      <div className="progress-container" onClick={handleSeek}>
+        <div className="progress-bar" style={{ width: `${progress}%` }}></div>
       </div>
     </div>
   );
 };
 
-export default VideoMode;
+export default MeditationAudioMode;
 ```
 
 ## Контексты приложения
@@ -425,12 +569,11 @@ export default VideoMode;
 ```tsx
 // QuizContext.tsx
 import { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 
 // Начальное состояние квиза
 const initialQuizState = {
   type: '',
-  duration: 0,
+  duration: '',
   goal: '',
   approach: '',
   selectedPractice: null
@@ -441,16 +584,20 @@ const QuizContext = createContext(null);
 export const QuizProvider = ({ children }) => {
   const [quizState, setQuizState] = useState(() => {
     // Попытка восстановить состояние из localStorage
-    const savedState = localStorage.getItem('quizState');
-    return savedState ? JSON.parse(savedState) : initialQuizState;
+    if (typeof window !== 'undefined') {
+      const savedState = localStorage.getItem('quizState');
+      return savedState ? JSON.parse(savedState) : initialQuizState;
+    }
+    return initialQuizState;
   });
   
-  const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [currentBranch, setCurrentBranch] = useState(''); // 'short', 'physical', 'breathing', 'meditation'
   
   // Сохранение состояния в localStorage при изменении
   useEffect(() => {
-    localStorage.setItem('quizState', JSON.stringify(quizState));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('quizState', JSON.stringify(quizState));
+    }
   }, [quizState]);
   
   // Обновление состояния квиза
@@ -458,71 +605,18 @@ export const QuizProvider = ({ children }) => {
     setQuizState(prev => ({ ...prev, ...newState }));
   };
   
-  // Навигация по шагам квиза
-  const goToNextStep = () => {
-    setCurrentStep(prev => prev + 1);
-  };
-  
-  const goToPreviousStep = () => {
-    setCurrentStep(prev => prev - 1);
-  };
-  
   // Сброс квиза
   const resetQuiz = () => {
     setQuizState(initialQuizState);
-    setCurrentStep(1);
-  };
-  
-  // Поиск подходящей практики
-  const findPractice = async () => {
-    setLoading(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('quizlogic')
-        .select('*')
-        .eq('type', quizState.type)
-        .eq('duration', quizState.duration)
-        .eq('goal', quizState.goal)
-        .eq('approach', quizState.approach);
-        
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        // Выбор случайной практики из подходящих
-        const randomIndex = Math.floor(Math.random() * data.length);
-        updateQuizState({ selectedPractice: data[randomIndex] });
-      } else {
-        // Если точного совпадения нет, ищем ближайшее
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('quizlogic')
-          .select('*')
-          .eq('type', quizState.type)
-          .order('duration', { ascending: Math.abs(quizState.duration - 10) > Math.abs(quizState.duration - 20) });
-          
-        if (fallbackError) throw fallbackError;
-        
-        if (fallbackData && fallbackData.length > 0) {
-          updateQuizState({ selectedPractice: fallbackData[0] });
-        }
-      }
-    } catch (error) {
-      console.error('Error finding practice:', error);
-    } finally {
-      setLoading(false);
-    }
+    setCurrentBranch('');
   };
   
   const value = {
     quizState,
     updateQuizState,
-    currentStep,
-    setCurrentStep,
-    goToNextStep,
-    goToPreviousStep,
     resetQuiz,
-    findPractice,
-    loading,
+    currentBranch,
+    setCurrentBranch,
     selectedPractice: quizState.selectedPractice
   };
   
