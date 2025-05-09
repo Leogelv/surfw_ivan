@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
+import logger from '@/lib/logger';
 
 function YogaApp() {
   const { userData, isLoading: authLoading } = useAuth();
@@ -14,11 +15,14 @@ function YogaApp() {
   const [showProfile, setShowProfile] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
-  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp } = useTelegram();
+  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, user } = useTelegram();
+  const appLogger = logger.createLogger('YogaApp');
 
   useEffect(() => {
     // Проверка, находимся ли мы в контексте Telegram или в обычном браузере
     const isTelegramWebApp = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+    
+    appLogger.info('Инициализация приложения', { isTelegramWebApp, user });
     
     // Инициализация Telegram WebApp только если он доступен
     if (isTelegramWebApp && webApp) {
@@ -26,51 +30,57 @@ function YogaApp() {
       const customInitializeTelegram = () => {
         // Проверяем наличие Telegram WebApp
         if (!webApp) {
-          console.log('Telegram WebApp is not available, possibly running in browser mode');
+          appLogger.warn('Telegram WebApp недоступен, запуск в режиме браузера');
           return;
         }
         
         try {
           // Подготовка приложения
           webApp.ready();
+          appLogger.info('Telegram WebApp готов');
           
           // Расширение на весь экран
           if (typeof webApp.expand === 'function') {
             webApp.expand();
+            appLogger.debug('Расширение окна приложения');
           }
           
           // Запрос на полноэкранный режим
           if (typeof webApp.requestFullscreen === 'function') {
             try {
               webApp.requestFullscreen();
+              appLogger.debug('Запрошен полноэкранный режим');
             } catch (err) {
-              console.log('requestFullscreen is not supported in this Telegram WebApp version');
+              appLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp');
             }
           }
           
           // Отключение вертикальных свайпов
           if (typeof webApp.disableVerticalSwipes === 'function') {
             webApp.disableVerticalSwipes();
+            appLogger.debug('Вертикальные свайпы отключены');
           }
           
           // Установка цветов для нового йога-приложения
           if (typeof webApp.setHeaderColor === 'function') {
             webApp.setHeaderColor('#FFFFFF'); // Белый для заголовка
+            appLogger.debug('Установлен цвет заголовка');
           }
           
           if (typeof webApp.setBackgroundColor === 'function') {
             webApp.setBackgroundColor('#F5F5F5'); // Светло-серый для фона
+            appLogger.debug('Установлен цвет фона');
           }
         } catch (error) {
-          console.error('Failed to initialize Telegram WebApp:', error);
+          appLogger.error('Ошибка инициализации Telegram WebApp:', error);
         }
       };
       
       customInitializeTelegram();
     } else {
-      console.log('Running in browser mode, skipping Telegram WebApp initialization');
+      appLogger.info('Запуск в режиме браузера, пропуск инициализации Telegram WebApp');
     }
-  }, [webApp]);
+  }, [webApp, user, appLogger]);
 
   // Устанавливаем CSS-переменную для отступа в зависимости от режима фулскрин
   useEffect(() => {
@@ -88,16 +98,19 @@ function YogaApp() {
           '--telegram-header-gradient',
           'linear-gradient(to bottom, #FFFFFF 90%, #FFFFFF 95%)'
         );
+        appLogger.debug('Установлены CSS-переменные для отступов');
       } else {
         // В обычном браузере или если не в полноэкранном режиме
         document.documentElement.style.setProperty('--telegram-header-padding', '0px');
         document.documentElement.style.setProperty('--telegram-header-gradient', 'none');
+        appLogger.debug('Сброшены CSS-переменные для отступов');
       }
     }
-  }, [isFullScreenEnabled, telegramHeaderPadding]);
+  }, [isFullScreenEnabled, telegramHeaderPadding, appLogger]);
 
   const toggleProfile = () => {
     setShowProfile(prev => !prev);
+    appLogger.info('Переключение профиля');
   };
 
   const contentStyle = {
@@ -105,8 +118,21 @@ function YogaApp() {
     transition: 'padding-top 0.3s ease'
   };
 
+  // Логирование пользовательских данных
+  useEffect(() => {
+    if (user) {
+      appLogger.info('Данные пользователя Telegram получены', { user });
+    } else {
+      appLogger.warn('Данные пользователя Telegram недоступны');
+    }
+    
+    if (userData) {
+      appLogger.info('Данные пользователя из Auth получены', { userData });
+    }
+  }, [user, userData, appLogger]);
+
   return (
-    <div style={contentStyle} className="h-screen bg-zinc-100">
+    <div style={contentStyle} className="h-screen bg-zinc-100 flex flex-col">
       {/* Градиентный оверлей для верхней части Telegram WebApp */}
       {isFullScreenEnabled && typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp && (
         <div 
@@ -117,7 +143,17 @@ function YogaApp() {
           }}
         ></div>
       )}
-      <div className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+      
+      {/* Добавляем силуэт человека над UI карточками */}
+      <div className="relative w-full flex justify-center">
+        <div className="absolute top-12 z-0 opacity-5">
+          <svg width="200" height="300" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+            <path d="M100,0 C120,0 135,15 135,40 C135,65 120,80 100,80 C80,80 65,65 65,40 C65,15 80,0 100,0 Z M65,85 L135,85 L135,170 L160,230 L130,230 L115,190 L115,300 L85,300 L85,190 L70,230 L40,230 L65,170 L65,85 Z" fill="black"/>
+          </svg>
+        </div>
+      </div>
+      
+      <div className={`flex-1 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
         {/* Верхняя часть */}
         <div className="relative">
           {/* Заголовок с именем пользователя и кнопками */}
@@ -134,12 +170,12 @@ function YogaApp() {
                   />
                 ) : (
                   <span className="text-gray-500">
-                    {userData?.first_name?.charAt(0) || 'У'}
+                    {userData?.first_name?.charAt(0) || user?.first_name?.charAt(0) || 'У'}
                   </span>
                 )}
               </div>
               <span className="text-black font-medium ml-2">
-                {userData?.first_name || 'Иван'}
+                {user ? `${user.first_name || ''} ${user.last_name || ''}` : userData?.first_name || 'Гость'}
               </span>
             </div>
             <div className="flex items-center">
@@ -196,76 +232,88 @@ function YogaApp() {
               </svg>
             </div>
           </Link>
-
-          {/* Навигация */}
-          <div className="mt-auto border-t border-gray-200 grid grid-cols-4 px-4">
-            <button 
-              className={`flex flex-col items-center py-3 ${activeTab === 'home' ? 'text-black' : 'text-gray-400'}`}
-              onClick={() => setActiveTab('home')}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M3 10.25V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V10.25M3 10.25L12 3L21 10.25M3 10.25L4.5 11.5M21 10.25L19.5 11.5" 
-                  stroke={activeTab === 'home' ? 'black' : 'currentColor'} 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-xs mt-1">Главная</span>
-            </button>
-            
-            <button 
-              className={`flex flex-col items-center py-3 ${activeTab === 'library' ? 'text-black' : 'text-gray-400'}`}
-              onClick={() => setActiveTab('library')}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 5.5V3M12 5.5V8M12 5.5H8M19 21V19C19 17.9 18.1 17 17 17H7C5.9 17 5 17.9 5 19V21H19ZM12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" 
-                  stroke={activeTab === 'library' ? 'black' : 'currentColor'} 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-xs mt-1">Библиотека</span>
-            </button>
-            
-            <button 
-              className={`flex flex-col items-center py-3 ${activeTab === 'schedule' ? 'text-black' : 'text-gray-400'}`}
-              onClick={() => setActiveTab('schedule')}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" 
-                  stroke={activeTab === 'schedule' ? 'black' : 'currentColor'} 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-xs mt-1">Расписание</span>
-            </button>
-            
-            <button 
-              className={`flex flex-col items-center py-3 ${activeTab === 'profile' ? 'text-black' : 'text-gray-400'}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 15C15.3137 15 18 12.3137 18 9C18 5.68629 15.3137 3 12 3C8.68629 3 6 5.68629 6 9C6 12.3137 8.68629 15 12 15Z" 
-                  stroke={activeTab === 'profile' ? 'black' : 'currentColor'} 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-                <path d="M2.90625 20.2491C3.82834 18.6531 5.1542 17.3278 6.75064 16.4064C8.34708 15.485 10.1579 15 12.0011 15C13.8444 15 15.6552 15.4851 17.2516 16.4066C18.848 17.3281 20.1738 18.6533 21.0959 20.2494" 
-                  stroke={activeTab === 'profile' ? 'black' : 'currentColor'} 
-                  strokeWidth="1.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="text-xs mt-1">Профиль</span>
-            </button>
-          </div>
         </div>
+      </div>
+
+      {/* Навигация - закрепляем внизу экрана */}
+      <div className="border-t border-gray-200 grid grid-cols-4 px-4 bg-white sticky bottom-0 mt-auto">
+        <button 
+          className={`flex flex-col items-center py-3 ${activeTab === 'home' ? 'text-black' : 'text-gray-400'}`}
+          onClick={() => {
+            setActiveTab('home');
+            appLogger.info('Переход на вкладку Главная');
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M3 10.25V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V10.25M3 10.25L12 3L21 10.25M3 10.25L4.5 11.5M21 10.25L19.5 11.5" 
+              stroke={activeTab === 'home' ? 'black' : 'currentColor'} 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-xs mt-1">Главная</span>
+        </button>
+        
+        <button 
+          className={`flex flex-col items-center py-3 ${activeTab === 'library' ? 'text-black' : 'text-gray-400'}`}
+          onClick={() => {
+            setActiveTab('library');
+            appLogger.info('Переход на вкладку Библиотека');
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5.5V3M12 5.5V8M12 5.5H8M19 21V19C19 17.9 18.1 17 17 17H7C5.9 17 5 17.9 5 19V21H19ZM12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" 
+              stroke={activeTab === 'library' ? 'black' : 'currentColor'} 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-xs mt-1">Библиотека</span>
+        </button>
+        
+        <button 
+          className={`flex flex-col items-center py-3 ${activeTab === 'schedule' ? 'text-black' : 'text-gray-400'}`}
+          onClick={() => {
+            setActiveTab('schedule');
+            appLogger.info('Переход на вкладку Расписание');
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" 
+              stroke={activeTab === 'schedule' ? 'black' : 'currentColor'} 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-xs mt-1">Расписание</span>
+        </button>
+        
+        <button 
+          className={`flex flex-col items-center py-3 ${activeTab === 'profile' ? 'text-black' : 'text-gray-400'}`}
+          onClick={() => {
+            setActiveTab('profile');
+            appLogger.info('Переход на вкладку Профиль');
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 15C15.3137 15 18 12.3137 18 9C18 5.68629 15.3137 3 12 3C8.68629 3 6 5.68629 6 9C6 12.3137 8.68629 15 12 15Z" 
+              stroke={activeTab === 'profile' ? 'black' : 'currentColor'} 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path d="M2.90625 20.2491C3.82834 18.6531 5.1542 17.3278 6.75064 16.4064C8.34708 15.485 10.1579 15 12.0011 15C13.8444 15 15.6552 15.4851 17.2516 16.4066C18.848 17.3281 20.1738 18.6533 21.0959 20.2494" 
+              stroke={activeTab === 'profile' ? 'black' : 'currentColor'} 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-xs mt-1">Профиль</span>
+        </button>
       </div>
     </div>
   );

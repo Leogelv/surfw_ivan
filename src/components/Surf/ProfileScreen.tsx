@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useTelegram } from '@/context/TelegramContext';
 import useHapticFeedback from '@/hooks/useHapticFeedback';
+import logger from '@/lib/logger';
 
 interface ProfileScreenProps {
   onClose: () => void;
@@ -15,6 +16,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
   const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
   const { user, webApp, isFullScreenEnabled, telegramHeaderPadding } = useTelegram();
   const haptic = useHapticFeedback();
+  const profileLogger = logger.createLogger('ProfileScreen');
 
   // Демо-данные для заказов
   const orders = [
@@ -44,14 +46,29 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoaded(true);
+      profileLogger.debug('Профиль загружен');
     }, 100);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [profileLogger]);
+
+  // Логирование данных пользователя
+  useEffect(() => {
+    if (user) {
+      profileLogger.info('Данные пользователя в профиле', { 
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username
+      });
+    } else {
+      profileLogger.warn('Данные пользователя не доступны в профиле');
+    }
+  }, [user, profileLogger]);
 
   // Функция для закрытия профиля
   const handleCloseProfile = () => {
     haptic.buttonClick(); // Haptic feedback при нажатии
+    profileLogger.info('Закрытие профиля');
     onClose(); // Закрываем профиль
     onHomeClick(); // Переходим на главную
   };
@@ -92,19 +109,21 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
             {user?.photo_url ? (
               <Image
                 src={user.photo_url}
-                alt={user.first_name}
+                alt={user.first_name || 'Пользователь'}
                 fill
                 className="rounded-full object-cover border-2 border-[#A67C52]/50"
               />
             ) : (
               <div className="w-full h-full rounded-full bg-gradient-to-r from-[#A67C52] to-[#5D4037] flex items-center justify-center text-2xl font-bold">
-                {user?.first_name?.charAt(0) || 'G'}
+                {user?.first_name?.charAt(0) || 'S'}
               </div>
             )}
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#1D1816]"></div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold">{user?.first_name || 'Гость'} {user?.last_name || ''}</h2>
+            <h2 className="text-2xl font-bold">
+              {user ? `${user.first_name || ''} ${user.last_name || ''}` : 'Гость'}
+            </h2>
             <p className="text-white/60 text-sm">
               {user?.username ? `@${user.username}` : 'Пользователь Telegram'}
             </p>
@@ -183,6 +202,7 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
                 className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors active:scale-95"
                 onClick={() => { 
                   haptic.buttonClick(); // Haptic feedback при нажатии
+                  profileLogger.info('Повтор заказа', { order_id: order.id });
                   onOrdersClick(); 
                 }}
               >
@@ -198,7 +218,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
           <div className="space-y-2">
             <button 
               className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-              onClick={() => haptic.buttonClick()}
+              onClick={() => {
+                haptic.buttonClick();
+                profileLogger.info('Нажатие кнопки "Уведомления"');
+              }}
             >
               <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -210,7 +233,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
             </button>
             <button 
               className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-              onClick={() => haptic.buttonClick()}
+              onClick={() => {
+                haptic.buttonClick();
+                profileLogger.info('Нажатие кнопки "Способы оплаты"');
+              }}
             >
               <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -222,7 +248,10 @@ const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: Pro
             </button>
             <button 
               className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-              onClick={() => haptic.buttonClick()}
+              onClick={() => {
+                haptic.buttonClick();
+                profileLogger.info('Нажатие кнопки "Адреса доставки"');
+              }}
             >
               <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

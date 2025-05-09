@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import logger from '@/lib/logger';
+import { getSupabaseClient } from '@/lib/supabase';
 
 interface TelegramUser {
   id: number;
@@ -13,9 +15,9 @@ interface TelegramUser {
 
 interface SafeAreaInset {
   top: number;
+  right: number;
   bottom: number;
   left: number;
-  right: number;
 }
 
 interface TelegramWebApp {
@@ -87,22 +89,19 @@ interface TelegramWebApp {
   showPopup: (params: {
     title?: string;
     message: string;
-    buttons?: {
+    buttons?: Array<{
+      id: string;
+      type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive';
       text: string;
-      type?: string;
-      id?: string;
-    }[];
+    }>;
   }, callback?: (id: string) => void) => void;
   showAlert: (message: string, callback?: () => void) => void;
-  showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void;
-  enableClosingConfirmation: () => void;
-  disableClosingConfirmation: () => void;
+  showConfirm: (message: string, callback?: (isConfirmed: boolean) => void) => void;
   requestFullscreen: () => void;
-  disableVerticalSwipes: () => void;
   setHeaderColor: (color: string) => void;
   setBackgroundColor: (color: string) => void;
-  onEvent: (eventType: string, eventHandler: () => void) => void;
-  offEvent: (eventType: string, eventHandler: () => void) => void;
+  enableVerticalSwipes: () => void;
+  disableVerticalSwipes: () => void;
 }
 
 interface TelegramContextType {
@@ -113,6 +112,9 @@ interface TelegramContextType {
   enableFullScreen: () => void;
   initializeTelegramApp: () => void;
 }
+
+// Создаем логгер для контекста Telegram
+const telegramLogger = logger.createLogger('TelegramContext');
 
 // Создаем контекст
 const TelegramContext = createContext<TelegramContextType>({
@@ -140,19 +142,85 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   const [isFullScreenEnabled, setIsFullScreenEnabled] = useState(false);
   const [telegramHeaderPadding] = useState(100);
 
+  // Функция для создания пользователя в Supabase
+  const createUserInSupabase = async (telegramUser: TelegramUser) => {
+    if (!telegramUser || !telegramUser.id) {
+      telegramLogger.warn('Нет данных пользователя Telegram для создания в Supabase');
+      return;
+    }
+
+    try {
+      telegramLogger.info('Попытка создания пользователя в Supabase', { telegramUser });
+      const supabase = getSupabaseClient();
+      
+      // Проверяем существует ли пользователь
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('telegram_id', telegramUser.id)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        telegramLogger.error('Ошибка при проверке пользователя в Supabase', checkError);
+        return;
+      }
+      
+      if (existingUser) {
+        telegramLogger.info('Пользователь уже существует в Supabase', { existingUser });
+        return;
+      }
+      
+      // Создаем нового пользователя
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert([
+          { 
+            telegram_id: telegramUser.id,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name || '',
+            username: telegramUser.username || '',
+            photo_url: telegramUser.photo_url || '',
+            user_settings: {},
+            last_login: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+      
+      if (insertError) {
+        telegramLogger.error('Ошибка при создании пользователя в Supabase', insertError);
+        return;
+      }
+      
+      telegramLogger.info('Пользователь успешно создан в Supabase', { newUser });
+    } catch (error) {
+      telegramLogger.error('Исключение при создании пользователя в Supabase', error);
+    }
+  };
+
   // Инициализация Telegram WebApp
   useEffect(() => {
     // Проверяем, доступен ли Telegram WebApp
     if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
       const tgWebApp = window.Telegram.WebApp;
+      telegramLogger.info('Telegram WebApp обнаружен');
       
       // Устанавливаем данные WebApp и пользователя
       setWebApp(tgWebApp as unknown as TelegramWebApp);
       
       // Если в инициализационных данных есть пользователь, используем его
       if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
-        setUser(tgWebApp.initDataUnsafe.user);
+        const telegramUser = tgWebApp.initDataUnsafe.user;
+        telegramLogger.info('Получены данные пользователя из Telegram WebApp', telegramUser);
+        setUser(telegramUser);
+        
+        // Создаем или обновляем пользователя в Supabase
+        createUserInSupabase(telegramUser);
+      } else {
+        telegramLogger.warn('Пользователь не найден в Telegram WebApp initDataUnsafe');
       }
+    } else {
+      telegramLogger.warn('Telegram WebApp не обнаружен, возможно запуск в браузере');
     }
   }, []);
 
@@ -162,8 +230,9 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       try {
         webApp.expand();
         setIsFullScreenEnabled(true);
+        telegramLogger.info('Полноэкранный режим включен');
       } catch (error) {
-        console.error('Failed to enable fullscreen mode:', error);
+        telegramLogger.error('Ошибка при включении полноэкранного режима', error);
       }
     }
   };
@@ -172,47 +241,53 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   const initializeTelegramApp = () => {
     // Проверяем наличие Telegram WebApp
     if (!webApp) {
-      console.log('Telegram WebApp is not available, possibly running in browser mode');
+      telegramLogger.warn('Telegram WebApp недоступен, возможно запуск в браузере');
       return;
     }
     
     try {
       // Подготовка приложения
       webApp.ready();
+      telegramLogger.info('Telegram WebApp готов');
       
       // Проверяем и вызываем методы только если они доступны
       
       // Расширение на весь экран
       if (typeof webApp.expand === 'function') {
         webApp.expand();
+        telegramLogger.debug('Вызван метод expand()');
       }
       
       // Запрос на полноэкранный режим
       if (typeof webApp.requestFullscreen === 'function') {
         try {
           webApp.requestFullscreen();
+          telegramLogger.debug('Вызван метод requestFullscreen()');
         } catch (err) {
-          console.log('requestFullscreen is not supported in this Telegram WebApp version');
+          telegramLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp');
         }
       }
       
       // Отключение вертикальных свайпов
       if (typeof webApp.disableVerticalSwipes === 'function') {
         webApp.disableVerticalSwipes();
+        telegramLogger.debug('Вызван метод disableVerticalSwipes()');
       }
       
       // Установка цветов, соответствующих нашему приложению
       if (typeof webApp.setHeaderColor === 'function') {
         webApp.setHeaderColor('#1D1816'); // Темно-коричневый
+        telegramLogger.debug('Установлен цвет заголовка #1D1816');
       }
       
       if (typeof webApp.setBackgroundColor === 'function') {
         webApp.setBackgroundColor('#1D1816'); // Темно-коричневый
+        telegramLogger.debug('Установлен цвет фона #1D1816');
       }
       
       setIsFullScreenEnabled(true);
     } catch (error) {
-      console.error('Failed to initialize Telegram WebApp:', error);
+      telegramLogger.error('Ошибка при инициализации Telegram WebApp', error);
     }
   };
 

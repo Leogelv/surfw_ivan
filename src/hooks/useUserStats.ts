@@ -19,6 +19,12 @@ export const useUserStats = () => {
   const { user } = useAuth();
 
   useEffect(() => {
+    // На клиентской стороне
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
+    
     const fetchStats = async () => {
       try {
         setIsLoading(true);
