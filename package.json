@@ -12,6 +12,7 @@
   "dependencies": {
     "@iconify/react": "^5.2.0",
     "@phosphor-icons/react": "^2.1.7",
+    "@supabase/supabase-js": "^2.49.4",
     "framer-motion": "^12.6.3",
     "next": "15.1.0",
     "react": "^19.0.0",

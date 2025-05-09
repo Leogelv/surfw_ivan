@@ -14,3 +14,9 @@ also we HAVE supabase MCP server inside project
 
 
 В СУПЕ ЕСТЬ ТАБЛИЦА logs и туда логгер наш пишет данные - юзай mcp супы когда нужно увидеть логи. сортируй по дате содания чтобы получать последние 150
+
+NEXT_PUBLIC_IGNORE_BUILD_ERROR=true
+SUPABASE_PROJECT_ID=umgioqmcytxkspbrbaww
+SUPABASE_ANON_KEY=test
+SUPABASE_PROJECT_URL=https://umgioqmcytxkspbrbaww.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://umgioqmcytxkspbrbaww.supabase.co

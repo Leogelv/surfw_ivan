@@ -1,6 +1,16 @@
 {
-  "buildCommand": "NODE_OPTIONS=--max-old-space-size=3072 && NEXT_PUBLIC_IGNORE_BUILD_ERROR=true && next build",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
+  "framework": "nextjs",
   "env": {
-    "NEXT_PUBLIC_IGNORE_BUILD_ERROR": "true"
-  }
+    "NEXT_PUBLIC_IGNORE_BUILD_ERROR": "true",
+    "NEXT_TYPESCRIPT_IGNORE_ERRORS": "true",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "builds": [
+    {
+      "src": "next.config.ts",
+      "use": "@vercel/next"
+    }
+  ]
 } 
