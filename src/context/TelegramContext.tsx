@@ -162,7 +162,10 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         .single();
       
       if (checkError && checkError.code !== 'PGRST116') {
-        telegramLogger.error('Ошибка при проверке пользователя в Supabase', checkError, telegramUser.id.toString());
+        telegramLogger.error('Ошибка при проверке пользователя в Supabase', 
+          { error: checkError, details: checkError.details, code: checkError.code, message: checkError.message }, 
+          telegramUser.id.toString()
+        );
         return;
       }
       
@@ -182,7 +185,10 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
           .eq('telegram_id', telegramUser.id.toString());
         
         if (updateError) {
-          telegramLogger.error('Ошибка при обновлении пользователя в Supabase', updateError, telegramUser.id.toString());
+          telegramLogger.error('Ошибка при обновлении пользователя в Supabase', 
+            { error: updateError, details: updateError.details, code: updateError.code, message: updateError.message }, 
+            telegramUser.id.toString()
+          );
         } else {
           telegramLogger.info('Данные пользователя успешно обновлены в Supabase', null, telegramUser.id.toString());
         }
@@ -190,12 +196,15 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         return;
       }
       
-      // Создаем нового пользователя (без указания id, пусть Supabase сам сгенерирует)
+      const userId = randomUUID();
+      telegramLogger.info('Генерация ID для нового пользователя', { userId }, telegramUser.id.toString());
+      
+      // Создаем нового пользователя
       const { data: newUser, error: insertError } = await supabase
         .from('users')
         .insert(
           { 
-            id: randomUUID(),
+            id: userId,
             telegram_id: telegramUser.id.toString(),
             first_name: telegramUser.first_name,
             last_name: telegramUser.last_name || '',
@@ -210,8 +219,10 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         .single();
       
       if (insertError) {
-        telegramLogger.error('Ошибка при создании пользователя в Supabase', insertError, telegramUser.id.toString());
-        console.error('SQL Error:', insertError);
+        telegramLogger.error('Ошибка при создании пользователя в Supabase', 
+          { error: insertError, details: insertError.details, code: insertError.code, message: insertError.message, userId }, 
+          telegramUser.id.toString()
+        );
         return;
       }
       
@@ -224,7 +235,10 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
           .insert({ user_id: newUser.id });
         
         if (settingsError) {
-          telegramLogger.error('Ошибка при создании настроек пользователя', settingsError, telegramUser.id.toString());
+          telegramLogger.error('Ошибка при создании настроек пользователя', 
+            { error: settingsError, details: settingsError.details, code: settingsError.code, message: settingsError.message }, 
+            telegramUser.id.toString()
+          );
         } else {
           telegramLogger.info('Настройки пользователя созданы', null, telegramUser.id.toString());
         }
@@ -257,7 +271,22 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         telegramLogger.warn('Пользователь не найден в Telegram WebApp initDataUnsafe');
       }
     } else {
-      telegramLogger.warn('Telegram WebApp не обнаружен, возможно запуск в браузере');
+      telegramLogger.warn('Telegram WebApp не обнаружен, запуск в режиме браузера');
+      
+      // Симуляция данных пользователя Telegram для веб-тестов
+      const mockTelegramUser: TelegramUser = {
+        id: 375634162,
+        first_name: 'Леонид',
+        last_name: 'Гельвих',
+        username: 'sapientweb',
+        photo_url: 'https://t.me/i/userpic/320/default.jpg'
+      };
+      
+      telegramLogger.info('Используем симуляцию данных пользователя для веб-тестов', mockTelegramUser);
+      setUser(mockTelegramUser);
+      
+      // Создаем или обновляем пользователя в Supabase
+      createUserInSupabase(mockTelegramUser);
     }
   }, []);
 

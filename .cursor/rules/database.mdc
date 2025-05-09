@@ -11,3 +11,6 @@ SUPABASE_ANON_KEY=set in env
 SUPABASE_PROJECT_URL=https://umgioqmcytxkspbrbaww.supabase.co
 
 also we HAVE supabase MCP server inside project
+
+
+В СУПЕ ЕСТЬ ТАБЛИЦА logs и туда логгер наш пишет данные - юзай mcp супы когда нужно увидеть логи. сортируй по дате содания чтобы получать последние 150
