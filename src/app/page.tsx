@@ -262,7 +262,13 @@ function YogaApp() {
     }
 
     try {
-      appLogger.info('Сохранение пользователя Telegram в Supabase', { telegramId: user.id });
+      appLogger.info('Сохранение пользователя Telegram в Supabase', {
+        telegramId: user.id,
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name
+      });
+      
       const supabase = getSupabaseClient();
       
       if (!supabase) {
@@ -270,29 +276,24 @@ function YogaApp() {
         return;
       }
       
-      // Проверяем соединение с Supabase
+      // Проверяем соединение с Supabase простым запросом
       try {
-        const { data: pingData, error: pingError } = await supabase.from('users').select('count').limit(1);
+        appLogger.debug('Проверка соединения с Supabase...');
+        const { error: pingError } = await supabase.from('users').select('count', { count: 'exact', head: true });
+        
         if (pingError) {
-          appLogger.error('Ошибка соединения с Supabase', pingError);
+          appLogger.error('Ошибка соединения с Supabase', { 
+            code: pingError.code, 
+            message: pingError.message,
+            details: pingError.details 
+          });
           return;
         } else {
           appLogger.info('Соединение с Supabase установлено успешно');
         }
       } catch (pingErr) {
-        appLogger.error('Ошибка при проверке соединения с Supabase', pingErr);
-        return;
-      }
-      
-      // Проверяем существующего пользователя
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', user.id.toString())
-        .maybeSingle();
-      
-      if (fetchError) {
-        appLogger.error('Ошибка при проверке существования пользователя', fetchError);
+        appLogger.error('Необработанная ошибка при проверке соединения с Supabase', pingErr);
+        console.error('Ошибка проверки соединения Supabase:', pingErr);
         return;
       }
       
@@ -304,43 +305,193 @@ function YogaApp() {
         last_name: user.last_name || '',
         photo_url: user.photo_url || '',
         updated_at: new Date().toISOString(),
-        last_login: new Date().toISOString()
+        last_login: new Date().toISOString(),
+        is_test: false  // добавляем поле is_test из миграции
       };
       
-      // Если пользователь существует - обновляем, иначе создаем
-      if (existingUser) {
-        appLogger.info('Обновление существующего пользователя', { userId: existingUser.id });
-        const { data, error: updateError } = await supabase
-          .from('users')
-          .update(userData)
-          .eq('telegram_id', user.id.toString())
-          .select()
-          .single();
+      try {
+        // Сначала пробуем создать пользователя через auth API
+        const email = `telegram_${user.id}@example.com`;
+        const password = Math.random().toString(36).slice(-10) + Math.random().toString(36).toUpperCase().slice(-2) + '!1';
         
-        if (updateError) {
-          appLogger.error('Ошибка при обновлении пользователя', updateError);
-        } else {
-          appLogger.info('Пользователь успешно обновлен', { userId: data.id });
-        }
-      } else {
-        appLogger.info('Создание нового пользователя');
-        const { data, error: insertError } = await supabase
-          .from('users')
-          .insert({ 
-            ...userData, 
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+        appLogger.debug('Попытка аутентификации через существующий аккаунт', { email });
         
-        if (insertError) {
-          appLogger.error('Ошибка при создании пользователя', insertError);
-        } else {
-          appLogger.info('Пользователь успешно создан', { userId: data.id });
+        // Пробуем войти через существующий аккаунт
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        // Если пользователь не существует, создаем его
+        if (authError && authError.message.includes('Invalid login credentials')) {
+          appLogger.info('Пользователь не найден, создаем новый аккаунт', { email });
+          
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                telegram_id: user.id.toString(),
+                first_name: user.first_name || '',
+                last_name: user.last_name || '',
+                username: user.username || '',
+                photo_url: user.photo_url || '',
+                provider: 'telegram'
+              }
+            }
+          });
+          
+          if (signUpError) {
+            appLogger.error('Ошибка при создании пользователя через auth.signUp', { 
+              code: signUpError.code, 
+              message: signUpError.message,
+              name: signUpError.name
+            });
+          } else {
+            appLogger.info('Пользователь успешно создан через auth.signUp', { 
+              id: signUpData?.user?.id,
+              email: signUpData?.user?.email 
+            });
+            
+            // После создания пользователя через Auth API, добавляем запись в таблицу users
+            if (signUpData?.user?.id) {
+              try {
+                // Проверяем наличие записи в таблице users (может быть создана триггером)
+                const { data: existingUser, error: checkError } = await supabase
+                  .from('users')
+                  .select('id')
+                  .eq('id', signUpData.user.id)
+                  .maybeSingle();
+                
+                if (checkError) {
+                  appLogger.error('Ошибка при проверке записи в таблице users', { 
+                    code: checkError.code,
+                    message: checkError.message,
+                    details: checkError.details
+                  });
+                }
+                
+                // Если записи нет, создаем её
+                if (!existingUser) {
+                  appLogger.info('Создание записи в таблице users');
+                  
+                  const insertData = {
+                    id: signUpData.user.id,
+                    ...userData,
+                    created_at: new Date().toISOString()
+                  };
+                  
+                  const { data: insertedUser, error: insertError } = await supabase
+                    .from('users')
+                    .insert([insertData])
+                    .select('id')
+                    .single();
+                  
+                  if (insertError) {
+                    appLogger.error('Ошибка при создании записи в таблице users', { 
+                      code: insertError.code,
+                      message: insertError.message,
+                      details: insertError.details
+                    });
+                  } else {
+                    appLogger.info('Запись в таблице users успешно создана', { userId: insertedUser.id });
+                  }
+                } else {
+                  appLogger.info('Запись в таблице users уже существует', { userId: existingUser.id });
+                }
+              } catch (insertError) {
+                appLogger.error('Необработанная ошибка при создании записи в таблице users', insertError);
+                console.error('Ошибка создания записи в users:', insertError);
+              }
+            }
+          }
+        } else if (authData?.user) {
+          // Пользователь существует, обновляем его данные
+          appLogger.info('Пользователь найден, обновляем данные', { 
+            id: authData.user.id,
+            email: authData.user.email 
+          });
+          
+          try {
+            // Проверяем запись в таблице users
+            const { data: existingUser, error: checkError } = await supabase
+              .from('users')
+              .select('id, telegram_id')
+              .eq('id', authData.user.id)
+              .maybeSingle();
+            
+            if (checkError) {
+              appLogger.error('Ошибка при проверке записи в таблице users', { 
+                code: checkError.code,
+                message: checkError.message,
+                details: checkError.details
+              });
+            }
+            
+            if (existingUser) {
+              // Если запись есть, обновляем её
+              appLogger.info('Обновление записи в таблице users', { userId: existingUser.id });
+              
+              const { data: updatedUser, error: updateError } = await supabase
+                .from('users')
+                .update(userData)
+                .eq('id', existingUser.id)
+                .select('id')
+                .single();
+              
+              if (updateError) {
+                appLogger.error('Ошибка при обновлении записи в таблице users', { 
+                  code: updateError.code,
+                  message: updateError.message,
+                  details: updateError.details
+                });
+              } else {
+                appLogger.info('Запись в таблице users успешно обновлена', { userId: updatedUser.id });
+              }
+            } else {
+              // Если записи нет, создаем её
+              appLogger.info('Создание записи в таблице users для существующего пользователя');
+              
+              const insertData = {
+                id: authData.user.id,
+                ...userData,
+                created_at: new Date().toISOString()
+              };
+              
+              const { data: insertedUser, error: insertError } = await supabase
+                .from('users')
+                .insert([insertData])
+                .select('id')
+                .single();
+              
+              if (insertError) {
+                appLogger.error('Ошибка при создании записи в таблице users', { 
+                  code: insertError.code,
+                  message: insertError.message,
+                  details: insertError.details
+                });
+              } else {
+                appLogger.info('Запись в таблице users успешно создана', { userId: insertedUser.id });
+              }
+            }
+          } catch (userError) {
+            appLogger.error('Необработанная ошибка при работе с таблицей users', userError);
+            console.error('Ошибка работы с таблицей users:', userError);
+          }
+        } else if (authError) {
+          appLogger.error('Ошибка при аутентификации', { 
+            code: authError.code,
+            message: authError.message,
+            name: authError.name
+          });
         }
+      } catch (authProcessError) {
+        appLogger.error('Необработанная ошибка в процессе аутентификации', authProcessError);
+        console.error('Ошибка процесса аутентификации:', authProcessError);
       }
     } catch (error) {
-      appLogger.error('Ошибка при создании/обновлении пользователя', error);
+      appLogger.error('Необработанная ошибка при сохранении пользователя', error);
+      console.error('Ошибка сохранения пользователя:', error);
     }
   };
 
