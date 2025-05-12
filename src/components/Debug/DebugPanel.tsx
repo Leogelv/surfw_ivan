@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTelegram } from '@/context/TelegramContext';
 import styles from './DebugPanel.module.css';
@@ -16,29 +16,19 @@ type LogEntry = {
 };
 
 type DebugPanelProps = {
-  telegramUser?: any;
-  supabaseUser?: any;
   logs?: any[];
 };
 
-const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: propsLogs }: DebugPanelProps = {}) => {
+const DebugPanel = ({ logs: propsLogs }: DebugPanelProps = {}) => {
   const debugLogger = logger.createLogger('DebugPanel');
-  const { user: contextTelegramUser } = useTelegram();
+  const { user: telegramUser } = useTelegram();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const [activeTab, setActiveTab] = useState('console');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Кэшируем время последнего обновления для предотвращения слишком частых запросов
-  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
-  // Ограничиваем количество логов для отображения
-  const MAX_LOGS = 20;
-  // Минимальный интервал между обновлениями в миллисекундах
-  const MIN_REFRESH_INTERVAL = 2000;
-
-  // Используем telegramUser из пропсов, если он передан, в противном случае из контекста
-  const telegramUser = propsTelegramUser || contextTelegramUser;
-
+  const MAX_LOGS = 30;
+  
   // Используем логи из пропсов, если они переданы
   useEffect(() => {
     if (propsLogs?.length) {
@@ -63,7 +53,7 @@ const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: props
     }
   };
 
-  // Получаем и мемоизируем данные инициализации для предотвращения постоянных перерасчетов
+  // Получаем и мемоизируем данные инициализации
   const initData = useMemo(() => {
     try {
       return retrieveLaunchParams();
@@ -73,26 +63,8 @@ const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: props
     }
   }, [debugLogger]);
 
-  // Мемоизируем информацию о WebApp для предотвращения лишних перерендеров
-  const webAppInfo = useMemo(() => {
-    if (typeof window === 'undefined' || !window.Telegram || !window.Telegram.WebApp) {
-      return { available: false };
-    }
-    
-    const webApp = window.Telegram.WebApp;
-    return {
-      available: true,
-      version: webApp.version,
-      platform: webApp.platform,
-      viewportHeight: webApp.viewportHeight,
-      viewportStableHeight: webApp.viewportStableHeight,
-      isExpanded: webApp.isExpanded,
-      colorScheme: webApp.colorScheme
-    };
-  }, []);
-
-  // Оптимизированная функция получения логов
-  const fetchLogs = useCallback(async () => {
+  // Функция получения логов
+  const fetchLogs = async () => {
     // Если у нас есть логи из пропсов, не загружаем из Supabase
     if (propsLogs?.length) {
       return;
@@ -103,17 +75,9 @@ const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: props
       return;
     }
 
-    // Проверяем, прошло ли достаточно времени с момента последнего обновления
-    const now = Date.now();
-    if (now - lastRefreshTime < MIN_REFRESH_INTERVAL) {
-      debugLogger.debug('Пропуск обновления логов: слишком частые запросы');
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-      setLastRefreshTime(now);
 
       const { data, error: fetchError } = await supabase
         .from('logs')
@@ -135,30 +99,25 @@ const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: props
     } finally {
       setLoading(false);
     }
-  }, [supabase, lastRefreshTime, debugLogger, propsLogs]);
+  };
 
-  // Обработчик клика по кнопке обновления
-  const handleRefresh = useCallback(() => {
-    setRefreshCount(prev => prev + 1);
-  }, []);
-
-  // Эффект для загрузки логов при изменении refreshCount
+  // Эффект для загрузки логов при открытии панели
   useEffect(() => {
-    if (isExpanded && !propsLogs?.length) {
+    if (isExpanded && activeTab === 'console' && !propsLogs?.length) {
       fetchLogs();
     }
-  }, [fetchLogs, refreshCount, isExpanded, propsLogs]);
-
-  // Автоматическое обновление логов с интервалом только когда панель открыта
-  useEffect(() => {
-    if (!isExpanded || propsLogs?.length) return;
-    
-    const interval = setInterval(() => {
-      fetchLogs();
-    }, 5000); // 5 секунд между автоматическими обновлениями
-    
-    return () => clearInterval(interval);
-  }, [isExpanded, fetchLogs, propsLogs]);
+  }, [isExpanded, activeTab, propsLogs]);
+  
+  // Функция для копирования текста в буфер обмена
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        debugLogger.info('Скопировано в буфер обмена');
+      })
+      .catch(err => {
+        debugLogger.error('Ошибка при копировании в буфер обмена', err);
+      });
+  };
 
   return (
     <div className={styles.debugPanel}>
@@ -173,99 +132,86 @@ const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: props
         <div className={styles.content}>
           <h3>Отладочная информация</h3>
           
-          <div className={styles.section}>
-            <h4>Пользователь Telegram</h4>
-            {telegramUser ? (
-              <div>
-                <p>ID: {telegramUser.id}</p>
-                <p>Имя: {telegramUser.first_name} {telegramUser.last_name}</p>
-                <p>Username: {telegramUser.username || 'не указан'}</p>
-                {telegramUser.photo_url && (
+          {/* Табы */}
+          <div className={styles.tabs}>
+            <button 
+              className={`${styles.tabButton} ${activeTab === 'console' ? styles.active : ''}`}
+              onClick={() => setActiveTab('console')}
+            >
+              Консоль логи
+            </button>
+            <button 
+              className={`${styles.tabButton} ${activeTab === 'initData' ? styles.active : ''}`}
+              onClick={() => setActiveTab('initData')}
+            >
+              Init Data SDK
+            </button>
+          </div>
+          
+          {/* Содержимое табов */}
+          <div className={styles.tabContent}>
+            {/* Таб консоли */}
+            {activeTab === 'console' && (
+              <div className={styles.consoleTab}>
+                <div className={styles.sectionHeader}>
+                  <h4>Логи ({logs.length})</h4>
                   <div>
-                    <p>Фото URL: {telegramUser.photo_url}</p>
-                    <img 
-                      src={telegramUser.photo_url} 
-                      alt="User avatar" 
-                      className={styles.avatar}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/default-avatar.png';
-                        target.onerror = null;
-                        debugLogger.warn('Ошибка при загрузке аватара пользователя');
-                      }}
-                    />
+                    <button 
+                      onClick={() => fetchLogs()} 
+                      disabled={loading || !!propsLogs?.length} 
+                      className={styles.actionButton}
+                    >
+                      {loading ? 'Загрузка...' : 'Обновить'}
+                    </button>
+                    <button 
+                      onClick={() => copyToClipboard(logs.map(log => 
+                        `[${formatTime(log.created_at)}] [${log.level.toUpperCase()}] ${log.message} ${log.context ? JSON.stringify(log.context) : ''}`
+                      ).join('\n'))}
+                      className={styles.actionButton}
+                    >
+                      Копировать
+                    </button>
                   </div>
-                )}
-              </div>
-            ) : (
-              <p>Пользователь не найден</p>
-            )}
-          </div>
-
-          {supabaseUser && (
-            <div className={styles.section}>
-              <h4>Пользователь Supabase</h4>
-              <div>
-                <p>ID: {supabaseUser.id}</p>
-                <p>Telegram ID: {supabaseUser.telegram_id}</p>
-                <p>Имя: {supabaseUser.first_name} {supabaseUser.last_name}</p>
-                <p>Username: {supabaseUser.username || 'не указан'}</p>
-              </div>
-            </div>
-          )}
-          
-          <div className={styles.section}>
-            <h4>InitData из SDK</h4>
-            <pre>
-              {JSON.stringify(
-                {
-                  hasInitData: !!initData.initData,
-                  hasInitDataRaw: !!initData.initDataRaw,
-                  hasUser: !!initData.user
-                },
-                null,
-                2
-              )}
-            </pre>
-          </div>
-          
-          <div className={styles.section}>
-            <h4>Информация о WebApp</h4>
-            <pre>
-              {JSON.stringify(webAppInfo, null, 2)}
-            </pre>
-          </div>
-          
-          <div className={styles.section}>
-            <h4>
-              Логи ({logs.length})
-              <button 
-                onClick={handleRefresh} 
-                disabled={loading || !!propsLogs?.length} 
-                className={styles.refreshButton}
-              >
-                {loading ? 'Загрузка...' : 'Обновить'}
-              </button>
-            </h4>
-            
-            {error && <p className={styles.error}>{error}</p>}
-            
-            <div className={styles.logs}>
-              {logs.map((log) => (
-                <div key={log.id} className={`${styles.logEntry} ${styles[log.level]}`}>
-                  <span className={styles.timestamp}>{formatTime(log.created_at)}</span>
-                  <span className={styles.level}>[{log.level.toUpperCase()}]</span>
-                  <span className={styles.message}>{log.message}</span>
-                  {log.context && (
-                    <pre className={styles.context}>
-                      {JSON.stringify(log.context, null, 2)}
-                    </pre>
-                  )}
                 </div>
-              ))}
-              
-              {logs.length === 0 && !loading && <p>Нет доступных логов</p>}
-            </div>
+                
+                {error && <p className={styles.error}>{error}</p>}
+                
+                <div className={styles.logs}>
+                  {logs.map((log) => (
+                    <div key={log.id} className={`${styles.logEntry} ${styles[log.level]}`}>
+                      <span className={styles.timestamp}>{formatTime(log.created_at)}</span>
+                      <span className={styles.level}>[{log.level.toUpperCase()}]</span>
+                      <span className={styles.message}>{log.message}</span>
+                      {log.context && (
+                        <pre className={styles.context}>
+                          {JSON.stringify(log.context, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {logs.length === 0 && !loading && <p>Нет доступных логов</p>}
+                </div>
+              </div>
+            )}
+            
+            {/* Таб Init Data */}
+            {activeTab === 'initData' && (
+              <div className={styles.initDataTab}>
+                <div className={styles.sectionHeader}>
+                  <h4>InitData из SDK</h4>
+                  <button 
+                    onClick={() => copyToClipboard(JSON.stringify(initData, null, 2))}
+                    className={styles.actionButton}
+                  >
+                    Копировать
+                  </button>
+                </div>
+                <pre className={styles.jsonData}>
+                  {JSON.stringify(initData, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
       )}
