@@ -1,16 +1,20 @@
 // Скрипт для создания тестового пользователя в Supabase
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
-const crypto = require('crypto');
-
-// Функция для генерации UUID v4
-function uuidv4() {
-  return crypto.randomUUID();
+// Подключаем еще и сервисный файл с ключом
+try {
+  require('dotenv').config({ path: '.env.service' });
+} catch (e) {
+  console.log('Файл .env.service не найден, используем только .env');
 }
+
+const { createClient } = require('@supabase/supabase-js');
+const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 // Получаем URL и ключ из переменных окружения
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Ошибка: URL или ключ Supabase не найдены в переменных окружения');
@@ -18,106 +22,103 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 console.log('URL Supabase:', supabaseUrl);
-console.log('Ключ Supabase:', supabaseKey.substring(0, 10) + '...');
+console.log('Анонимный ключ Supabase:', supabaseKey.substring(0, 10) + '...');
+console.log('Service ключ доступен:', !!supabaseServiceKey);
 
-// Создаем клиент Supabase
+// Создаем клиенты Supabase - анонимный и сервисный (если доступен)
 const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
-// Данные тестового пользователя
-const userData = {
-  id: uuidv4(),
-  telegram_id: '987654321',
-  username: 'test_cli_user',
-  first_name: 'CLI',
-  last_name: 'Test',
-  // Используем реальную ссылку на Telegram фото вместо примера
-  photo_url: 'https://t.me/i/userpic/320/default.jpg',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  last_login: new Date().toISOString(),
-  telegram_auth_date: new Date().toISOString(), // Используем стандартный формат ISO для timestamp
-};
-
-// Функция для проверки доступности Supabase
-async function checkSupabaseConnection() {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error('Ошибка при подключении к Supabase:', error);
-      return false;
-    }
-    
-    console.log('Успешное подключение к Supabase!');
-    return true;
-  } catch (e) {
-    console.error('Необработанная ошибка при проверке подключения к Supabase:', e);
-    return false;
-  }
+// Генерируем случайный пароль
+function generateRandomPassword(length = 16) {
+  return crypto.randomBytes(length).toString('hex');
 }
 
-// Функция для создания пользователя
-async function createTestUser() {
+// Создаем мок данных пользователя Telegram с определенным timestamp для времени
+function createMockTelegramUser() {
+  const randomId = Math.floor(Math.random() * 1000000) + 1000000; // Случайный ID
+  const timestamp = Math.floor(Date.now() / 1000); // Текущее время в секундах
+
+  return {
+    id: randomId,
+    first_name: 'Test',
+    last_name: 'User',
+    username: `test_user_${randomId}`,
+    language_code: 'ru',
+    photo_url: 'https://placekitten.com/200/200',
+    auth_date: timestamp.toString()
+  };
+}
+
+// Правильный подход к созданию пользователя:
+// 1. Сначала создать пользователя в auth.users через Auth API
+// 2. Затем создать запись в public.users с тем же ID
+async function createUserInSupabase() {
+  const mockTelegramUser = createMockTelegramUser();
+  console.log("Создаем тестового пользователя с данными:", mockTelegramUser);
+  
+  // Шаг 1: Создаем пользователя в auth.users
+  const email = `test_${mockTelegramUser.id}@example.com`;
+  const password = generateRandomPassword();
+  let userId = null;
+  
+  // Используем обычный signUp
   try {
-    // Сначала проверяем подключение
-    const isConnected = await checkSupabaseConnection();
-    if (!isConnected) {
-      console.error('Невозможно продолжить без подключения к Supabase');
-      process.exit(1);
-    }
+    console.log("Используем auth.signUp для создания пользователя");
     
-    console.log('Создаем тестового пользователя:', userData);
-    
-    // Проверяем, существует ли пользователь с таким telegram_id
-    const { data: existingUsers, error: checkError } = await supabase
-      .from('users')
-      .select('id, telegram_id, photo_url') // Добавляем photo_url для проверки
-      .eq('telegram_id', userData.telegram_id)
-      .limit(1);
-    
-    if (checkError) {
-      console.error('Ошибка при проверке существующего пользователя:', checkError);
-      process.exit(1);
-    }
-    
-    // Если пользователь с таким telegram_id уже существует, обновляем его
-    if (existingUsers && existingUsers.length > 0) {
-      const existingUser = existingUsers[0];
-      console.log('Пользователь с таким telegram_id уже существует, обновляем:', existingUser);
-      console.log('Текущее значение photo_url:', existingUser.photo_url);
-      
-      const updatedData = {
-        username: userData.username,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        photo_url: userData.photo_url,
-        updated_at: userData.updated_at,
-        last_login: userData.last_login,
-        telegram_auth_date: userData.telegram_auth_date
-      };
-      
-      console.log('Данные для обновления:', updatedData);
-      
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update(updatedData)
-        .eq('telegram_id', userData.telegram_id)
-        .select();
-      
-      if (updateError) {
-        console.error('Ошибка при обновлении пользователя:', updateError);
-        process.exit(1);
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          telegram_id: mockTelegramUser.id.toString(),
+          first_name: mockTelegramUser.first_name,
+          last_name: mockTelegramUser.last_name,
+          username: mockTelegramUser.username,
+          photo_url: mockTelegramUser.photo_url,
+          provider: 'telegram'
+        }
       }
-      
-      console.log('Пользователь успешно обновлен:', updatedUser);
-      return;
+    });
+    
+    if (signUpError) {
+      console.error("Ошибка при создании пользователя через auth.signUp:", signUpError);
+      return null;
     }
     
-    // Создаем нового пользователя
-    console.log('Создаем нового пользователя с данными:', userData);
+    if (!signUpData?.user?.id) {
+      console.error("Не удалось получить ID пользователя после регистрации");
+      return null;
+    }
+    
+    userId = signUpData.user.id;
+    console.log("Пользователь успешно создан в auth.users, ID:", userId);
+  } catch (error) {
+    console.error("Необработанная ошибка при использовании auth.signUp:", error);
+    return null;
+  }
+  
+  if (!userId) {
+    console.error("Не удалось получить ID созданного пользователя");
+    return null;
+  }
+  
+  // Шаг 2: Создаем запись в public.users с тем же ID
+  try {
+    const userData = {
+      id: userId, // Важно! Используем тот же ID, что и в auth.users
+      telegram_id: mockTelegramUser.id.toString(),
+      username: mockTelegramUser.username,
+      first_name: mockTelegramUser.first_name,
+      last_name: mockTelegramUser.last_name || '',
+      photo_url: mockTelegramUser.photo_url || '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_login: new Date().toISOString(),
+      telegram_auth_date: new Date(parseInt(mockTelegramUser.auth_date) * 1000).toISOString()
+    };
+    
+    console.log("Создаем запись в public.users с данными:", userData);
     
     const { data: newUser, error: insertError } = await supabase
       .from('users')
@@ -125,73 +126,219 @@ async function createTestUser() {
       .select();
     
     if (insertError) {
-      console.error('Ошибка при создании пользователя:', insertError);
-      process.exit(1);
-    }
-    
-    console.log('Пользователь успешно создан:', newUser);
-    
-    // Проверка успешности создания/обновления
-    const { data: verifyUser, error: verifyError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('telegram_id', userData.telegram_id)
-      .single();
+      console.error("Ошибка при создании записи в public.users:", insertError);
       
-    if (verifyError) {
-      console.error('Ошибка при проверке созданного пользователя:', verifyError);
-    } else {
-      console.log('Проверка: пользователь в базе данных:', verifyUser);
-      console.log('Проверка photo_url:', verifyUser.photo_url);
-    }
-    
-    // Проверяем наличие таблицы user_settings
-    try {
-      const { count, error: settingsCountError } = await supabase
-        .from('user_settings')
-        .select('*', { count: 'exact', head: true });
-      
-      if (settingsCountError) {
-        console.log('Таблица user_settings не найдена или нет доступа к ней, пропускаем создание настроек');
-        return;
-      }
-      
-      // Создаем запись в user_settings для этого пользователя
-      if (newUser && newUser.length > 0) {
-        const settingsData = {
-          id: uuidv4(),
-          user_id: newUser[0].id,
-          notification_enabled: true,
-          theme: 'light',
-          last_updated: new Date().toISOString()
-        };
-        
-        const { error: settingsError } = await supabase
-          .from('user_settings')
-          .insert(settingsData);
-        
-        if (settingsError) {
-          console.error('Ошибка при создании настроек пользователя:', settingsError);
-        } else {
-          console.log('Настройки пользователя успешно созданы');
+      // Если возникла ошибка и доступен сервисный ключ, удаляем пользователя из auth.users
+      if (supabaseAdmin) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+          console.log("Пользователь удален из auth.users из-за ошибки");
+        } catch (deleteError) {
+          console.error("Ошибка при удалении пользователя из auth.users:", deleteError);
         }
       }
-    } catch (settingsError) {
-      console.error('Ошибка при работе с таблицей user_settings:', settingsError);
+      
+      return null;
     }
-  } catch (e) {
-    console.error('Необработанная ошибка:', e);
-    process.exit(1);
+    
+    console.log("Запись успешно создана в public.users:", newUser);
+    
+    // Шаг 3: Создаем запись в user_settings
+    try {
+      const settingsData = {
+        user_id: userId,
+        notifications_enabled: true,
+        theme: 'light',
+        language: 'ru',
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error: settingsError } = await supabase
+        .from('user_settings')
+        .insert(settingsData);
+      
+      if (settingsError) {
+        console.error("Ошибка при создании настроек пользователя:", settingsError);
+      } else {
+        console.log("Настройки пользователя успешно созданы");
+      }
+    } catch (error) {
+      console.error("Необработанная ошибка при создании настроек:", error);
+    }
+    
+    return {
+      id: userId,
+      telegram_id: mockTelegramUser.id.toString(),
+      username: mockTelegramUser.username,
+      email: email
+    };
+  } catch (error) {
+    console.error("Необработанная ошибка при создании записи в public.users:", error);
+    
+    // Если возникла ошибка и доступен сервисный ключ, удаляем пользователя из auth.users
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        console.log("Пользователь удален из auth.users из-за ошибки");
+      } catch (deleteError) {
+        console.error("Ошибка при удалении пользователя из auth.users:", deleteError);
+      }
+    }
+    
+    return null;
   }
 }
 
-// Запускаем создание пользователя
-createTestUser()
-  .then(() => {
-    console.log('Операция завершена успешно');
-    process.exit(0);
-  })
-  .catch(e => {
-    console.error('Необработанная ошибка в промисе:', e);
-    process.exit(1);
-  }); 
+// Функция для удаления тестового пользователя
+async function deleteUserFromSupabase(userId) {
+  if (!userId) {
+    console.error("ID пользователя не указан");
+    return false;
+  }
+  
+  console.log("Удаляем пользователя с ID:", userId);
+  
+  // Шаг 1: Удаляем настройки пользователя
+  try {
+    const { error: settingsDeleteError } = await supabase
+      .from('user_settings')
+      .delete()
+      .eq('user_id', userId);
+    
+    if (settingsDeleteError) {
+      console.error("Ошибка при удалении настроек пользователя:", settingsDeleteError);
+    } else {
+      console.log("Настройки пользователя успешно удалены");
+    }
+  } catch (error) {
+    console.error("Необработанная ошибка при удалении настроек:", error);
+  }
+  
+  // Шаг 2: Удаляем пользователя из public.users
+  try {
+    const { error: userDeleteError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+    
+    if (userDeleteError) {
+      console.error("Ошибка при удалении пользователя из public.users:", userDeleteError);
+    } else {
+      console.log("Пользователь успешно удален из public.users");
+    }
+  } catch (error) {
+    console.error("Необработанная ошибка при удалении пользователя из public.users:", error);
+  }
+  
+  // Шаг 3: Удаляем пользователя из auth.users
+  if (supabaseAdmin) {
+    try {
+      const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      
+      if (authDeleteError) {
+        console.error("Ошибка при удалении пользователя из auth.users:", authDeleteError);
+        return false;
+      } else {
+        console.log("Пользователь успешно удален из auth.users");
+        return true;
+      }
+    } catch (error) {
+      console.error("Необработанная ошибка при удалении пользователя из auth.users:", error);
+      return false;
+    }
+  } else {
+    console.warn("Сервисный ключ не доступен, не удалось удалить пользователя из auth.users");
+    return false;
+  }
+}
+
+// Функция для отображения списка тестовых пользователей
+async function listTestUsers() {
+  console.log("\n=== СПИСОК ТЕСТОВЫХ ПОЛЬЗОВАТЕЛЕЙ ===");
+  
+  try {
+    // Ищем пользователей по шаблону имени пользователя (username начинается с 'test_user_')
+    const { data: testUsers, error: findError } = await supabase
+      .from('users')
+      .select('id, telegram_id, username, first_name, last_name, photo_url')
+      .like('username', 'test_user_%');
+    
+    if (findError) {
+      console.error('Ошибка при поиске тестовых пользователей:', findError);
+      return;
+    }
+    
+    if (!testUsers || testUsers.length === 0) {
+      console.log('Тестовые пользователи не найдены');
+      return;
+    }
+    
+    console.log(`Найдено ${testUsers.length} тестовых пользователей:`);
+    testUsers.forEach(user => {
+      console.log(`- ID: ${user.id}, Telegram ID: ${user.telegram_id}, Username: ${user.username}`);
+    });
+    
+    console.log("\nДля удаления используйте: node create-test-user.js delete USER_ID");
+  } catch (error) {
+    console.error('Необработанная ошибка при поиске тестовых пользователей:', error);
+  }
+}
+
+// Основная функция
+async function main() {
+  const command = process.argv[2] || 'help';
+  
+  switch (command) {
+    case 'create':
+      console.log("\n=== СОЗДАНИЕ ТЕСТОВОГО ПОЛЬЗОВАТЕЛЯ ===");
+      const user = await createUserInSupabase();
+      
+      if (user) {
+        console.log("\n=== ПОЛЬЗОВАТЕЛЬ УСПЕШНО СОЗДАН ===");
+        console.log("ID:", user.id);
+        console.log("Telegram ID:", user.telegram_id);
+        console.log("Username:", user.username);
+        console.log("Email:", user.email);
+        console.log("\nДля удаления используйте: node create-test-user.js delete", user.id);
+      } else {
+        console.error("\n=== ОШИБКА СОЗДАНИЯ ПОЛЬЗОВАТЕЛЯ ===");
+      }
+      break;
+      
+    case 'delete':
+      const userId = process.argv[3];
+      
+      if (!userId) {
+        console.error("Не указан ID пользователя для удаления");
+        console.log("Использование: node create-test-user.js delete USER_ID");
+        return;
+      }
+      
+      console.log("\n=== УДАЛЕНИЕ ПОЛЬЗОВАТЕЛЯ ===");
+      const result = await deleteUserFromSupabase(userId);
+      
+      if (result) {
+        console.log("\n=== ПОЛЬЗОВАТЕЛЬ УСПЕШНО УДАЛЕН ===");
+      } else {
+        console.error("\n=== ОШИБКА УДАЛЕНИЯ ПОЛЬЗОВАТЕЛЯ ===");
+      }
+      break;
+      
+    case 'list':
+      await listTestUsers();
+      break;
+      
+    case 'help':
+    default:
+      console.log("\n=== СПРАВКА ПО ИСПОЛЬЗОВАНИЮ ===");
+      console.log("Создание пользователя: node create-test-user.js create");
+      console.log("Список тестовых пользователей: node create-test-user.js list");
+      console.log("Удаление пользователя: node create-test-user.js delete USER_ID");
+      break;
+  }
+}
+
+// Запускаем скрипт
+main()
+  .catch(err => console.error("Ошибка выполнения скрипта:", err))
+  .finally(() => process.exit()); 
