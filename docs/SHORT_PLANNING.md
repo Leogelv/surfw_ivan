@@ -128,4 +128,90 @@
 | src/components/Debug/DebugPanel.tsx | Панель отладки с поддержкой пропсов | ✅ |
 | src/components/Debug/DebugPanel.module.css | Стили для панели отладки | ✅ |
 | create-test-user.js | CLI-скрипт для создания тестового пользователя | ✅ |
-| docs/TELEGRAM_SDK_FIXES.md | Документация по исправлениям | ✅ | 
+| docs/TELEGRAM_SDK_FIXES.md | Документация по исправлениям | ✅ |
+
+# Краткий план по интеграции с Telegram Mini Apps SDK
+
+## Текущие правки (май 2024)
+
+1. ✅ Настройка получения данных через SDK аналогично DebugPanel
+2. ✅ Исправление методов работы с полноэкранным режимом (web_app_request_fullscreen)
+3. ✅ Добавление обработки событий content_safe_area_changed
+4. ✅ Настройка вертикальных свайпов (web_app_setup_swipe_behavior)
+5. ✅ Добавление поддержки темы оформления Telegram (web_app_request_theme)
+
+## Чек-лист для проверки
+
+- [ ] Данные из Telegram корректно отображаются в дебаг-панели
+- [ ] Полноэкранный режим работает на мобильных устройствах
+- [ ] Корректно отображаются отступы с учетом безопасной зоны контента
+- [ ] Вертикальные свайпы работают для закрытия приложения
+- [ ] Приложение адаптируется к теме Telegram (светлая/темная)
+
+## Архитектура взаимодействия с Telegram SDK
+
+```
+┌─────────────────────┐      ┌───────────────────┐
+│ TelegramContext.tsx │◄────►│ Telegram SDK      │
+└─────────┬───────────┘      └───────────────────┘
+          │
+          ▼
+┌─────────────────────┐      ┌───────────────────┐
+│ page.tsx (YogaApp)  │◄────►│ DebugPanel.tsx    │
+└─────────────────────┘      └───────────────────┘
+```
+
+## Используемые методы из методов_тг_full.md
+
+- web_app_request_fullscreen
+- web_app_request_content_safe_area
+- web_app_setup_swipe_behavior
+- web_app_ready
+- web_app_request_theme
+
+## Примечания для тестирования
+
+- Проверить на iOS и Android устройствах
+- Проверить на iPhone с челкой для корректности отступов
+- Проверить работу на разных версиях Telegram (>=6.1)
+- Проверить работу вертикальных свайпов с параметром `allow_vertical_swipe: true`
+- Проверить переключение между светлой и темной темами Telegram
+
+## CSS переменные для интеграции с Telegram
+
+### Отступы безопасной зоны
+```css
+:root {
+  --safe-area-top: 30px;
+  --safe-area-right: 0px;
+  --safe-area-bottom: 0px;
+  --safe-area-left: 0px;
+  
+  /* Альтернативный формат */
+  --tg-content-safe-area-top: 30px;
+  --tg-content-safe-area-right: 0px;
+  --tg-content-safe-area-bottom: 0px;
+  --tg-content-safe-area-left: 0px;
+}
+```
+
+### Параметры темы
+```css
+:root {
+  /* Прямые переменные из Telegram */
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: #999999;
+  --tg-theme-link-color: #2481cc;
+  --tg-theme-button-color: #2481cc;
+  --tg-theme-button-text-color: #ffffff;
+  
+  /* Упрощенные алиасы */
+  --tg-theme-bg: #ffffff;
+  --tg-theme-text: #000000;
+  --tg-theme-hint: #999999;
+  --tg-theme-link: #2481cc;
+  --tg-theme-button: #2481cc;
+  --tg-theme-button-text: #ffffff;
+}
+``` 

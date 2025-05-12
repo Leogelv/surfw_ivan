@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
-import { postEvent } from '@telegram-apps/sdk';
+import { postEvent, retrieveLaunchParams } from '@telegram-apps/sdk';
 import { usePathname } from 'next/navigation';
 import ProfileScreen from '@/components/screens/ProfileScreen';
 import DebugPanel from '@/components/Debug/DebugPanel';
@@ -19,9 +19,60 @@ function YogaApp() {
   const [showProfile, setShowProfile] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [appLogs, setAppLogs] = useState<any[]>([]);
+  const [contentSafeArea, setContentSafeArea] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
   
   const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, enableFullScreen, user: telegramUser } = useTelegram();
   const appLogger = createLogger('HomePage');
+
+  // Получение и мемоизация данных инициализации из SDK
+  const sdkInitData = useMemo(() => {
+    try {
+      // Получаем данные через SDK
+      const sdkData = retrieveLaunchParams();
+      appLogger.info('Получены данные из Telegram SDK', sdkData);
+      return sdkData;
+    } catch (e) {
+      appLogger.error('Ошибка при получении данных через SDK', e);
+      return {
+        error: e instanceof Error ? e.message : String(e)
+      };
+    }
+  }, [appLogger]);
+
+  // Применяем цвета темы из данных SDK, если они доступны
+  useEffect(() => {
+    if (typeof document !== 'undefined' && sdkInitData && 'tgWebAppThemeParams' in sdkInitData) {
+      const themeParams = sdkInitData.tgWebAppThemeParams;
+      appLogger.info('Применяем параметры темы из Telegram SDK', themeParams);
+      
+      // Применяем доступные цвета темы к CSS переменным
+      if (themeParams) {
+        Object.entries(themeParams).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(`--tg-theme-${key}`, value as string);
+        });
+        
+        // Устанавливаем также более удобные алиасы для некоторых параметров
+        if (themeParams.bg_color) {
+          document.documentElement.style.setProperty('--tg-theme-bg', themeParams.bg_color);
+        }
+        if (themeParams.text_color) {
+          document.documentElement.style.setProperty('--tg-theme-text', themeParams.text_color);
+        }
+        if (themeParams.hint_color) {
+          document.documentElement.style.setProperty('--tg-theme-hint', themeParams.hint_color);
+        }
+        if (themeParams.link_color) {
+          document.documentElement.style.setProperty('--tg-theme-link', themeParams.link_color);
+        }
+        if (themeParams.button_color) {
+          document.documentElement.style.setProperty('--tg-theme-button', themeParams.button_color);
+        }
+        if (themeParams.button_text_color) {
+          document.documentElement.style.setProperty('--tg-theme-button-text', themeParams.button_text_color);
+        }
+      }
+    }
+  }, [sdkInitData, appLogger]);
 
   // Функция для добавления лога в состояние
   const addLog = (level: string, message: string, data?: any) => {
@@ -71,11 +122,142 @@ function YogaApp() {
     };
   }, []);
 
+  // Установка обработчика для события content_safe_area_changed
+  useEffect(() => {
+    const handleContentSafeAreaChanged = (event: any) => {
+      try {
+        // Для событий из web версии Telegram, которые приходят через window.postMessage
+        if (event.data && typeof event.data === 'string') {
+          try {
+            const eventData = JSON.parse(event.data);
+            if (eventData.eventType === 'content_safe_area_changed') {
+              appLogger.info('Получены данные о безопасной зоне контента из web', eventData.eventData);
+              setContentSafeArea(eventData.eventData);
+            }
+          } catch (e) {
+            // Игнорируем ошибки парсинга для сообщений, которые не являются JSON
+          }
+        } else if (event.eventType === 'content_safe_area_changed') {
+          // Для событий из мобильных приложений
+          appLogger.info('Получены данные о безопасной зоне контента из мобильного приложения', event.eventData);
+          setContentSafeArea(event.eventData);
+        }
+      } catch (error) {
+        appLogger.error('Ошибка при обработке события content_safe_area_changed', error);
+      }
+    };
+
+    // Добавляем обработчик события для веб-версии
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleContentSafeAreaChanged);
+    }
+
+    // Возвращаем функцию очистки
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', handleContentSafeAreaChanged);
+      }
+    };
+  }, [appLogger]);
+
+  // Установка обработчика для события theme_changed
+  useEffect(() => {
+    const handleThemeChanged = (event: any) => {
+      try {
+        // Для событий из web версии Telegram, которые приходят через window.postMessage
+        if (event.data && typeof event.data === 'string') {
+          try {
+            const eventData = JSON.parse(event.data);
+            if (eventData.eventType === 'theme_changed') {
+              const themeParams = eventData.eventData;
+              appLogger.info('Получены данные о теме из web', themeParams);
+              
+              // Применяем параметры темы к CSS переменным
+              if (themeParams) {
+                Object.entries(themeParams).forEach(([key, value]) => {
+                  document.documentElement.style.setProperty(`--tg-theme-${key}`, value as string);
+                });
+                
+                // Обновляем алиасы
+                if (themeParams.bg_color) {
+                  document.documentElement.style.setProperty('--tg-theme-bg', themeParams.bg_color);
+                }
+                if (themeParams.text_color) {
+                  document.documentElement.style.setProperty('--tg-theme-text', themeParams.text_color);
+                }
+                if (themeParams.hint_color) {
+                  document.documentElement.style.setProperty('--tg-theme-hint', themeParams.hint_color);
+                }
+                if (themeParams.link_color) {
+                  document.documentElement.style.setProperty('--tg-theme-link', themeParams.link_color);
+                }
+                if (themeParams.button_color) {
+                  document.documentElement.style.setProperty('--tg-theme-button', themeParams.button_color);
+                }
+                if (themeParams.button_text_color) {
+                  document.documentElement.style.setProperty('--tg-theme-button-text', themeParams.button_text_color);
+                }
+              }
+            }
+          } catch (e) {
+            // Игнорируем ошибки парсинга для сообщений, которые не являются JSON
+          }
+        } else if (event.eventType === 'theme_changed') {
+          // Для событий из мобильных приложений
+          const themeParams = event.eventData;
+          appLogger.info('Получены данные о теме из мобильного приложения', themeParams);
+          
+          // Применяем параметры темы к CSS переменным
+          if (themeParams) {
+            Object.entries(themeParams).forEach(([key, value]) => {
+              document.documentElement.style.setProperty(`--tg-theme-${key}`, value as string);
+            });
+            
+            // Обновляем алиасы
+            if (themeParams.bg_color) {
+              document.documentElement.style.setProperty('--tg-theme-bg', themeParams.bg_color);
+            }
+            if (themeParams.text_color) {
+              document.documentElement.style.setProperty('--tg-theme-text', themeParams.text_color);
+            }
+            if (themeParams.hint_color) {
+              document.documentElement.style.setProperty('--tg-theme-hint', themeParams.hint_color);
+            }
+            if (themeParams.link_color) {
+              document.documentElement.style.setProperty('--tg-theme-link', themeParams.link_color);
+            }
+            if (themeParams.button_color) {
+              document.documentElement.style.setProperty('--tg-theme-button', themeParams.button_color);
+            }
+            if (themeParams.button_text_color) {
+              document.documentElement.style.setProperty('--tg-theme-button-text', themeParams.button_text_color);
+            }
+          }
+        }
+      } catch (error) {
+        appLogger.error('Ошибка при обработке события theme_changed', error);
+      }
+    };
+
+    // Добавляем обработчик события для веб-версии
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleThemeChanged);
+    }
+
+    // Возвращаем функцию очистки
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', handleThemeChanged);
+      }
+    };
+  }, [appLogger]);
+
   useEffect(() => {
     // Проверка, находимся ли мы в контексте Telegram или в обычном браузере
-    const isTelegramWebApp = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) || !!telegramUser;
+    const hasTgWebAppData = sdkInitData && 'tgWebAppData' in sdkInitData && !!sdkInitData.tgWebAppData;
+    const isTelegramWebApp = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) || !!telegramUser || hasTgWebAppData;
     
-    appLogger.info('Инициализация приложения', { isTelegramWebApp, telegramUser });
+    appLogger.info('Инициализация приложения', { isTelegramWebApp, telegramUser, sdkInitData, hasTgWebAppData });
     
     // Инициализация Telegram WebApp только если он доступен или есть данные пользователя из SDK
     if (isTelegramWebApp) {
@@ -83,7 +265,7 @@ function YogaApp() {
       const customInitializeTelegram = async () => {
         try {
           // Проверяем наличие Telegram WebApp или данных пользователя
-          if (!webApp && !telegramUser) {
+          if (!webApp && !telegramUser && !hasTgWebAppData) {
             appLogger.warn('Telegram WebApp недоступен и данные пользователя отсутствуют, запуск в режиме браузера');
             return;
           }
@@ -96,11 +278,38 @@ function YogaApp() {
             webApp.ready();
             appLogger.info('Telegram WebApp готов');
           }
+
+          // Настройка вертикальных свайпов
+          try {
+            appLogger.info('Установка параметров свайпа', { allow_vertical_swipe: true });
+            postEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: true });
+          } catch (swipeError) {
+            appLogger.error('Ошибка при настройке поведения свайпа', swipeError);
+          }
+          
+          // Запрос безопасной зоны контента
+          try {
+            appLogger.info('Запрос информации о безопасной зоне контента');
+            postEvent('web_app_request_content_safe_area');
+          } catch (safeAreaError) {
+            appLogger.error('Ошибка при запросе безопасной зоны контента', safeAreaError);
+          }
+          
+          // Запрос темы оформления (если нет в данных SDK)
+          try {
+            if (!(sdkInitData && 'tgWebAppThemeParams' in sdkInitData)) {
+              appLogger.info('Запрос информации о теме оформления');
+              postEvent('web_app_request_theme');
+            }
+          } catch (themeError) {
+            appLogger.error('Ошибка при запросе темы оформления', themeError);
+          }
           
           // Запрашиваем полноэкранный режим через SDK
           try {
             appLogger.info('Запрос на полноэкранный режим через web_app_request_fullscreen');
             postEvent('web_app_request_fullscreen');
+            enableFullScreen();
             appLogger.info('Полноэкранный режим запрошен');
           } catch (fullscreenError) {
             appLogger.error('Ошибка при вызове web_app_request_fullscreen', fullscreenError);
@@ -125,40 +334,73 @@ function YogaApp() {
     } else {
       appLogger.info('Запуск в режиме браузера, пропуск инициализации Telegram WebApp');
     }
-  }, [webApp, telegramUser, appLogger]);
+  }, [webApp, telegramUser, sdkInitData, appLogger, enableFullScreen, initializeTelegramApp]);
 
   // Устанавливаем CSS-переменную для отступа в зависимости от режима фулскрин
   useEffect(() => {
     if (typeof document !== 'undefined') {
       // Проверка, находимся ли мы в контексте Telegram
       const isTelegramWebApp = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+      const hasTgWebAppData = sdkInitData && 'tgWebAppData' in sdkInitData && !!sdkInitData.tgWebAppData;
+      
+      // Используем значение из безопасной зоны контента, если оно доступно
+      const topPadding = contentSafeArea.top > 0 ? contentSafeArea.top : telegramHeaderPadding;
       
       // Устанавливаем отступы только если мы в Telegram и включен полноэкранный режим
-      if (isTelegramWebApp && isFullScreenEnabled) {
-        // Используем значение из контекста, которое теперь динамически обновляется
+      if ((isTelegramWebApp || telegramUser || hasTgWebAppData) && isFullScreenEnabled) {
+        // Используем значение из контекста или contentSafeArea
         document.documentElement.style.setProperty(
           '--telegram-header-padding', 
-          `${telegramHeaderPadding}px`
+          `${topPadding}px`
         );
         document.documentElement.style.setProperty(
           '--telegram-header-gradient',
           'linear-gradient(to bottom, #FFFFFF 90%, #FFFFFF 95%)'
         );
+        
+        // Добавляем CSS-переменные для contentSafeArea по документации
+        document.documentElement.style.setProperty('--safe-area-top', `${contentSafeArea.top}px`);
+        document.documentElement.style.setProperty('--safe-area-right', `${contentSafeArea.right}px`);
+        document.documentElement.style.setProperty('--safe-area-bottom', `${contentSafeArea.bottom}px`);
+        document.documentElement.style.setProperty('--safe-area-left', `${contentSafeArea.left}px`);
+        
+        // Добавляем также совместимые имена по примеру из документации
+        document.documentElement.style.setProperty('--tg-content-safe-area-top', `${contentSafeArea.top}px`);
+        document.documentElement.style.setProperty('--tg-content-safe-area-right', `${contentSafeArea.right}px`);
+        document.documentElement.style.setProperty('--tg-content-safe-area-bottom', `${contentSafeArea.bottom}px`);
+        document.documentElement.style.setProperty('--tg-content-safe-area-left', `${contentSafeArea.left}px`);
+        
         appLogger.debug('Установлены CSS-переменные для отступов', { 
-          telegramHeaderPadding, 
+          topPadding,
+          contentSafeArea,
+          telegramHeaderPadding,
           safeAreaInset: webApp?.safeAreaInset
         });
-        console.log('Telegram padding applied:', telegramHeaderPadding, 
+        console.log('Telegram padding applied:', topPadding, 
+                    'ContentSafeArea:', contentSafeArea,
+                    'HeaderPadding:', telegramHeaderPadding,
                     'SafeAreaInset:', webApp?.safeAreaInset);
       } else {
         // В обычном браузере или если не в полноэкранном режиме
         document.documentElement.style.setProperty('--telegram-header-padding', '0px');
         document.documentElement.style.setProperty('--telegram-header-gradient', 'none');
+        
+        // Сбрасываем CSS-переменные для contentSafeArea
+        document.documentElement.style.setProperty('--safe-area-top', '0px');
+        document.documentElement.style.setProperty('--safe-area-right', '0px');
+        document.documentElement.style.setProperty('--safe-area-bottom', '0px');
+        document.documentElement.style.setProperty('--safe-area-left', '0px');
+        
+        document.documentElement.style.setProperty('--tg-content-safe-area-top', '0px');
+        document.documentElement.style.setProperty('--tg-content-safe-area-right', '0px');
+        document.documentElement.style.setProperty('--tg-content-safe-area-bottom', '0px');
+        document.documentElement.style.setProperty('--tg-content-safe-area-left', '0px');
+        
         appLogger.debug('Сброшены CSS-переменные для отступов');
         console.log('No Telegram padding applied, browser mode or not fullscreen');
       }
     }
-  }, [isFullScreenEnabled, telegramHeaderPadding, webApp?.safeAreaInset, appLogger]);
+  }, [isFullScreenEnabled, telegramHeaderPadding, webApp?.safeAreaInset, contentSafeArea, sdkInitData, telegramUser, appLogger]);
 
   const toggleProfile = () => {
     setShowProfile(prev => !prev);
@@ -220,7 +462,7 @@ function YogaApp() {
             <div 
               className="fixed top-0 left-0 right-0 z-40 pointer-events-none"
               style={{
-                height: `${telegramHeaderPadding}px`,
+                height: `${telegramHeaderPadding > 0 ? telegramHeaderPadding : contentSafeArea.top}px`,
                 background: 'var(--telegram-header-gradient)'
               }}
             ></div>
@@ -230,8 +472,11 @@ function YogaApp() {
           <div 
             className="flex-1 flex flex-col"
             style={{ 
-              paddingTop: isFullScreenEnabled ? `${telegramHeaderPadding}px` : '0',
-              transition: 'padding-top 0.3s ease'
+              paddingTop: isFullScreenEnabled ? `${telegramHeaderPadding > 0 ? telegramHeaderPadding : contentSafeArea.top}px` : '0',
+              paddingRight: isFullScreenEnabled ? `var(--safe-area-right, 0px)` : '0',
+              paddingBottom: isFullScreenEnabled ? `var(--safe-area-bottom, 0px)` : '0',
+              paddingLeft: isFullScreenEnabled ? `var(--safe-area-left, 0px)` : '0',
+              transition: 'padding 0.3s ease'
             }}
           >
             {/* Добавляем силуэт человека над UI карточками */}
