@@ -17,11 +17,13 @@ type LogEntry = {
 
 type DebugPanelProps = {
   logs?: any[];
+  telegramUser?: any;
+  supabaseUser?: any;
 };
 
-const DebugPanel = ({ logs: propsLogs }: DebugPanelProps = {}) => {
+const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelProps = {}) => {
   const debugLogger = logger.createLogger('DebugPanel');
-  const { user: telegramUser } = useTelegram();
+  const { user: telegramUserContext } = useTelegram();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('console');
@@ -37,7 +39,7 @@ const DebugPanel = ({ logs: propsLogs }: DebugPanelProps = {}) => {
         level: log.level || 'info',
         message: log.message || 'Сообщение отсутствует',
         created_at: log.timestamp || new Date().toISOString(),
-        context: log.context || undefined
+        context: log.context || log.data || undefined
       }));
       setLogs(formattedLogs);
     }
@@ -56,12 +58,33 @@ const DebugPanel = ({ logs: propsLogs }: DebugPanelProps = {}) => {
   // Получаем и мемоизируем данные инициализации
   const initData = useMemo(() => {
     try {
-      return retrieveLaunchParams();
+      // Пытаемся получить initData через SDK
+      const sdkData = retrieveLaunchParams();
+      
+      // Добавляем отладочную информацию о пользователе из контекста и пропсов
+      const debugData = {
+        ...sdkData,
+        userFromContext: telegramUserContext || null,
+        userFromProps: telegramUser || null,
+        supabaseUser: supabaseUser || null,
+        hasWebApp: typeof window !== 'undefined' && !!window.Telegram?.WebApp,
+      };
+      
+      return debugData;
     } catch (e) {
       debugLogger.error('Ошибка при получении initData', e);
-      return { initData: null, initDataRaw: null, user: null };
+      return { 
+        initData: null, 
+        initDataRaw: null, 
+        user: null,
+        error: e instanceof Error ? e.message : String(e),
+        userFromContext: telegramUserContext || null,
+        userFromProps: telegramUser || null,
+        supabaseUser: supabaseUser || null,
+        hasWebApp: typeof window !== 'undefined' && !!window.Telegram?.WebApp,
+      };
     }
-  }, [debugLogger]);
+  }, [debugLogger, telegramUserContext, telegramUser, supabaseUser]);
 
   // Функция получения логов
   const fetchLogs = async () => {

@@ -467,6 +467,12 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
           
           // Создаем пользователя в Supabase на основе данных из Telegram
           await createUserInSupabase(user as TelegramUser);
+          
+          // Если у нас есть данные пользователя из SDK, значит мы в телеграм,
+          // даже если window.Telegram.WebApp не доступен
+          if (!webApp && typeof window !== 'undefined') {
+            telegramLogger.info('Используем данные пользователя из SDK, хотя WebApp не обнаружен');
+          }
         } else {
           telegramLogger.warn('Данные пользователя отсутствуют в Launch Params');
         }
@@ -507,7 +513,11 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
           telegramLogger.error('Ошибка при отправке сигнала ready', error);
         }
       } else {
-        telegramLogger.warn('WebApp не доступен в глобальном объекте Telegram');
+        if (telegramUser) {
+          telegramLogger.info('WebApp не доступен в глобальном объекте Telegram, но у нас есть данные пользователя из SDK');
+        } else {
+          telegramLogger.warn('WebApp не доступен в глобальном объекте Telegram');
+        }
       }
     } catch (error) {
       telegramLogger.error('Необработанная ошибка при инициализации данных Telegram', error);
@@ -517,30 +527,69 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   // Функция для включения полноэкранного режима
   const enableFullScreen = () => {
     try {
-      // Пробуем использовать postEvent из SDK для запроса fullscreen
+      // Всегда сначала пробуем использовать postEvent из SDK для запроса fullscreen
       telegramLogger.info('Запрос на полноэкранный режим через SDK');
       postEvent('web_app_request_fullscreen');
       setIsFullScreenEnabled(true);
+      telegramLogger.info('Запрос на полноэкранный режим через SDK отправлен успешно');
       
-      // Если есть webApp, пробуем использовать также нативный метод requestFullscreen
-      if (webApp && typeof webApp.requestFullscreen === 'function') {
-        webApp.requestFullscreen();
-      } else if (webApp && typeof webApp.expand === 'function') {
-        // Если requestFullscreen недоступен, используем expand как запасной вариант
-        webApp.expand();
+      // Если есть webApp, пробуем использовать также нативный метод как запасной вариант
+      if (webApp) {
+        if (typeof webApp.requestFullscreen === 'function') {
+          try {
+            webApp.requestFullscreen();
+            telegramLogger.info('Нативный метод requestFullscreen вызван успешно');
+          } catch (reqFsError) {
+            telegramLogger.warn('Ошибка при вызове нативного метода requestFullscreen', reqFsError);
+          }
+        } else if (typeof webApp.expand === 'function') {
+          // Если requestFullscreen недоступен, используем expand как третий вариант
+          try {
+            webApp.expand();
+            telegramLogger.info('Запасной нативный метод expand вызван успешно');
+          } catch (expandError) {
+            telegramLogger.warn('Ошибка при вызове запасного нативного метода expand', expandError);
+          }
+        }
+      } else {
+        telegramLogger.info('WebApp недоступен, полагаемся только на SDK метод');
       }
     } catch (error) {
-      telegramLogger.error('Ошибка при запросе полноэкранного режима', error);
+      telegramLogger.error('Ошибка при запросе полноэкранного режима через SDK', error);
       
-      // Если SDK вызов не сработал, пробуем запасной вариант через webApp напрямую
-      if (webApp && typeof webApp.expand === 'function') {
-        try {
-          webApp.expand();
-          setIsFullScreenEnabled(true);
-          telegramLogger.info('Использован запасной метод expand для перехода в полноэкранный режим');
-        } catch (expandError) {
-          telegramLogger.error('Ошибка при использовании запасного метода expand', expandError);
+      // Если SDK вызов не сработал, пробуем запасные варианты через webApp напрямую
+      if (webApp) {
+        if (typeof webApp.requestFullscreen === 'function') {
+          try {
+            webApp.requestFullscreen();
+            setIsFullScreenEnabled(true);
+            telegramLogger.info('Использован запасной метод requestFullscreen');
+          } catch (reqFsError) {
+            telegramLogger.warn('Ошибка при использовании запасного метода requestFullscreen', reqFsError);
+            
+            if (typeof webApp.expand === 'function') {
+              try {
+                webApp.expand();
+                setIsFullScreenEnabled(true);
+                telegramLogger.info('Использован запасной метод expand');
+              } catch (expandError) {
+                telegramLogger.error('Ошибка при использовании запасного метода expand', expandError);
+              }
+            }
+          }
+        } else if (typeof webApp.expand === 'function') {
+          try {
+            webApp.expand();
+            setIsFullScreenEnabled(true);
+            telegramLogger.info('Использован запасной метод expand');
+          } catch (expandError) {
+            telegramLogger.error('Ошибка при использовании запасного метода expand', expandError);
+          }
+        } else {
+          telegramLogger.error('Ни один из методов полноэкранного режима не доступен');
         }
+      } else {
+        telegramLogger.warn('WebApp недоступен, и SDK метод не сработал');
       }
     }
   };

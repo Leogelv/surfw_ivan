@@ -73,27 +73,29 @@ function YogaApp() {
 
   useEffect(() => {
     // Проверка, находимся ли мы в контексте Telegram или в обычном браузере
-    const isTelegramWebApp = typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp;
+    const isTelegramWebApp = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) || !!telegramUser;
     
     appLogger.info('Инициализация приложения', { isTelegramWebApp, telegramUser });
     
-    // Инициализация Telegram WebApp только если он доступен
-    if (isTelegramWebApp && webApp) {
+    // Инициализация Telegram WebApp только если он доступен или есть данные пользователя из SDK
+    if (isTelegramWebApp) {
       // Переопределяем метод initializeTelegramApp для нашего нового интерфейса
       const customInitializeTelegram = async () => {
         try {
-          // Проверяем наличие Telegram WebApp
-          if (!webApp) {
-            appLogger.warn('Telegram WebApp недоступен, запуск в режиме браузера');
+          // Проверяем наличие Telegram WebApp или данных пользователя
+          if (!webApp && !telegramUser) {
+            appLogger.warn('Telegram WebApp недоступен и данные пользователя отсутствуют, запуск в режиме браузера');
             return;
           }
   
           // Инициализируем приложение
           initializeTelegramApp();
           
-          // Показываем, что приложение готово
-          webApp.ready();
-          appLogger.info('Telegram WebApp готов');
+          // Показываем, что приложение готово, если есть WebApp
+          if (webApp) {
+            webApp.ready();
+            appLogger.info('Telegram WebApp готов');
+          }
           
           // Запрашиваем полноэкранный режим через SDK
           try {
@@ -103,13 +105,15 @@ function YogaApp() {
           } catch (fullscreenError) {
             appLogger.error('Ошибка при вызове web_app_request_fullscreen', fullscreenError);
             
-            // Пробуем использовать expand() как запасной вариант
-            try {
-              webApp.expand();
-              enableFullScreen();
-              appLogger.info('Использован запасной метод webApp.expand()');
-            } catch (expandError) {
-              appLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp', expandError);
+            // Пробуем использовать expand() как запасной вариант, если есть WebApp
+            if (webApp) {
+              try {
+                webApp.expand();
+                enableFullScreen();
+                appLogger.info('Использован запасной метод webApp.expand()');
+              } catch (expandError) {
+                appLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp', expandError);
+              }
             }
           }
         } catch (error) {
