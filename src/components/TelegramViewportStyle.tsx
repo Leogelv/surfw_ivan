@@ -15,6 +15,14 @@ interface TelegramUser {
   auth_date?: string;
 }
 
+// Интерфейс для безопасной зоны контента
+interface SafeAreaInsets {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 const TelegramViewportStyle = () => {
   const viewportLogger = logger.createLogger('TelegramViewport');
 
@@ -42,20 +50,47 @@ const TelegramViewportStyle = () => {
     }
 
     // Проверяем наличие Telegram WebApp в браузере
-    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-      const webApp = window.Telegram.WebApp;
+    const telegramWebApp = typeof window !== 'undefined' && 
+                          window.Telegram && 
+                          window.Telegram.WebApp;
+                          
+    if (telegramWebApp) {
+      const webApp = telegramWebApp;
       
       // Запрашиваем fullscreen для приложения
       try {
         // Используем новый метод web_app_request_fullscreen через SDK
         try {
           viewportLogger.info('Запрос на полноэкранный режим через web_app_request_fullscreen');
+          // Пробуем использовать новый метод postEvent для запроса на полноэкранный режим
           postEvent('web_app_request_fullscreen');
           viewportLogger.info('Метод web_app_request_fullscreen вызван успешно');
+          
+          // Проверяем, был ли успешно выполнен запрос полноэкранного режима
+          setTimeout(() => {
+            if (webApp.isExpanded) {
+              viewportLogger.info('Переход в полноэкранный режим успешно выполнен');
+            } else {
+              viewportLogger.warn('Метод web_app_request_fullscreen не привел к переходу в полноэкранный режим, пробуем запасной метод');
+              try {
+                webApp.expand();
+                viewportLogger.info('Запасной метод webApp.expand() успешно вызван');
+              } catch (expandError) {
+                viewportLogger.error('Ошибка при вызове запасного метода webApp.expand()', expandError);
+              }
+            }
+          }, 500); // Проверяем через 500 мс, чтобы дать время на переключение режима
+          
         } catch (fullscreenError) {
           viewportLogger.warn('Ошибка при вызове web_app_request_fullscreen, переключаемся на webApp.expand()', fullscreenError);
-          webApp.expand();
-          viewportLogger.info('Использован запасной метод webApp.expand() для перехода в полноэкранный режим');
+          
+          // Проверяем, доступен ли метод expand в текущей версии WebApp
+          if (typeof webApp.expand === 'function') {
+            webApp.expand();
+            viewportLogger.info('Использован запасной метод webApp.expand() для перехода в полноэкранный режим');
+          } else {
+            viewportLogger.error('Метод webApp.expand() недоступен в текущей версии WebApp');
+          }
         }
       } catch (error) {
         viewportLogger.warn('Не удалось перевести WebApp в fullscreen режим', error);
@@ -83,6 +118,49 @@ const TelegramViewportStyle = () => {
         viewportLogger.debug('Установлены CSS-переменные для contentSafeAreaInsets', webApp.contentSafeAreaInset);
       }
       
+      // Настройка дополнительных параметров Telegram WebApp
+      try {
+        // Запрашиваем информацию о content safe area
+        postEvent('web_app_request_content_safe_area');
+        viewportLogger.info('Запрошена информация о content safe area');
+        
+        // Обработчик события content_safe_area_changed устанавливается через SDK
+        // При получении события значения будут обновлены автоматически
+        
+        // Отключаем вертикальные свайпы для закрытия
+        postEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: false });
+        viewportLogger.info('Вертикальные свайпы для закрытия приложения отключены');
+        
+        // Включаем подтверждение при закрытии
+        postEvent('web_app_setup_closing_behavior', { need_confirmation: true });
+        viewportLogger.info('Включено подтверждение при закрытии приложения');
+      } catch (setupError) {
+        viewportLogger.error('Ошибка при настройке дополнительных параметров Telegram WebApp', setupError);
+      }
+      
+      // Функция для обработки события изменения content safe area
+      const handleContentSafeAreaChanged = (event: any) => {
+        try {
+          const eventData = JSON.parse(event.data);
+          if (eventData && eventData.eventType === 'content_safe_area_changed') {
+            const { top, right, bottom, left } = eventData.eventData;
+            
+            // Устанавливаем CSS переменные
+            document.documentElement.style.setProperty('--tg-content-safe-area-top', `${top}px`);
+            document.documentElement.style.setProperty('--tg-content-safe-area-right', `${right}px`);
+            document.documentElement.style.setProperty('--tg-content-safe-area-bottom', `${bottom}px`);
+            document.documentElement.style.setProperty('--tg-content-safe-area-left', `${left}px`);
+            
+            viewportLogger.info('Обновлены значения content safe area', { top, right, bottom, left });
+          }
+        } catch (error) {
+          // Игнорируем ошибки парсинга для сообщений, которые не относятся к нашему событию
+        }
+      };
+      
+      // Добавляем обработчик события message для веб-версии
+      window.addEventListener('message', handleContentSafeAreaChanged);
+      
       // Сигнализируем, что приложение готово к отображению
       try {
         webApp.ready();
@@ -90,6 +168,11 @@ const TelegramViewportStyle = () => {
       } catch (error) {
         viewportLogger.error('Ошибка при отправке сигнала ready', error);
       }
+      
+      // Очистка при размонтировании
+      return () => {
+        window.removeEventListener('message', handleContentSafeAreaChanged);
+      };
     } else {
       // Значения по умолчанию, если WebApp не доступен
       document.documentElement.style.setProperty('--tg-viewport-height', '100vh');

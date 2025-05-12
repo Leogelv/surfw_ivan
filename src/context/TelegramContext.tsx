@@ -6,6 +6,14 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 
+// Используем эту функцию для генерации случайного пароля
+function generateRandomPassword(length = 16) {
+  // Для браузерного окружения используем Web Crypto API
+  const array = new Uint8Array(length);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 interface TelegramUser {
   id: number;
   first_name: string;
@@ -188,7 +196,7 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         .eq('telegram_id', telegramUser.id.toString())
         .maybeSingle();
       
-      if (findError) {
+      if (findError && findError.code !== 'PGRST116') {
         telegramLogger.error('Ошибка при поиске существующего пользователя', 
           { error: findError.message, details: findError.details }, 
           telegramUser.id.toString()
@@ -240,33 +248,69 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
           telegramLogger.info('Пользователь успешно обновлен', { updatedUser }, telegramUser.id.toString());
         }
       } else {
-        // Создаем нового пользователя с генерированным UUID
-        const newUserData = {
-          ...userData,
-          id: uuidv4(),
-          created_at: new Date().toISOString()
-        };
+        // Если пользователь не существует, сначала создаем его в auth.users, а затем в public.users
+        telegramLogger.info('Пользователь не найден, создаем нового пользователя');
         
-        telegramLogger.info('Создание нового пользователя', newUserData, telegramUser.id.toString());
+        // Генерируем email и пароль для auth.users
+        const email = `telegram_${telegramUser.id}@example.com`;
+        const password = generateRandomPassword();
+        let userId = null;
         
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert(newUserData)
-          .select();
-        
-        if (insertError) {
-          telegramLogger.error('Ошибка при создании пользователя', 
-            { error: insertError.message, details: insertError.details }, 
-            telegramUser.id.toString()
-          );
-        } else {
-          telegramLogger.info('Пользователь успешно создан', { newUser }, telegramUser.id.toString());
+        // Создаем пользователя через Auth API
+        try {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                telegram_id: telegramUser.id.toString(),
+                first_name: telegramUser.first_name,
+                last_name: telegramUser.last_name || '',
+                username: telegramUser.username || '',
+                photo_url: telegramUser.photo_url || '',
+                provider: 'telegram'
+              }
+            }
+          });
           
-          // Дополнительно создаем запись в user_settings, если пользователь создан успешно
-          if (newUser && newUser.length > 0) {
+          if (signUpError) {
+            telegramLogger.error('Ошибка при создании пользователя через auth.signUp:', signUpError);
+          } else if (signUpData?.user) {
+            userId = signUpData.user.id;
+            telegramLogger.info('Пользователь успешно создан через auth.signUp:', {
+              id: userId,
+              email: signUpData.user.email
+            });
+          }
+        } catch (authError) {
+          telegramLogger.error('Ошибка при создании пользователя через Auth API:', authError);
+        }
+        
+        // Если удалось создать пользователя в auth.users, создаем запись в public.users
+        if (userId) {
+          // Создаем запись в public.users
+          const newUserData = {
+            ...userData,
+            id: userId, // Используем ID из auth.users
+            created_at: new Date().toISOString()
+          };
+          
+          telegramLogger.info('Создание записи в таблице users с ID из auth.users:', { userId });
+          
+          const { data: newUser, error: insertError } = await supabase
+            .from('users')
+            .insert(newUserData)
+            .select();
+          
+          if (insertError) {
+            telegramLogger.error('Ошибка при создании записи в таблице users:', insertError);
+          } else {
+            telegramLogger.info('Запись успешно создана в таблице users:', newUser);
+            
+            // Дополнительно создаем запись в user_settings
             try {
               const settingsData = {
-                user_id: newUser[0].id,
+                user_id: userId,
                 notifications_enabled: true,
                 theme: 'light',
                 language: 'ru',
@@ -278,16 +322,60 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
                 .insert(settingsData);
               
               if (settingsError) {
-                telegramLogger.error('Ошибка при создании настроек пользователя', 
-                  { error: settingsError.message, details: settingsError.details }, 
-                  telegramUser.id.toString()
-                );
+                telegramLogger.error('Ошибка при создании настроек пользователя:', settingsError);
               } else {
-                telegramLogger.info('Настройки пользователя успешно созданы', {}, telegramUser.id.toString());
+                telegramLogger.info('Настройки пользователя успешно созданы');
               }
             } catch (settingsError) {
-              telegramLogger.error('Необработанная ошибка при создании настроек', settingsError, telegramUser.id.toString());
+              telegramLogger.error('Необработанная ошибка при создании настроек:', settingsError);
             }
+          }
+        } else {
+          // Если не удалось создать пользователя через Auth API и включен флаг NEXT_PUBLIC_IGNORE_BUILD_ERROR
+          // пробуем сделать прямую вставку (только для отладки и тестирования)
+          if (process.env.NEXT_PUBLIC_IGNORE_BUILD_ERROR === 'true') {
+            telegramLogger.warn('Пытаемся сделать прямую вставку (не рекомендуется для продакшн)');
+            
+            const newUserId = uuidv4();
+            const newUserData = {
+              ...userData,
+              id: newUserId,
+              created_at: new Date().toISOString()
+            };
+            
+            const { data: forcedUser, error: forcedError } = await supabase
+              .from('users')
+              .insert(newUserData)
+              .select();
+            
+            if (forcedError) {
+              telegramLogger.error('Ошибка при принудительной вставке:', forcedError);
+            } else {
+              telegramLogger.info('Пользователь успешно создан принудительно:', forcedUser);
+              
+              // Если удалось создать пользователя, создаем также настройки
+              if (forcedUser && forcedUser.length > 0) {
+                const settingsData = {
+                  user_id: newUserId,
+                  notifications_enabled: true,
+                  theme: 'light',
+                  language: 'ru',
+                  updated_at: new Date().toISOString()
+                };
+                
+                const { error: settingsError } = await supabase
+                  .from('user_settings')
+                  .insert(settingsData);
+                  
+                if (settingsError) {
+                  telegramLogger.error('Ошибка при создании настроек пользователя:', settingsError);
+                } else {
+                  telegramLogger.info('Настройки пользователя успешно созданы');
+                }
+              }
+            }
+          } else {
+            telegramLogger.error('Не удалось создать пользователя через Auth API. Установите NEXT_PUBLIC_IGNORE_BUILD_ERROR=true для обхода ограничения');
           }
         }
       }
