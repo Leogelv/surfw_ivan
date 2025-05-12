@@ -1,8 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
-import { init } from '@telegram-apps/sdk';
+import { init, retrieveLaunchParams } from '@telegram-apps/sdk';
 import logger from '@/lib/logger';
+
+// Define interface for Telegram user
+interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+  photo_url?: string;
+  auth_date?: string;
+}
 
 const TelegramViewportStyle = () => {
   const viewportLogger = logger.createLogger('TelegramViewport');
@@ -12,6 +23,20 @@ const TelegramViewportStyle = () => {
     try {
       init();
       viewportLogger.info('Telegram Mini Apps SDK успешно инициализирован');
+      
+      // Получаем и логируем инициализационные данные
+      try {
+        const { initData, initDataRaw, user } = retrieveLaunchParams();
+        const telegramUser = user as TelegramUser;
+        viewportLogger.info('Получены параметры запуска', { 
+          hasInitData: !!initData, 
+          hasInitDataRaw: !!initDataRaw,
+          hasUser: !!telegramUser,
+          userPhotoUrl: telegramUser?.photo_url || 'не указан' 
+        });
+      } catch (launchError) {
+        viewportLogger.error('Ошибка при получении параметров запуска', launchError);
+      }
     } catch (error) {
       viewportLogger.error('Ошибка при инициализации Telegram Mini Apps SDK', error);
     }

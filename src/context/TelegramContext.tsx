@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import logger from '@/lib/logger';
 import { getSupabaseClient } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { retrieveLaunchParams } from '@telegram-apps/sdk';
 
 interface TelegramUser {
   id: number;
@@ -163,13 +164,22 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
   // Функция для создания пользователя в Supabase
   const createUserInSupabase = async (telegramUser: TelegramUser) => {
     if (!telegramUser || !telegramUser.id) {
-      telegramLogger.warn('Нет данных пользователя Telegram для создания в Supabase');
+      telegramLogger.error('Невозможно создать пользователя: отсутствуют данные пользователя Telegram');
       return;
     }
 
     try {
-      telegramLogger.info('Попытка создания пользователя в Supabase', { telegramUser }, telegramUser.id.toString());
+      telegramLogger.info('Создание/обновление пользователя Telegram в Supabase', { 
+        telegramId: telegramUser.id,
+        username: telegramUser.username,
+        hasPhotoUrl: !!telegramUser.photo_url 
+      });
+      
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        telegramLogger.error('Невозможно создать пользователя: клиент Supabase не инициализирован');
+        return;
+      }
       
       // Проверка политик доступа для таблицы users
       try {
@@ -188,140 +198,95 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         }
         
         telegramLogger.info('Таблица users доступна, количество записей', { count }, telegramUser.id.toString());
-      } catch (checkTableError) {
-        telegramLogger.error('Исключение при проверке таблицы users', checkTableError, telegramUser.id.toString());
+      } catch (accessError) {
+        telegramLogger.error('Ошибка при проверке доступа к таблице users', accessError, telegramUser.id.toString());
+        return;
       }
       
-      // Проверяем существует ли пользователь
-      telegramLogger.debug('Поиск пользователя по telegram_id', { telegram_id: telegramUser.id.toString() });
-      const { data: existingUser, error: checkError } = await supabase
+      // Проверяем, существует ли пользователь
+      telegramLogger.debug('Проверка существования пользователя с telegram_id', 
+        { telegram_id: telegramUser.id.toString() },
+        telegramUser.id.toString()
+      );
+      
+      const { data: existingUser, error: findError } = await supabase
         .from('users')
-        .select('id, telegram_id, username, first_name, last_name')
+        .select('id, telegram_id, photo_url')
         .eq('telegram_id', telegramUser.id.toString())
-        .maybeSingle(); // используем maybeSingle вместо single чтобы избежать ошибки, если пользователя нет
+        .maybeSingle();
       
-      if (checkError) {
-        telegramLogger.error('Ошибка при проверке пользователя в Supabase', 
-          { error: checkError, details: checkError.details, code: checkError.code, message: checkError.message }, 
-          telegramUser.id.toString()
-        );
+      if (findError) {
+        telegramLogger.error('Ошибка при поиске существующего пользователя', findError, telegramUser.id.toString());
         return;
       }
       
-      if (existingUser) {
-        telegramLogger.info('Пользователь уже существует в Supabase, обновляем данные', { existingUser }, telegramUser.id.toString());
-        
-        // Обновляем данные пользователя
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ 
-            first_name: telegramUser.first_name,
-            last_name: telegramUser.last_name || '',
-            username: telegramUser.username || '',
-            photo_url: telegramUser.photo_url || '',
-            auth_date: telegramUser.auth_date ? parseInt(telegramUser.auth_date.toString()) : Math.floor(Date.now() / 1000),
-            last_login: new Date().toISOString()
-          })
-          .eq('telegram_id', telegramUser.id.toString());
-        
-        if (updateError) {
-          telegramLogger.error('Ошибка при обновлении пользователя в Supabase', 
-            { error: updateError, details: updateError.details, code: updateError.code, message: updateError.message }, 
-            telegramUser.id.toString()
-          );
-        } else {
-          telegramLogger.info('Данные пользователя успешно обновлены в Supabase', null, telegramUser.id.toString());
-        }
-        
-        return;
-      }
-      
-      // Генерируем уникальный ID для нового пользователя
-      const userId = uuidv4();
-      telegramLogger.info('Генерация ID для нового пользователя', { userId }, telegramUser.id.toString());
-      
-      // Подготовка данных пользователя
-      const userData = { 
-        id: userId,
-        telegram_id: telegramUser.id.toString(),
-        first_name: telegramUser.first_name,
-        last_name: telegramUser.last_name || '',
-        username: telegramUser.username || '',
-        photo_url: telegramUser.photo_url || '',
-        auth_date: telegramUser.auth_date ? parseInt(telegramUser.auth_date.toString()) : Math.floor(Date.now() / 1000),
-        preferences: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_login: new Date().toISOString()
+      // Преобразование Unix timestamp в ISO формат
+      const convertAuthDateToISO = (authDate: number) => {
+        // authDate приходит как Unix timestamp в секундах, преобразуем в миллисекунды для Date
+        return new Date(authDate * 1000).toISOString();
       };
       
-      // Создание нового пользователя
-      const { data: insertedUser, error: insertError } = await supabase
-        .from('users')
-        .insert(userData)
-        .select()
-        .single();
+      // Общие данные пользователя для создания или обновления
+      const userData = {
+        telegram_id: telegramUser.id.toString(),
+        username: telegramUser.username || '',
+        first_name: telegramUser.first_name || '',
+        last_name: telegramUser.last_name || '',
+        photo_url: telegramUser.photo_url || '',
+        updated_at: new Date().toISOString(),
+        last_login: new Date().toISOString(),
+        // Преобразуем auth_date в правильный формат, если он есть
+        ...(telegramUser.auth_date && { 
+          telegram_auth_date: convertAuthDateToISO(parseInt(telegramUser.auth_date)) 
+        })
+      };
       
-      if (insertError) {
-        telegramLogger.error('Ошибка при создании пользователя в Supabase', 
-          { error: insertError, details: insertError.details, code: insertError.code, message: insertError.message }, 
+      // Если пользователь существует, обновляем его
+      if (existingUser) {
+        telegramLogger.info('Обновление существующего пользователя', 
+          { userId: existingUser.id, photoUrlBefore: existingUser.photo_url },
           telegramUser.id.toString()
         );
         
-        // Если ошибка связана с constraint, проверяем, возможно пользователь все же был создан
-        if (insertError.code === '23505') { // duplicate key value violates unique constraint
-          telegramLogger.info('Пользователь, возможно, уже существует. Пробуем получить его данные', 
-            null, telegramUser.id.toString());
-          const { data: retryUser, error: retryError } = await supabase
-            .from('users')
-            .select('id, telegram_id, username, first_name, last_name')
-            .eq('telegram_id', telegramUser.id.toString())
-            .single();
-          
-          if (retryError) {
-            telegramLogger.error('Не удалось получить данные после повторной попытки', 
-              { error: retryError }, telegramUser.id.toString());
-          } else {
-            telegramLogger.info('Пользователь найден после повторной попытки', 
-              { userId: retryUser.id }, telegramUser.id.toString());
-          }
-        }
-      } else {
-        telegramLogger.info('Пользователь успешно создан в Supabase', 
-          { userId: insertedUser.id }, telegramUser.id.toString());
+        // Обновляем пользователя
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update(userData)
+          .eq('telegram_id', telegramUser.id.toString())
+          .select();
         
-        // Создание настроек пользователя, если такая таблица существует
-        try {
-          const { count, error: settingsCountError } = await supabase
-            .from('user_settings')
-            .select('*', { count: 'exact', head: true });
-          
-          if (!settingsCountError) {
-            // Таблица существует, создаем запись настроек
-            const settingsData = {
-              id: uuidv4(),
-              user_id: insertedUser.id,
-              notification_enabled: true,
-              theme: 'light',
-              last_updated: new Date().toISOString()
-            };
-            
-            const { error: settingsError } = await supabase
-              .from('user_settings')
-              .insert(settingsData);
-            
-            if (settingsError) {
-              telegramLogger.error('Ошибка при создании настроек пользователя', 
-                { error: settingsError }, telegramUser.id.toString());
-            } else {
-              telegramLogger.info('Настройки пользователя успешно созданы',
-                null, telegramUser.id.toString());
-            }
-          }
-        } catch (settingsError) {
-          telegramLogger.error('Ошибка при работе с таблицей user_settings', 
-            settingsError, telegramUser.id.toString());
+        if (updateError) {
+          telegramLogger.error('Ошибка при обновлении пользователя', updateError, telegramUser.id.toString());
+          return;
         }
+        
+        telegramLogger.info('Пользователь успешно обновлен', { updatedUser }, telegramUser.id.toString());
+      } else {
+        // Создаем нового пользователя
+        // Генерируем уникальный ID для нового пользователя
+        const userId = uuidv4();
+        telegramLogger.info('Создание нового пользователя', { userId }, telegramUser.id.toString());
+        
+        // Добавляем id и created_at для нового пользователя
+        const newUserData = {
+          ...userData,
+          id: userId,
+          created_at: new Date().toISOString(),
+          preferences: {}
+        };
+        
+        // Создаем пользователя
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert(newUserData)
+          .select();
+        
+        if (insertError) {
+          telegramLogger.error('Ошибка при создании пользователя', insertError, telegramUser.id.toString());
+          return;
+        }
+        
+        telegramLogger.info('Пользователь успешно создан', { newUser }, telegramUser.id.toString());
       }
     } catch (error) {
       telegramLogger.error('Необработанная ошибка при создании пользователя', 
@@ -369,16 +334,50 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
         window.removeEventListener('message', handleViewportChanged);
       };
       
-      // Если в инициализационных данных есть пользователь, используем его
-      if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
-        const telegramUser = tgWebApp.initDataUnsafe.user;
-        telegramLogger.info('Получены данные пользователя из Telegram WebApp', telegramUser);
-        setUser(telegramUser);
+      // Получаем данные пользователя через SDK
+      try {
+        const { user: telegramUser } = retrieveLaunchParams();
+        if (telegramUser) {
+          const typedUser = telegramUser as unknown as TelegramUser;
+          telegramLogger.info('Получены данные пользователя через retrieveLaunchParams', {
+            id: typedUser.id,
+            username: typedUser.username,
+            hasPhotoUrl: !!typedUser.photo_url
+          });
+          setUser(typedUser);
+          
+          // Создаем или обновляем пользователя в Supabase
+          createUserInSupabase(typedUser);
+        } else {
+          // Пытаемся получить данные из initDataUnsafe как запасной вариант
+          if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+            const backupTelegramUser = tgWebApp.initDataUnsafe.user;
+            telegramLogger.info('Получены данные пользователя из Telegram WebApp initDataUnsafe (запасной вариант)', {
+              id: backupTelegramUser.id,
+              hasPhotoUrl: !!backupTelegramUser.photo_url
+            });
+            setUser(backupTelegramUser);
+            
+            // Создаем или обновляем пользователя в Supabase
+            createUserInSupabase(backupTelegramUser);
+          } else {
+            telegramLogger.error('Не удалось получить данные пользователя ни через SDK, ни через WebApp');
+          }
+        }
+      } catch (error) {
+        telegramLogger.error('Ошибка при получении данных пользователя через SDK', error);
         
-        // Создаем или обновляем пользователя в Supabase
-        createUserInSupabase(telegramUser);
-      } else {
-        telegramLogger.warn('Пользователь не найден в Telegram WebApp initDataUnsafe');
+        // Пытаемся получить данные из initDataUnsafe как запасной вариант
+        if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
+          const backupTelegramUser = tgWebApp.initDataUnsafe.user;
+          telegramLogger.info('Получены данные пользователя из Telegram WebApp initDataUnsafe (после ошибки SDK)', backupTelegramUser);
+          setUser(backupTelegramUser);
+          
+          // Создаем или обновляем пользователя в Supabase
+          createUserInSupabase(backupTelegramUser);
+        } else {
+          telegramLogger.warn('Пользователь не найден в Telegram WebApp initDataUnsafe');
+        }
       }
     } else {
       telegramLogger.warn('Telegram WebApp не обнаружен, запуск в режиме браузера');

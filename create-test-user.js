@@ -30,21 +30,51 @@ const userData = {
   username: 'test_cli_user',
   first_name: 'CLI',
   last_name: 'Test',
-  photo_url: 'https://example.com/test_cli.jpg',
+  // Используем реальную ссылку на Telegram фото вместо примера
+  photo_url: 'https://t.me/i/userpic/320/default.jpg',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
-  last_login: new Date().toISOString()
+  last_login: new Date().toISOString(),
+  telegram_auth_date: new Date().toISOString(), // Используем стандартный формат ISO для timestamp
 };
+
+// Функция для проверки доступности Supabase
+async function checkSupabaseConnection() {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
+    
+    if (error) {
+      console.error('Ошибка при подключении к Supabase:', error);
+      return false;
+    }
+    
+    console.log('Успешное подключение к Supabase!');
+    return true;
+  } catch (e) {
+    console.error('Необработанная ошибка при проверке подключения к Supabase:', e);
+    return false;
+  }
+}
 
 // Функция для создания пользователя
 async function createTestUser() {
   try {
+    // Сначала проверяем подключение
+    const isConnected = await checkSupabaseConnection();
+    if (!isConnected) {
+      console.error('Невозможно продолжить без подключения к Supabase');
+      process.exit(1);
+    }
+    
     console.log('Создаем тестового пользователя:', userData);
     
     // Проверяем, существует ли пользователь с таким telegram_id
     const { data: existingUsers, error: checkError } = await supabase
       .from('users')
-      .select('id, telegram_id')
+      .select('id, telegram_id, photo_url') // Добавляем photo_url для проверки
       .eq('telegram_id', userData.telegram_id)
       .limit(1);
     
@@ -57,17 +87,23 @@ async function createTestUser() {
     if (existingUsers && existingUsers.length > 0) {
       const existingUser = existingUsers[0];
       console.log('Пользователь с таким telegram_id уже существует, обновляем:', existingUser);
+      console.log('Текущее значение photo_url:', existingUser.photo_url);
+      
+      const updatedData = {
+        username: userData.username,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        photo_url: userData.photo_url,
+        updated_at: userData.updated_at,
+        last_login: userData.last_login,
+        telegram_auth_date: userData.telegram_auth_date
+      };
+      
+      console.log('Данные для обновления:', updatedData);
       
       const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        .update({
-          username: userData.username,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          photo_url: userData.photo_url,
-          updated_at: userData.updated_at,
-          last_login: userData.last_login
-        })
+        .update(updatedData)
         .eq('telegram_id', userData.telegram_id)
         .select();
       
@@ -81,6 +117,8 @@ async function createTestUser() {
     }
     
     // Создаем нового пользователя
+    console.log('Создаем нового пользователя с данными:', userData);
+    
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert(userData)
@@ -92,6 +130,20 @@ async function createTestUser() {
     }
     
     console.log('Пользователь успешно создан:', newUser);
+    
+    // Проверка успешности создания/обновления
+    const { data: verifyUser, error: verifyError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_id', userData.telegram_id)
+      .single();
+      
+    if (verifyError) {
+      console.error('Ошибка при проверке созданного пользователя:', verifyError);
+    } else {
+      console.log('Проверка: пользователь в базе данных:', verifyUser);
+      console.log('Проверка photo_url:', verifyUser.photo_url);
+    }
     
     // Проверяем наличие таблицы user_settings
     try {
