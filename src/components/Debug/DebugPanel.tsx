@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseClient } from '@/lib/supabase';
 import { useTelegram } from '@/context/TelegramContext';
+import { useAuth } from '@/context/AuthContext';
 import styles from './DebugPanel.module.css';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import logger from '@/lib/logger';
@@ -23,14 +24,95 @@ type DebugPanelProps = {
 
 const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelProps = {}) => {
   const debugLogger = logger.createLogger('DebugPanel');
-  const { user: telegramUserContext } = useTelegram();
+  const { user: telegramUserContext, initData: telegramInitData } = useTelegram(); 
+  const auth = useAuth();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('console');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authState, setAuthState] = useState<any>(null);
+  const [supabaseStatus, setSupabaseStatus] = useState({ connected: false, error: null });
   const MAX_LOGS = 30;
   
+  // Проверка соединения с Supabase
+  useEffect(() => {
+    const checkSupabaseConnection = async () => {
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setSupabaseStatus({ connected: false, error: 'Supabase client не инициализирован' as any });
+          return;
+        }
+        
+        // Проверяем соединение простым запросом
+        const { data, error } = await supabase.from('users').select('count').limit(1);
+        
+        if (error) {
+          setSupabaseStatus({ 
+            connected: false, 
+            error: `Ошибка соединения с Supabase: ${error.message}` as any
+          });
+        } else {
+          setSupabaseStatus({ 
+            connected: true, 
+            error: null
+          });
+        }
+      } catch (err) {
+        setSupabaseStatus({ 
+          connected: false, 
+          error: `Необработанная ошибка Supabase: ${err instanceof Error ? err.message : String(err)}` as any
+        });
+      }
+    };
+    
+    if (isExpanded && activeTab === 'auth') {
+      checkSupabaseConnection();
+    }
+  }, [isExpanded, activeTab]);
+  
+  // Получаем информацию о состоянии авторизации
+  useEffect(() => {
+    const getAuthState = async () => {
+      try {
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          setAuthState({ error: 'Supabase client не инициализирован' });
+          return;
+        }
+        
+        // Получаем текущую сессию
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        // Получаем текущего пользователя
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        
+        setAuthState({
+          session: sessionData?.session || null,
+          user: userData?.user || null,
+          sessionError: sessionError?.message || null,
+          userError: userError?.message || null,
+          contextUser: supabaseUser || null,
+          authContext: {
+            isLoading: auth?.isLoading || false,
+            isAuthenticated: auth?.isAuthenticated || false,
+            userData: auth?.userData || null,
+            error: auth?.error || null
+          }
+        });
+      } catch (err) {
+        setAuthState({ 
+          error: `Необработанная ошибка авторизации: ${err instanceof Error ? err.message : String(err)}`
+        });
+      }
+    };
+    
+    if (isExpanded && activeTab === 'auth') {
+      getAuthState();
+    }
+  }, [isExpanded, activeTab, supabaseUser, auth]);
+
   // Используем логи из пропсов, если они переданы
   useEffect(() => {
     if (propsLogs?.length) {
@@ -68,6 +150,7 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
         userFromProps: telegramUser || null,
         supabaseUser: supabaseUser || null,
         hasWebApp: typeof window !== 'undefined' && !!window.Telegram?.WebApp,
+        telegramInitData: telegramInitData || null
       };
       
       return debugData;
@@ -82,9 +165,10 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
         userFromProps: telegramUser || null,
         supabaseUser: supabaseUser || null,
         hasWebApp: typeof window !== 'undefined' && !!window.Telegram?.WebApp,
+        telegramInitData: telegramInitData || null
       };
     }
-  }, [debugLogger, telegramUserContext, telegramUser, supabaseUser]);
+  }, [debugLogger, telegramUserContext, telegramUser, supabaseUser, telegramInitData]);
 
   // Функция получения логов
   const fetchLogs = async () => {
@@ -93,6 +177,7 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
       return;
     }
 
+    const supabase = getSupabaseClient();
     if (!supabase) {
       setError('Supabase client not available');
       return;
@@ -142,6 +227,23 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
       });
   };
 
+  // Функция для получения детализированной информации о подключении суперабэйз
+  const getSupabaseInfo = () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'не задан';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+      ? (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 5) + '...' + 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length - 5))
+      : 'не задан';
+    
+    return {
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+      isClientInitialized: !!getSupabaseClient(),
+      connectionStatus: supabaseStatus.connected ? 'Подключено' : 'Не подключено',
+      connectionError: supabaseStatus.error,
+    };
+  };
+
   return (
     <div className={styles.debugPanel}>
       <button
@@ -168,6 +270,12 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
               onClick={() => setActiveTab('initData')}
             >
               Init Data SDK
+            </button>
+            <button 
+              className={`${styles.tabButton} ${activeTab === 'auth' ? styles.active : ''}`}
+              onClick={() => setActiveTab('auth')}
+            >
+              Авторизация
             </button>
           </div>
           
@@ -233,6 +341,92 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
                 <pre className={styles.jsonData}>
                   {JSON.stringify(initData, null, 2)}
                 </pre>
+              </div>
+            )}
+
+            {/* Таб Авторизация */}
+            {activeTab === 'auth' && (
+              <div className={styles.authTab}>
+                <div className={styles.sectionHeader}>
+                  <h4>Данные авторизации</h4>
+                  <button 
+                    onClick={() => copyToClipboard(JSON.stringify({
+                      supabaseInfo: getSupabaseInfo(),
+                      authState
+                    }, null, 2))}
+                    className={styles.actionButton}
+                  >
+                    Копировать
+                  </button>
+                </div>
+
+                {/* Информация о подключении к Supabase */}
+                <div className={styles.section}>
+                  <h5>Подключение к Supabase</h5>
+                  <div className={`${styles.connectionStatus} ${supabaseStatus.connected ? styles.connected : styles.disconnected}`}>
+                    Статус: {supabaseStatus.connected ? 'Подключено' : 'Не подключено'}
+                  </div>
+                  {supabaseStatus.error && (
+                    <div className={styles.error}>
+                      Ошибка: {supabaseStatus.error}
+                    </div>
+                  )}
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify(getSupabaseInfo(), null, 2)}
+                  </pre>
+                </div>
+
+                {/* Информация о Telegram пользователе */}
+                <div className={styles.section}>
+                  <h5>Пользователь Telegram</h5>
+                  <div className={styles.userStatus}>
+                    Статус: {telegramUser ? 'Авторизован' : 'Не авторизован'}
+                  </div>
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify(telegramUser || 'Пользователь не найден', null, 2)}
+                  </pre>
+                </div>
+
+                {/* Информация о состоянии авторизации */}
+                <div className={styles.section}>
+                  <h5>Состояние авторизации</h5>
+                  <div className={styles.userStatus}>
+                    AuthContext: {auth?.isAuthenticated ? 'Авторизован' : 'Не авторизован'}
+                  </div>
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify(authState || 'Данные не доступны', null, 2)}
+                  </pre>
+                </div>
+
+                {/* Диагностика проблем авторизации */}
+                <div className={styles.section}>
+                  <h5>Диагностика авторизации</h5>
+                  <ul className={styles.diagnosticList}>
+                    <li className={telegramUser ? styles.success : styles.error}>
+                      {telegramUser ? '✅' : '❌'} Данные пользователя Telegram получены 
+                      {telegramUser && ` (ID: ${telegramUser.id})`}
+                    </li>
+                    <li className={telegramInitData ? styles.success : styles.error}>
+                      {telegramInitData ? '✅' : '❌'} InitData Telegram получен
+                    </li>
+                    <li className={supabaseStatus.connected ? styles.success : styles.error}>
+                      {supabaseStatus.connected ? '✅' : '❌'} Соединение с Supabase установлено
+                    </li>
+                    <li className={authState?.session ? styles.success : styles.error}>
+                      {authState?.session ? '✅' : '❌'} Сессия Supabase активна
+                    </li>
+                    <li className={authState?.user ? styles.success : styles.error}>
+                      {authState?.user ? '✅' : '❌'} Пользователь Supabase авторизован
+                    </li>
+                    <li className={auth?.userData ? styles.success : styles.error}>
+                      {auth?.userData ? '✅' : '❌'} Данные пользователя в AuthContext получены
+                      {auth?.userData && ` (ID: ${auth.userData.id})`}
+                    </li>
+                    <li className={(initData && 'tgWebAppData' in initData && initData.tgWebAppData?.user) ? styles.success : styles.error}>
+                      {(initData && 'tgWebAppData' in initData && initData.tgWebAppData?.user) ? '✅' : '❌'} Данные пользователя в tgWebAppData
+                    </li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>

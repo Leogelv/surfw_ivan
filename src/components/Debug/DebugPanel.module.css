@@ -1,142 +1,74 @@
 .debugPanel {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
-
-.toggleButton {
-  background-color: #4a76a8;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.2s;
-}
-
-.toggleButton:hover {
-  background-color: #3a5a78;
+  background-color: rgba(30, 30, 30, 0.95);
+  color: #fff;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+  transition: all 0.3s ease;
 }
 
 .content {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  margin-top: 10px;
-  max-width: 500px;
-  max-height: 500px;
-  overflow: auto;
-  padding: 16px;
-  color: #333;
+  padding: 8px 12px;
 }
 
-.content h3 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+.toggleButton {
+  width: 100%;
+  padding: 4px;
+  background-color: rgba(50, 50, 50, 0.9);
+  color: #fff;
+  border: none;
+  font-family: monospace;
+  cursor: pointer;
 }
 
-/* Стили для табов */
+.toggleButton:hover {
+  background-color: rgba(60, 60, 60, 0.9);
+}
+
 .tabs {
   display: flex;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 16px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 8px;
 }
 
 .tabButton {
-  background: none;
+  background: transparent;
   border: none;
-  padding: 8px 16px;
+  color: #ccc;
+  padding: 6px 12px;
   cursor: pointer;
-  font-size: 14px;
-  color: #666;
-  position: relative;
-  transition: color 0.2s;
-}
-
-.tabButton:hover {
-  color: #4a76a8;
+  margin-right: 2px;
+  font-family: monospace;
 }
 
 .tabButton.active {
-  color: #4a76a8;
-  font-weight: 600;
-}
-
-.tabButton.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: #4a76a8;
+  background-color: #444;
+  color: #fff;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
 }
 
 .tabContent {
-  flex: 1;
-  overflow: auto;
+  max-height: 50vh;
+  overflow-y: auto;
 }
 
-/* Header для секций с кнопками */
-.sectionHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.sectionHeader h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.actionButton {
-  background-color: #f0f2f5;
-  border: none;
-  border-radius: 4px;
-  padding: 6px 10px;
-  margin-left: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #555;
-  transition: background-color 0.2s;
-}
-
-.actionButton:hover {
-  background-color: #e4e6eb;
-}
-
-.actionButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Стили для логов */
 .logs {
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #eee;
-  border-radius: 4px;
+  margin-top: 8px;
 }
 
 .logEntry {
-  padding: 8px 12px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 12px;
-  line-height: 1.5;
-  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-}
-
-.logEntry:last-child {
-  border-bottom: none;
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+  word-break: break-word;
 }
 
 .timestamp {
@@ -145,60 +77,138 @@
 }
 
 .level {
-  font-weight: 600;
+  font-weight: bold;
   margin-right: 6px;
 }
 
-.info {
-  background-color: #f8f9fa;
-}
-
-.debug {
-  background-color: #f0f8ff;
-}
-
-.warn {
-  background-color: #fff8e1;
-}
-
-.error {
-  background-color: #ffebee;
-}
-
 .message {
-  color: #333;
-  word-break: break-word;
+  color: #eee;
 }
 
 .context {
-  margin-top: 6px;
-  padding: 6px;
-  background-color: rgba(0, 0, 0, 0.03);
-  border-radius: 3px;
+  margin-top: 4px;
+  padding: 4px;
+  background-color: rgba(70, 70, 70, 0.5);
+  border-radius: 2px;
+  color: #ddd;
   font-size: 11px;
-  white-space: pre-wrap;
-  max-height: 100px;
+  max-height: 150px;
   overflow-y: auto;
+  white-space: pre-wrap;
 }
 
 .error {
-  color: #e53935;
-  margin-bottom: 10px;
-  font-size: 14px;
+  color: #ff6b6b;
 }
 
-/* Стили для вкладки Init Data */
+.warn {
+  color: #ffd166;
+}
+
+.info {
+  color: #06d6a0;
+}
+
+.debug {
+  color: #118ab2;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sectionHeader h4 {
+  margin: 0;
+}
+
+.actionButton {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+.actionButton:hover {
+  background-color: #444;
+}
+
+.actionButton:disabled {
+  background-color: #222;
+  color: #666;
+  cursor: not-allowed;
+}
+
 .jsonData {
-  background-color: #f8f9fa;
-  padding: 12px;
-  border-radius: 4px;
-  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-  line-height: 1.5;
   max-height: 300px;
-  overflow: auto;
+  overflow-y: auto;
+  background-color: rgba(20, 20, 20, 0.7);
+  padding: 8px;
+  border-radius: 4px;
   white-space: pre-wrap;
-  word-break: break-word;
+  font-size: 11px;
+}
+
+/* Новые стили для вкладки авторизации */
+.authTab .section {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 16px;
+}
+
+.authTab h5 {
+  margin: 0 0 8px 0;
+  color: #aaa;
+}
+
+.connectionStatus,
+.userStatus {
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.connectionStatus.connected {
+  background-color: rgba(0, 128, 0, 0.3);
+  color: #4caf50;
+}
+
+.connectionStatus.disconnected {
+  background-color: rgba(128, 0, 0, 0.3);
+  color: #f44336;
+}
+
+.diagnosticList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.diagnosticList li {
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+}
+
+.diagnosticList .success {
+  color: #4caf50;
+}
+
+.diagnosticList .error {
+  color: #f44336;
+}
+
+.initDataTab, 
+.authTab, 
+.consoleTab {
+  padding-bottom: 16px;
 }
 
 /* Медиа-запрос для мобильных устройств */
