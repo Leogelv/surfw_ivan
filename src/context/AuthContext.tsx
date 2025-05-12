@@ -194,7 +194,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        authLogger.info('Данные пользователя Telegram получены', { telegramId: telegramUser.id });
+        authLogger.info('Данные пользователя Telegram получены, инициируем авторизацию', { 
+          telegramId: telegramUser.id,
+          username: telegramUser.username
+        });
+        
+        // Проверяем клиент Supabase
+        if (!supabase) {
+          authLogger.error('Клиент Supabase не инициализирован, авторизация невозможна', {
+            NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Установлен' : 'Не установлен',
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Установлен' : 'Не установлен'
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Проверяем соединение с Supabase
+        try {
+          authLogger.debug('Проверка соединения с Supabase...');
+          const { error: pingError } = await supabase
+            .from('users')
+            .select('count', { count: 'exact', head: true })
+            .limit(1);
+          
+          if (pingError) {
+            authLogger.error('Ошибка соединения с Supabase', {
+              code: pingError.code,
+              message: pingError.message,
+              details: pingError.details
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+          authLogger.info('Соединение с Supabase установлено успешно');
+        } catch (pingError) {
+          authLogger.error('Необработанная ошибка при проверке соединения с Supabase', pingError);
+          setIsLoading(false);
+          return;
+        }
         
         // Получаем пользователя из Supabase или создаем нового
         const userRecord = await createOrUpdateTelegramUser(telegramUser);
@@ -202,6 +240,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userRecord) {
           setUserData(userRecord);
           authLogger.info('Авторизация через Telegram успешна', { userId: userRecord.id });
+          
+          // Попытка войти через auth API для синхронизации сессии
+          try {
+            const email = `telegram_${telegramUser.id}@example.com`;
+            const password = generateStrongPassword();
+            
+            const { data: signInResult, error: signInError } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+            
+            if (signInError) {
+              // Если не удалось войти, пробуем создать пользователя
+              authLogger.info('Не удалось войти, пробуем создать пользователя в auth', { 
+                error: signInError.message 
+              });
+              
+              const { data: signUpResult, error: signUpError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                  data: {
+                    telegram_id: telegramUser.id.toString(),
+                    username: telegramUser.username || '',
+                    first_name: telegramUser.first_name || '',
+                    last_name: telegramUser.last_name || '',
+                    provider: 'telegram'
+                  }
+                }
+              });
+              
+              if (signUpError) {
+                authLogger.error('Не удалось создать пользователя в auth', { 
+                  error: signUpError.message 
+                });
+              } else {
+                authLogger.info('Пользователь создан в auth', { 
+                  userId: signUpResult.user?.id 
+                });
+                setUser(signUpResult.user);
+              }
+            } else {
+              authLogger.info('Успешный вход через auth API', { 
+                userId: signInResult.user?.id 
+              });
+              setUser(signInResult.user);
+            }
+          } catch (authError) {
+            authLogger.error('Ошибка при работе с auth API', authError);
+          }
         } else {
           authLogger.warn('Не удалось получить данные пользователя после создания/обновления');
         }
@@ -216,6 +304,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     handleTelegramAuth();
   }, [telegramUser, authLogger]);
+
+  // Функция для генерации сложного пароля
+  function generateStrongPassword() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let password = '';
+    for (let i = 0; i < 16; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
 
   // Функция для входа по email/password
   const signIn = async (email: string, password: string) => {

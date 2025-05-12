@@ -23,7 +23,10 @@ export const getSupabaseClient = () => {
   // Инициализируем клиент, если он еще не создан
   if (!supabaseClient) {
     try {
-      supabaseLogger.info('Инициализация Supabase клиента', { url: supabaseUrl });
+      supabaseLogger.info('Инициализация Supabase клиента', { 
+        url: supabaseUrl, 
+        keyAvailable: !!supabaseAnonKey && supabaseAnonKey !== 'placeholder-key'
+      });
       
       if (!supabaseUrl || supabaseUrl === 'https://placeholder-url.supabase.co') {
         supabaseLogger.error('Не установлен URL для Supabase');
@@ -37,13 +40,49 @@ export const getSupabaseClient = () => {
         return null;
       }
       
+      // Дополнительная проверка, что мы в браузере
+      if (typeof window === 'undefined') {
+        supabaseLogger.warn('Попытка создать клиент Supabase вне браузера');
+        return null;
+      }
+      
+      // Проверяем, что ключи доступны и корректны
+      if (supabaseAnonKey.length < 20) {
+        supabaseLogger.error('Некорректный ключ Supabase (слишком короткий)');
+        console.error('Некорректный ключ Supabase (слишком короткий)');
+        return null;
+      }
+      
+      // Создаем клиент с дополнительными параметрами
       supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
           detectSessionInUrl: true
+        },
+        global: {
+          fetch: (...args) => {
+            return fetch(...args);
+          }
         }
       });
+      
+      // Проверяем соединение простым запросом
+      supabaseClient.from('users').select('count', { count: 'exact', head: true })
+        .then(({ error }) => {
+          if (error) {
+            supabaseLogger.error('Ошибка при проверке соединения с Supabase', { 
+              code: error.code, 
+              message: error.message,
+              details: error.details 
+            });
+          } else {
+            supabaseLogger.info('Supabase соединение проверено успешно');
+          }
+        })
+        .catch((err: unknown) => {
+          supabaseLogger.error('Необработанная ошибка при проверке соединения', err);
+        });
       
       supabaseLogger.info('Supabase клиент успешно инициализирован');
     } catch (error) {

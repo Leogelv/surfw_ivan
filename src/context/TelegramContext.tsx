@@ -443,88 +443,99 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     }
   };
   
-  // Функция инициализации данных Telegram
+  // Инициализация данных телеграм при загрузке
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      telegramLogger.info('Инициализация данных Telegram');
+      initializeTelegramData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Функция для получения данных из Telegram
   const initializeTelegramData = async () => {
-    try {
-      // Инициализируем Telegram Mini Apps SDK
-      init();
-      telegramLogger.info('Telegram Mini Apps SDK инициализирован');
-      
-      // Пытаемся получить данные из SDK
+    // Проверяем, доступен ли Telegram WebApp
+    if (typeof window !== 'undefined') {
       try {
-        const { initDataRaw, user } = retrieveLaunchParams();
-        
-        if (initDataRaw) {
-          setInitData(initDataRaw as string);
-          telegramLogger.info('Получены initData из SDK');
-        } else {
-          telegramLogger.warn('initDataRaw отсутствует');
+        // Сначала попробуем получить данные через SDK
+        try {
+          telegramLogger.info('Попытка получения данных через Telegram SDK');
+          init();
+          
+          // Получаем данные инициализации
+          const tgData = retrieveLaunchParams();
+          telegramLogger.info('Получены данные через SDK', tgData);
+          
+          if (tgData.tgWebAppData?.user) {
+            const userData = tgData.tgWebAppData.user;
+            telegramLogger.info('Получены данные пользователя из SDK', userData);
+            setTelegramUser(userData);
+            
+            // Запрашиваем дополнительные параметры для безопасной области
+            try {
+              postEvent('web_app_request_content_safe_area');
+              telegramLogger.info('Запрошена безопасная область контента');
+            } catch (safeAreaError) {
+              telegramLogger.error('Ошибка запроса безопасной области', safeAreaError);
+            }
+            
+            // Запрашиваем полноэкранный режим
+            try {
+              postEvent('web_app_request_fullscreen');
+              setIsFullScreenEnabled(true);
+              telegramLogger.info('Запрошен полноэкранный режим');
+            } catch (fullscreenError) {
+              telegramLogger.error('Ошибка запроса полноэкранного режима', fullscreenError);
+            }
+          }
+          
+        } catch (sdkError) {
+          telegramLogger.error('Ошибка при получении данных через SDK', sdkError);
         }
         
-        if (user) {
-          setTelegramUser(user as TelegramUser);
-          telegramLogger.info('Получены данные пользователя из SDK', {
-            id: (user as TelegramUser).id,
-            username: (user as TelegramUser).username,
-            hasPhoto: !!(user as TelegramUser).photo_url
-          });
+        // Затем получаем данные из WebApp напрямую
+        if (window.Telegram && window.Telegram.WebApp) {
+          telegramLogger.info('Найден объект Telegram.WebApp');
+          const webAppInstance = window.Telegram.WebApp;
           
-          // Создаем пользователя в Supabase на основе данных из Telegram
-          await createUserInSupabase(user as TelegramUser);
+          // Устанавливаем webApp
+          setWebApp(webAppInstance);
           
-          // Если у нас есть данные пользователя из SDK, значит мы в телеграм,
-          // даже если window.Telegram.WebApp не доступен
-          if (!webApp && typeof window !== 'undefined') {
-            telegramLogger.info('Используем данные пользователя из SDK, хотя WebApp не обнаружен');
+          // Получаем данные пользователя
+          if (webAppInstance.initDataUnsafe && webAppInstance.initDataUnsafe.user) {
+            telegramLogger.info('Получены данные пользователя из WebApp', webAppInstance.initDataUnsafe.user);
+            setTelegramUser(webAppInstance.initDataUnsafe.user);
+          }
+          
+          // Сохраняем initData для последующего использования
+          if (webAppInstance.initData) {
+            telegramLogger.info('Получены initData из WebApp');
+            setInitData(webAppInstance.initData);
+          }
+          
+          // Получаем отступ для заголовка
+          if (webAppInstance.viewportStableHeight) {
+            const paddingTop = webAppInstance.safeAreaInset?.top || 0;
+            telegramLogger.info('Установлен отступ для заголовка', { paddingTop, viewportStableHeight: webAppInstance.viewportStableHeight });
+            setTelegramHeaderPadding(paddingTop);
+          }
+          
+          // Запрашиваем полноэкранный режим
+          try {
+            if (webAppInstance.requestFullscreen) {
+              telegramLogger.info('Запрос на полноэкранный режим');
+              webAppInstance.requestFullscreen();
+              setIsFullScreenEnabled(true);
+            }
+          } catch (fullscreenError) {
+            telegramLogger.error('Ошибка при запросе полноэкранного режима', fullscreenError);
           }
         } else {
-          telegramLogger.warn('Данные пользователя отсутствуют в Launch Params');
+          telegramLogger.info('Telegram WebApp не найден, запускаемся в обычном браузере');
         }
       } catch (error) {
-        telegramLogger.error('Ошибка при получении данных из SDK Launch Params', error);
+        telegramLogger.error('Ошибка при инициализации данных Telegram', error);
       }
-      
-      // Пытаемся получить объект WebApp из глобального объекта Telegram
-      if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-        const webAppInstance = window.Telegram.WebApp;
-        setWebApp(webAppInstance);
-        
-        // Пытаемся получить пользователя из WebApp, если не получили из SDK
-        if (!telegramUser && webAppInstance.initDataUnsafe && webAppInstance.initDataUnsafe.user) {
-          const user = webAppInstance.initDataUnsafe.user;
-          setTelegramUser(user);
-          telegramLogger.info('Получены данные пользователя из WebApp', {
-            id: user.id,
-            username: user.username,
-            hasPhoto: !!user.photo_url
-          });
-          
-          // Создаем пользователя в Supabase на основе данных из Telegram
-          await createUserInSupabase(user);
-        }
-        
-        // Устанавливаем padding на основе данных из WebApp SafeArea
-        if (webAppInstance.safeAreaInset) {
-          setTelegramHeaderPadding(webAppInstance.safeAreaInset.top);
-          telegramLogger.debug('Установлен telegramHeaderPadding', { padding: webAppInstance.safeAreaInset.top });
-        }
-        
-        // Отправляем сигнал готовности приложения
-        try {
-          webAppInstance.ready();
-          telegramLogger.info('Отправлен сигнал ready в WebApp');
-        } catch (error) {
-          telegramLogger.error('Ошибка при отправке сигнала ready', error);
-        }
-      } else {
-        if (telegramUser) {
-          telegramLogger.info('WebApp не доступен в глобальном объекте Telegram, но у нас есть данные пользователя из SDK');
-        } else {
-          telegramLogger.warn('WebApp не доступен в глобальном объекте Telegram');
-        }
-      }
-    } catch (error) {
-      telegramLogger.error('Необработанная ошибка при инициализации данных Telegram', error);
     }
   };
   
@@ -605,12 +616,6 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
       enableFullScreen();
     }
   };
-  
-  // Эффект для инициализации данных Telegram при монтировании компонента
-  useEffect(() => {
-    initializeTelegramData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   
   // Возвращаем провайдер с контекстом
   return (
