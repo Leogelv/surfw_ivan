@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { supabase } from '@/lib/supabase';
 import { useTelegram } from '@/context/TelegramContext';
 import styles from './DebugPanel.module.css';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
@@ -15,10 +15,15 @@ type LogEntry = {
   context?: Record<string, any>;
 };
 
-const DebugPanel = () => {
+type DebugPanelProps = {
+  telegramUser?: any;
+  supabaseUser?: any;
+  logs?: any[];
+};
+
+const DebugPanel = ({ telegramUser: propsTelegramUser, supabaseUser, logs: propsLogs }: DebugPanelProps = {}) => {
   const debugLogger = logger.createLogger('DebugPanel');
-  const { supabase } = useSupabase();
-  const { telegramUser } = useTelegram();
+  const { user: contextTelegramUser } = useTelegram();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
@@ -30,6 +35,23 @@ const DebugPanel = () => {
   const MAX_LOGS = 20;
   // Минимальный интервал между обновлениями в миллисекундах
   const MIN_REFRESH_INTERVAL = 2000;
+
+  // Используем telegramUser из пропсов, если он передан, в противном случае из контекста
+  const telegramUser = propsTelegramUser || contextTelegramUser;
+
+  // Используем логи из пропсов, если они переданы
+  useEffect(() => {
+    if (propsLogs?.length) {
+      const formattedLogs = propsLogs.map((log, index) => ({
+        id: `external-${index}`,
+        level: log.level || 'info',
+        message: log.message || 'Сообщение отсутствует',
+        created_at: log.timestamp || new Date().toISOString(),
+        context: log.context || undefined
+      }));
+      setLogs(formattedLogs);
+    }
+  }, [propsLogs]);
 
   // Форматируем время для отображения
   const formatTime = (dateString: string) => {
@@ -71,6 +93,11 @@ const DebugPanel = () => {
 
   // Оптимизированная функция получения логов
   const fetchLogs = useCallback(async () => {
+    // Если у нас есть логи из пропсов, не загружаем из Supabase
+    if (propsLogs?.length) {
+      return;
+    }
+
     if (!supabase) {
       setError('Supabase client not available');
       return;
@@ -108,7 +135,7 @@ const DebugPanel = () => {
     } finally {
       setLoading(false);
     }
-  }, [supabase, lastRefreshTime, debugLogger]);
+  }, [supabase, lastRefreshTime, debugLogger, propsLogs]);
 
   // Обработчик клика по кнопке обновления
   const handleRefresh = useCallback(() => {
@@ -117,21 +144,21 @@ const DebugPanel = () => {
 
   // Эффект для загрузки логов при изменении refreshCount
   useEffect(() => {
-    if (isExpanded) {
+    if (isExpanded && !propsLogs?.length) {
       fetchLogs();
     }
-  }, [fetchLogs, refreshCount, isExpanded]);
+  }, [fetchLogs, refreshCount, isExpanded, propsLogs]);
 
   // Автоматическое обновление логов с интервалом только когда панель открыта
   useEffect(() => {
-    if (!isExpanded) return;
+    if (!isExpanded || propsLogs?.length) return;
     
     const interval = setInterval(() => {
       fetchLogs();
     }, 5000); // 5 секунд между автоматическими обновлениями
     
     return () => clearInterval(interval);
-  }, [isExpanded, fetchLogs]);
+  }, [isExpanded, fetchLogs, propsLogs]);
 
   return (
     <div className={styles.debugPanel}>
@@ -174,6 +201,18 @@ const DebugPanel = () => {
               <p>Пользователь не найден</p>
             )}
           </div>
+
+          {supabaseUser && (
+            <div className={styles.section}>
+              <h4>Пользователь Supabase</h4>
+              <div>
+                <p>ID: {supabaseUser.id}</p>
+                <p>Telegram ID: {supabaseUser.telegram_id}</p>
+                <p>Имя: {supabaseUser.first_name} {supabaseUser.last_name}</p>
+                <p>Username: {supabaseUser.username || 'не указан'}</p>
+              </div>
+            </div>
+          )}
           
           <div className={styles.section}>
             <h4>InitData из SDK</h4>
@@ -202,7 +241,7 @@ const DebugPanel = () => {
               Логи ({logs.length})
               <button 
                 onClick={handleRefresh} 
-                disabled={loading} 
+                disabled={loading || !!propsLogs?.length} 
                 className={styles.refreshButton}
               >
                 {loading ? 'Загрузка...' : 'Обновить'}

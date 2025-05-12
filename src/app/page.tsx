@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useUserStats } from '@/hooks/useUserStats';
 import { TelegramProvider, useTelegram } from '@/context/TelegramContext';
-import logger from '@/lib/logger';
+import { postEvent } from '@telegram-apps/sdk';
+import { usePathname } from 'next/navigation';
 import ProfileScreen from '@/components/screens/ProfileScreen';
 import DebugPanel from '@/components/Debug/DebugPanel';
+import { createLogger } from '@/lib/logger';
 
 function YogaApp() {
   const { userData, isLoading: authLoading, user: supabaseUser } = useAuth();
@@ -18,8 +20,8 @@ function YogaApp() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [appLogs, setAppLogs] = useState<any[]>([]);
   
-  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, user: telegramUser } = useTelegram();
-  const appLogger = logger.createLogger('YogaApp');
+  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, enableFullScreen, user: telegramUser } = useTelegram();
+  const appLogger = createLogger('HomePage');
 
   // Функция для добавления лога в состояние
   const addLog = (level: string, message: string, data?: any) => {
@@ -79,57 +81,36 @@ function YogaApp() {
     if (isTelegramWebApp && webApp) {
       // Переопределяем метод initializeTelegramApp для нашего нового интерфейса
       const customInitializeTelegram = async () => {
-        // Проверяем наличие Telegram WebApp
-        if (!webApp) {
-          appLogger.warn('Telegram WebApp недоступен, запуск в режиме браузера');
-          return;
-        }
-        
         try {
-          // Подготовка приложения
+          // Проверяем наличие Telegram WebApp
+          if (!webApp) {
+            appLogger.warn('Telegram WebApp недоступен, запуск в режиме браузера');
+            return;
+          }
+  
+          // Инициализируем приложение
+          initializeTelegramApp();
+          
+          // Показываем, что приложение готово
           webApp.ready();
           appLogger.info('Telegram WebApp готов');
           
-          // Расширение на весь экран
-          if (typeof webApp.expand === 'function') {
-            webApp.expand();
-            appLogger.debug('Расширение окна приложения');
-          }
-          
-          // Запрос на полноэкранный режим
-          if (typeof webApp.requestFullscreen === 'function') {
+          // Запрашиваем полноэкранный режим через SDK
+          try {
+            appLogger.info('Запрос на полноэкранный режим через web_app_request_fullscreen');
+            postEvent('web_app_request_fullscreen');
+            appLogger.info('Полноэкранный режим запрошен');
+          } catch (fullscreenError) {
+            appLogger.error('Ошибка при вызове web_app_request_fullscreen', fullscreenError);
+            
+            // Пробуем использовать expand() как запасной вариант
             try {
-              webApp.requestFullscreen();
-              appLogger.debug('Запрошен полноэкранный режим');
-            } catch (err) {
-              appLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp');
+              webApp.expand();
+              enableFullScreen();
+              appLogger.info('Использован запасной метод webApp.expand()');
+            } catch (expandError) {
+              appLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp', expandError);
             }
-          }
-          
-          // Отключение вертикальных свайпов
-          if (typeof webApp.disableVerticalSwipes === 'function') {
-            webApp.disableVerticalSwipes();
-            appLogger.debug('Вертикальные свайпы отключены');
-          }
-          
-          // Установка цветов для нового йога-приложения
-          if (typeof webApp.setHeaderColor === 'function') {
-            webApp.setHeaderColor('#FFFFFF'); // Белый для заголовка
-            appLogger.debug('Установлен цвет заголовка');
-          }
-          
-          if (typeof webApp.setBackgroundColor === 'function') {
-            webApp.setBackgroundColor('#F5F5F5'); // Светло-серый для фона
-            appLogger.debug('Установлен цвет фона');
-          }
-          
-          // Логируем информацию о safeAreaInset для отладки
-          if (webApp.safeAreaInset) {
-            appLogger.info('SafeAreaInset доступен:', webApp.safeAreaInset);
-            console.log('SafeAreaInset values:', webApp.safeAreaInset);
-          } else {
-            appLogger.warn('SafeAreaInset недоступен');
-            console.log('SafeAreaInset is not available');
           }
         } catch (error) {
           appLogger.error('Ошибка инициализации Telegram WebApp:', error);

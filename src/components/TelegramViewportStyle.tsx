@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { init, retrieveLaunchParams } from '@telegram-apps/sdk';
+import { init, retrieveLaunchParams, postEvent } from '@telegram-apps/sdk';
 import logger from '@/lib/logger';
 
 // Define interface for Telegram user
@@ -47,8 +47,16 @@ const TelegramViewportStyle = () => {
       
       // Запрашиваем fullscreen для приложения
       try {
-        webApp.expand();
-        viewportLogger.info('Telegram WebApp переведен в fullscreen режим');
+        // Используем новый метод web_app_request_fullscreen через SDK
+        try {
+          viewportLogger.info('Запрос на полноэкранный режим через web_app_request_fullscreen');
+          postEvent('web_app_request_fullscreen');
+          viewportLogger.info('Метод web_app_request_fullscreen вызван успешно');
+        } catch (fullscreenError) {
+          viewportLogger.warn('Ошибка при вызове web_app_request_fullscreen, переключаемся на webApp.expand()', fullscreenError);
+          webApp.expand();
+          viewportLogger.info('Использован запасной метод webApp.expand() для перехода в полноэкранный режим');
+        }
       } catch (error) {
         viewportLogger.warn('Не удалось перевести WebApp в fullscreen режим', error);
       }
