@@ -130,6 +130,8 @@ interface TelegramContextType {
   initializeTelegramApp: () => void;
   telegramUser: TelegramUser | null;
   initData: string | null;
+  setTelegramUser: (user: TelegramUser) => void;
+  setIsFullScreenEnabled: (enabled: boolean) => void;
 }
 
 // Объявляем глобальный тип Window с добавлением Telegram
@@ -149,7 +151,9 @@ const TelegramContext = createContext<TelegramContextType>({
   enableFullScreen: () => {},
   initializeTelegramApp: () => {},
   telegramUser: null,
-  initData: null
+  initData: null,
+  setTelegramUser: () => {},
+  setIsFullScreenEnabled: () => {}
 });
 
 // Хук для использования контекста Telegram
@@ -608,26 +612,22 @@ export const TelegramProvider = ({ children }: TelegramProviderProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // Подготовка контекста для провайдера
-  const contextValue = useMemo(() => ({
-    user: telegramUser,
-    webApp,
-    isFullScreenEnabled,
-    telegramHeaderPadding,
-    enableFullScreen,
-    initializeTelegramApp,
-    telegramUser,
-    initData
-  }), [
-    telegramUser,
-    webApp,
-    isFullScreenEnabled,
-    telegramHeaderPadding,
-    initData
-  ]);
-  
+  // Возвращаем провайдер с контекстом
   return (
-    <TelegramContext.Provider value={contextValue}>
+    <TelegramContext.Provider 
+      value={{
+        user: telegramUser,
+        webApp,
+        isFullScreenEnabled,
+        telegramHeaderPadding,
+        enableFullScreen,
+        initializeTelegramApp,
+        telegramUser,
+        initData,
+        setTelegramUser,
+        setIsFullScreenEnabled
+      }}
+    >
       {children}
     </TelegramContext.Provider>
   );

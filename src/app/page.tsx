@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 import ProfileScreen from '@/components/screens/ProfileScreen';
 import DebugPanel from '@/components/Debug/DebugPanel';
 import { createLogger } from '@/lib/logger';
+import { getSupabaseClient } from '@/lib/supabase';
 
 function YogaApp() {
   const { userData, isLoading: authLoading, user: supabaseUser } = useAuth();
@@ -21,7 +22,8 @@ function YogaApp() {
   const [appLogs, setAppLogs] = useState<any[]>([]);
   const [contentSafeArea, setContentSafeArea] = useState({ top: 0, right: 0, bottom: 0, left: 0 });
   
-  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, enableFullScreen, user: telegramUser } = useTelegram();
+  const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, 
+          enableFullScreen, user: telegramUser, setTelegramUser, setIsFullScreenEnabled } = useTelegram();
   const appLogger = createLogger('HomePage');
 
   // Получение и мемоизация данных инициализации из SDK
@@ -252,89 +254,151 @@ function YogaApp() {
     };
   }, [appLogger]);
 
-  useEffect(() => {
-    // Проверка, находимся ли мы в контексте Telegram или в обычном браузере
-    const hasTgWebAppData = sdkInitData && 'tgWebAppData' in sdkInitData && !!sdkInitData.tgWebAppData;
-    const isTelegramWebApp = (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) || !!telegramUser || hasTgWebAppData;
-    
-    appLogger.info('Инициализация приложения', { isTelegramWebApp, telegramUser, sdkInitData, hasTgWebAppData });
-    
-    // Инициализация Telegram WebApp только если он доступен или есть данные пользователя из SDK
-    if (isTelegramWebApp) {
-      // Переопределяем метод initializeTelegramApp для нашего нового интерфейса
-      const customInitializeTelegram = async () => {
-        try {
-          // Проверяем наличие Telegram WebApp или данных пользователя
-          if (!webApp && !telegramUser && !hasTgWebAppData) {
-            appLogger.warn('Telegram WebApp недоступен и данные пользователя отсутствуют, запуск в режиме браузера');
-            return;
-          }
-  
-          // Инициализируем приложение
-          initializeTelegramApp();
-          
-          // Показываем, что приложение готово, если есть WebApp
-          if (webApp) {
-            webApp.ready();
-            appLogger.info('Telegram WebApp готов');
-          }
+  // Функция для сохранения пользователя Telegram в Supabase
+  const saveTelegramUserToSupabase = async (user: any) => {
+    if (!user || !user.id) {
+      appLogger.warn('Невозможно сохранить пользователя: отсутствуют данные');
+      return;
+    }
 
-          // Настройка вертикальных свайпов
-          try {
-            appLogger.info('Установка параметров свайпа', { allow_vertical_swipe: fals });
-            postEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: true });
-          } catch (swipeError) {
-            appLogger.error('Ошибка при настройке поведения свайпа', swipeError);
-          }
-          
-          // Запрос безопасной зоны контента
-          try {
-            appLogger.info('Запрос информации о безопасной зоне контента');
-            postEvent('web_app_request_content_safe_area');
-          } catch (safeAreaError) {
-            appLogger.error('Ошибка при запросе безопасной зоны контента', safeAreaError);
-          }
-          
-          // Запрос темы оформления (если нет в данных SDK)
-          try {
-            if (!(sdkInitData && 'tgWebAppThemeParams' in sdkInitData)) {
-              appLogger.info('Запрос информации о теме оформления');
-              postEvent('web_app_request_theme');
-            }
-          } catch (themeError) {
-            appLogger.error('Ошибка при запросе темы оформления', themeError);
-          }
-          
-          // Запрашиваем полноэкранный режим через SDK
-          try {
-            appLogger.info('Запрос на полноэкранный режим через web_app_request_fullscreen');
-            postEvent('web_app_request_fullscreen');
-            enableFullScreen();
-            appLogger.info('Полноэкранный режим запрошен');
-          } catch (fullscreenError) {
-            appLogger.error('Ошибка при вызове web_app_request_fullscreen', fullscreenError);
-            
-            // Пробуем использовать expand() как запасной вариант, если есть WebApp
-            if (webApp) {
-              try {
-                webApp.expand();
-                enableFullScreen();
-                appLogger.info('Использован запасной метод webApp.expand()');
-              } catch (expandError) {
-                appLogger.warn('requestFullscreen не поддерживается в этой версии Telegram WebApp', expandError);
-              }
-            }
-          }
-        } catch (error) {
-          appLogger.error('Ошибка инициализации Telegram WebApp:', error);
+    try {
+      appLogger.info('Сохранение пользователя Telegram в Supabase', { telegramId: user.id });
+      const supabase = getSupabaseClient();
+      
+      if (!supabase) {
+        appLogger.error('Невозможно сохранить пользователя: клиент Supabase не инициализирован');
+        return;
+      }
+      
+      // Проверяем соединение с Supabase
+      try {
+        const { data: pingData, error: pingError } = await supabase.from('users').select('count').limit(1);
+        if (pingError) {
+          appLogger.error('Ошибка соединения с Supabase', pingError);
+          return;
+        } else {
+          appLogger.info('Соединение с Supabase установлено успешно');
         }
+      } catch (pingErr) {
+        appLogger.error('Ошибка при проверке соединения с Supabase', pingErr);
+        return;
+      }
+      
+      // Проверяем существующего пользователя
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('telegram_id', user.id.toString())
+        .maybeSingle();
+      
+      if (fetchError) {
+        appLogger.error('Ошибка при проверке существования пользователя', fetchError);
+        return;
+      }
+      
+      // Данные для создания/обновления
+      const userData = {
+        telegram_id: user.id.toString(),
+        username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        photo_url: user.photo_url || '',
+        updated_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
       };
       
-      customInitializeTelegram();
-    } else {
-      appLogger.info('Запуск в режиме браузера, пропуск инициализации Telegram WebApp');
+      // Если пользователь существует - обновляем, иначе создаем
+      if (existingUser) {
+        appLogger.info('Обновление существующего пользователя', { userId: existingUser.id });
+        const { data, error: updateError } = await supabase
+          .from('users')
+          .update(userData)
+          .eq('telegram_id', user.id.toString())
+          .select()
+          .single();
+        
+        if (updateError) {
+          appLogger.error('Ошибка при обновлении пользователя', updateError);
+        } else {
+          appLogger.info('Пользователь успешно обновлен', { userId: data.id });
+        }
+      } else {
+        appLogger.info('Создание нового пользователя');
+        const { data, error: insertError } = await supabase
+          .from('users')
+          .insert({ 
+            ...userData, 
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          appLogger.error('Ошибка при создании пользователя', insertError);
+        } else {
+          appLogger.info('Пользователь успешно создан', { userId: data.id });
+        }
+      }
+    } catch (error) {
+      appLogger.error('Ошибка при создании/обновлении пользователя', error);
     }
-  }, [webApp, telegramUser, sdkInitData, appLogger, enableFullScreen, initializeTelegramApp]);
+  };
+
+  // Инициализация приложения Telegram
+  useEffect(() => {
+    const hasTgWebAppData = sdkInitData && 'tgWebAppData' in sdkInitData && !!sdkInitData.tgWebAppData;
+    
+    if (hasTgWebAppData) {
+      appLogger.info('Инициализация приложения Telegram с данными из SDK', { 
+        hasTgWebAppData,
+        userInData: !!sdkInitData.tgWebAppData?.user
+      });
+      
+      // Сохраняем пользователя в Supabase, если он есть в данных
+      if (sdkInitData.tgWebAppData?.user && !telegramUser) {
+        appLogger.info('Установка данных пользователя из tgWebAppData', sdkInitData.tgWebAppData.user);
+        setTelegramUser(sdkInitData.tgWebAppData.user);
+        saveTelegramUserToSupabase(sdkInitData.tgWebAppData.user);
+      }
+      
+      // Запрашиваем полноэкранный режим
+      try {
+        appLogger.info('Запрос на полноэкранный режим через SDK');
+        postEvent('web_app_request_fullscreen');
+        setIsFullScreenEnabled(true);
+      } catch (error) {
+        appLogger.error('Ошибка при запросе полноэкранного режима', error);
+      }
+      
+      // Настройка вертикальных свайпов
+      try {
+        appLogger.info('Установка параметров свайпа', { allow_vertical_swipe: true });
+        postEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: true });
+      } catch (error) {
+        appLogger.error('Ошибка при настройке поведения свайпа', error);
+      }
+      
+      // Запрос безопасной зоны контента
+      try {
+        appLogger.info('Запрос информации о безопасной зоне контента');
+        postEvent('web_app_request_content_safe_area');
+      } catch (error) {
+        appLogger.error('Ошибка при запросе безопасной зоны контента', error);
+      }
+      
+      // Запрос темы оформления (если нет в данных SDK)
+      try {
+        if (!(sdkInitData && 'tgWebAppThemeParams' in sdkInitData)) {
+          appLogger.info('Запрос информации о теме оформления');
+          postEvent('web_app_request_theme');
+        }
+      } catch (error) {
+        appLogger.error('Ошибка при запросе темы оформления', error);
+      }
+    } else {
+      appLogger.info('Запуск в режиме браузера без данных Telegram');
+    }
+  }, [sdkInitData, appLogger, telegramUser, setTelegramUser, setIsFullScreenEnabled]);
 
   // Устанавливаем CSS-переменную для отступа в зависимости от режима фулскрин
   useEffect(() => {
