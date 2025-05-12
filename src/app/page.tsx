@@ -281,7 +281,7 @@ function YogaApp() {
 
           // Настройка вертикальных свайпов
           try {
-            appLogger.info('Установка параметров свайпа', { allow_vertical_swipe: true });
+            appLogger.info('Установка параметров свайпа', { allow_vertical_swipe: fals });
             postEvent('web_app_setup_swipe_behavior', { allow_vertical_swipe: true });
           } catch (swipeError) {
             appLogger.error('Ошибка при настройке поведения свайпа', swipeError);
