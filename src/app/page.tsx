@@ -269,6 +269,11 @@ function YogaApp() {
         last_name: user.last_name
       });
       
+      // Импортируем и вызываем тестовую функцию
+      const { testSupabaseConnection } = await import('@/lib/supabase');
+      const testResult = await testSupabaseConnection();
+      appLogger.info('Результат теста соединения Supabase', { success: testResult });
+      
       const supabase = getSupabaseClient();
       
       if (!supabase) {
@@ -542,6 +547,25 @@ function YogaApp() {
     }
   }, [sdkInitData, appLogger, telegramUser, setTelegramUser, setIsFullScreenEnabled]);
 
+  // Инициализация при загрузке страницы
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Импортируем и вызываем диагностическую функцию
+    import('@/lib/supabase').then(({ diagnoseClientIssues }) => {
+      const diagnostics = diagnoseClientIssues();
+      appLogger.info('Диагностика клиента Supabase', diagnostics);
+    });
+    
+    if (telegramUser) {
+      if (!authLoading) {
+        // Сохраняем пользователя Telegram в Supabase
+        saveTelegramUserToSupabase(telegramUser);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, telegramUser]);
+
   // Устанавливаем CSS-переменную для отступа в зависимости от режима фулскрин
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -643,6 +667,111 @@ function YogaApp() {
       appLogger.info('Данные пользователя из Auth получены', { userData });
     }
   }, [telegramUser, userData, appLogger]);
+
+  // Функция для тестирования соединения
+  const testConnection = async () => {
+    try {
+      appLogger.info('Запуск тестирования соединения с Supabase');
+      const { testSupabaseConnection, diagnoseClientIssues } = await import('@/lib/supabase');
+      
+      // Запускаем диагностику
+      const diagnostics = diagnoseClientIssues();
+      appLogger.info('Диагностика клиента Supabase', diagnostics);
+      
+      // Тестируем соединение
+      const testResult = await testSupabaseConnection();
+      appLogger.info('Результат теста соединения Supabase', { success: testResult });
+    } catch (error) {
+      appLogger.error('Ошибка при тестировании соединения', error);
+    }
+  };
+  
+  // Функция для создания пользователя с сервисным ключом
+  const createUserWithServiceKey = async () => {
+    if (!telegramUser) {
+      appLogger.warn('Нет данных пользователя Telegram для создания');
+      return;
+    }
+    
+    try {
+      appLogger.info('Запуск создания пользователя с сервисным ключом');
+      const { testCreateUserWithServiceKey } = await import('@/lib/supabase');
+      
+      const result = await testCreateUserWithServiceKey(telegramUser);
+      appLogger.info('Результат создания пользователя с сервисным ключом', result);
+    } catch (error) {
+      appLogger.error('Ошибка при создании пользователя с сервисным ключом', error);
+    }
+  };
+
+  // Состояния для отладочной информации
+  const [supabaseInfo, setSupabaseInfo] = useState<any>(null);
+  const [authState, setAuthState] = useState<any>(null);
+  
+  // Обновление диагностической информации
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const updateDiagnosticInfo = async () => {
+      try {
+        const { diagnoseClientIssues } = await import('@/lib/supabase');
+        const diagnostics = diagnoseClientIssues();
+        
+        setSupabaseInfo({
+          url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+          anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(0, 5) + '....' + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(-5) : 'Not set',
+          isClientInitialized: diagnostics.isClientInitialized,
+          connectionStatus: 'Не подключено',
+          connectionError: null
+        });
+        
+        setAuthState(userData || null);
+      } catch (error) {
+        console.error('Ошибка при обновлении диагностической информации:', error);
+      }
+    };
+    
+    updateDiagnosticInfo();
+    
+    // Обновляем каждые 5 секунд
+    const interval = setInterval(updateDiagnosticInfo, 5000);
+    return () => clearInterval(interval);
+  }, [userData]);
+
+  // Функция для обновления соединения с Supabase
+  const updateConnectionStatus = async () => {
+    try {
+      const { testSupabaseConnection } = await import('@/lib/supabase');
+      const success = await testSupabaseConnection();
+      
+      setSupabaseInfo(prev => ({
+        ...prev,
+        connectionStatus: success ? 'Подключено' : 'Не подключено',
+        connectionError: success ? null : 'Не удалось подключиться',
+        lastChecked: new Date().toLocaleTimeString()
+      }));
+    } catch (error) {
+      setSupabaseInfo(prev => ({
+        ...prev,
+        connectionStatus: 'Ошибка',
+        connectionError: error instanceof Error ? error.message : String(error),
+        lastChecked: new Date().toLocaleTimeString()
+      }));
+    }
+  };
+  
+  // Функция для копирования ключей в буфер обмена
+  const copyConfigToClipboard = () => {
+    const config = `NEXT_PUBLIC_SUPABASE_URL=${process.env.NEXT_PUBLIC_SUPABASE_URL}\nNEXT_PUBLIC_SUPABASE_ANON_KEY=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}\n`;
+    
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(config)
+        .then(() => appLogger.info('Конфигурация скопирована в буфер обмена'))
+        .catch(err => appLogger.error('Ошибка при копировании конфигурации', err));
+    } else {
+      appLogger.warn('API буфера обмена недоступно');
+    }
+  };
 
   // Если отображается профиль, показываем компонент ProfileScreen
   if (showProfile) {
@@ -849,6 +978,51 @@ function YogaApp() {
             </svg>
             <span className="text-xs mt-1">Профиль</span>
           </button>
+        </div>
+      </div>
+      <div className="mb-8">
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-row space-x-4">
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={testConnection}
+            >
+              Проверить соединение
+            </button>
+            
+            <button 
+              className="px-4 py-2 bg-green-500 text-white rounded"
+              onClick={createUserWithServiceKey}
+            >
+              Создать пользователя (Service Key)
+            </button>
+            
+            <button 
+              className="px-4 py-2 bg-purple-500 text-white rounded"
+              onClick={updateConnectionStatus}
+            >
+              Обновить статус
+            </button>
+            
+            <button 
+              className="px-4 py-2 bg-gray-500 text-white rounded"
+              onClick={copyConfigToClipboard}
+            >
+              Копировать ключи
+            </button>
+          </div>
+          
+          <div className="bg-gray-100 p-4 rounded-md">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-bold">Supabase Info</h2>
+              <span className={`px-2 py-1 rounded text-xs ${supabaseInfo?.connectionStatus === 'Подключено' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {supabaseInfo?.connectionStatus || 'Неизвестно'}
+              </span>
+            </div>
+            <pre className="text-xs overflow-auto max-h-40">
+              {JSON.stringify({ supabaseInfo, authState }, null, 2)}
+            </pre>
+          </div>
         </div>
       </div>
       <DebugPanel telegramUser={telegramUser} supabaseUser={userData} logs={appLogs} />

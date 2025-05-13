@@ -5,6 +5,9 @@ import { createLogger } from './logger';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
+// Получаем сервисный ключ из окружения (только для тестирования)
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+
 // Создаем логгер для Supabase
 const supabaseLogger = createLogger('Supabase');
 
@@ -19,6 +22,12 @@ export const getSupabaseClient = () => {
     // Создаем фиктивный клиент для статической сборки
     return createClient<Database>(supabaseUrl, supabaseAnonKey);
   }
+  
+  // Отладочная информация о ключах
+  console.log('DEBUG: Supabase URL:', supabaseUrl);
+  console.log('DEBUG: Supabase Key Length:', supabaseAnonKey?.length);
+  console.log('DEBUG: Supabase Key First 10 chars:', supabaseAnonKey?.substring(0, 10));
+  console.log('DEBUG: Supabase Key Last 10 chars:', supabaseAnonKey?.substring(supabaseAnonKey.length - 10));
   
   // Инициализируем клиент, если он еще не создан
   if (!supabaseClient) {
@@ -307,5 +316,282 @@ export const getUserStats = async () => {
       }, 
       error: err 
     };
+  }
+};
+
+// Функция для прямой проверки соединения с Supabase
+export const testSupabaseConnection = async () => {
+  try {
+    console.log('Прямая проверка соединения с Supabase');
+    
+    // 1. Тест через обычный fetch
+    const url = `${supabaseUrl}/rest/v1/users?select=count`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`
+      }
+    });
+    
+    const status = response.status;
+    console.log('Статус ответа от Supabase через fetch:', status);
+    
+    if (status >= 200 && status < 300) {
+      console.log('Соединение с Supabase успешно установлено через fetch');
+    } else {
+      console.log('Ошибка соединения с Supabase через fetch, статус:', status);
+      const text = await response.text();
+      console.log('Ответ:', text);
+    }
+
+    // 2. Тест через стандартный клиент
+    try {
+      if (supabaseClient) {
+        const { data, error, status } = await supabaseClient
+          .from('users')
+          .select('count', { count: 'exact', head: true });
+        
+        console.log('Статус ответа от Supabase через клиент:', status);
+        
+        if (error) {
+          console.log('Ошибка соединения через клиент:', error);
+        } else {
+          console.log('Соединение с Supabase успешно установлено через клиент');
+        }
+      } else {
+        console.log('Клиент Supabase не инициализирован для тестирования');
+      }
+    } catch (clientError) {
+      console.error('Ошибка при проверке соединения через клиент:', clientError);
+    }
+    
+    // 3. Тест через сервисный клиент (только для разработки)
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const serviceClient = createTestServiceClient();
+        
+        if (serviceClient) {
+          const { data, error, status } = await serviceClient
+            .from('users')
+            .select('count', { count: 'exact', head: true });
+          
+          console.log('Статус ответа от Supabase через сервисный клиент:', status);
+          
+          if (error) {
+            console.log('Ошибка соединения через сервисный клиент:', error);
+          } else {
+            console.log('Соединение с Supabase успешно установлено через сервисный клиент');
+            return true;
+          }
+        } else {
+          console.log('Сервисный клиент не инициализирован');
+        }
+      } catch (serviceError) {
+        console.error('Ошибка при проверке соединения через сервисный клиент:', serviceError);
+      }
+    }
+    
+    return status >= 200 && status < 300;
+  } catch (error) {
+    console.error('Необработанная ошибка при прямой проверке соединения с Supabase:', error);
+    return false;
+  }
+};
+
+// ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ - создает клиент с сервисным ключом
+// ВНИМАНИЕ: Не использовать в production-коде на клиенте!
+export const createTestServiceClient = () => {
+  // Проверка, что мы в режиме разработки
+  if (process.env.NODE_ENV !== 'development') {
+    console.error('Попытка создать сервисный клиент в production! Использование отклонено.');
+    return null;
+  }
+  
+  console.log('Создаю тестовый клиент с сервисным ключом для отладки');
+  
+  if (!supabaseUrl || supabaseUrl === 'https://placeholder-url.supabase.co') {
+    console.error('Не установлен URL для Supabase');
+    return null;
+  }
+  
+  if (!supabaseServiceKey) {
+    console.error('Не установлен сервисный ключ для Supabase');
+    return null;
+  }
+  
+  try {
+    // Создаем клиент с сервисным ключом (ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ)
+    return createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при создании тестового клиента', error);
+    return null;
+  }
+};
+
+// Функция для диагностики проблем инициализации клиента
+export const diagnoseClientIssues = () => {
+  try {
+    console.log('----------------------');
+    console.log('ДИАГНОСТИКА КЛИЕНТА SUPABASE');
+    console.log('----------------------');
+    
+    // Проверяем окружение
+    console.log('Окружение:', process.env.NODE_ENV);
+    console.log('URL Supabase:', supabaseUrl);
+    console.log('Длина ключа Supabase:', supabaseAnonKey?.length);
+    
+    // Основные проблемы
+    if (!supabaseUrl || supabaseUrl === 'https://placeholder-url.supabase.co') {
+      console.log('❌ URL Supabase не установлен или имеет значение по умолчанию');
+    } else {
+      console.log('✅ URL Supabase установлен');
+    }
+    
+    if (!supabaseAnonKey || supabaseAnonKey === 'placeholder-key') {
+      console.log('❌ Ключ Supabase не установлен или имеет значение по умолчанию');
+    } else if (supabaseAnonKey.length < 20) {
+      console.log('❌ Ключ Supabase слишком короткий, вероятно неверный');
+    } else {
+      console.log('✅ Ключ Supabase установлен и имеет корректную длину');
+    }
+    
+    // Проверяем тип окружения
+    if (typeof window === 'undefined') {
+      console.log('⚠️ Код выполняется на сервере');
+    } else {
+      console.log('✅ Код выполняется в браузере');
+    }
+    
+    // Проверяем наличие клиента
+    if (supabaseClient) {
+      console.log('✅ Клиент Supabase инициализирован');
+    } else {
+      console.log('❌ Клиент Supabase не инициализирован');
+    }
+    
+    console.log('----------------------');
+    return {
+      url: supabaseUrl,
+      keyLength: supabaseAnonKey?.length,
+      isClientInitialized: !!supabaseClient,
+      runningInBrowser: typeof window !== 'undefined',
+      environment: process.env.NODE_ENV
+    };
+  } catch (error) {
+    console.error('Ошибка при диагностике клиента Supabase:', error);
+    return { error };
+  }
+};
+
+// Функция создания пользователя с сервисным ключом (ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ)
+export const testCreateUserWithServiceKey = async (userData: any) => {
+  try {
+    console.log('----------------------');
+    console.log('ТЕСТОВОЕ СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ С СЕРВИСНЫМ КЛЮЧОМ');
+    console.log('----------------------');
+    
+    // Только для разработки!
+    if (process.env.NODE_ENV !== 'development') {
+      console.error('Эта функция должна использоваться только при разработке!');
+      return { success: false, error: 'Not in development mode' };
+    }
+
+    // Создаем клиент с сервисным ключом
+    const serviceClient = createTestServiceClient();
+    if (!serviceClient) {
+      console.error('Не удалось создать сервисный клиент');
+      return { success: false, error: 'Failed to create service client' };
+    }
+    
+    const email = `telegram_${userData.id}@example.com`;
+    const password = `Test123_${Date.now()}`;
+    
+    console.log('Создаем пользователя в auth.users через сервисный клиент:', {
+      email,
+      telegramId: userData.id
+    });
+    
+    // 1. Создаем пользователя в auth.users
+    const { data: authUserData, error: authError } = await serviceClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        telegram_id: userData.id.toString(),
+        username: userData.username || '',
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        provider: 'telegram'
+      }
+    });
+    
+    if (authError) {
+      console.error('Ошибка при создании пользователя в auth.users:', authError);
+      return { success: false, error: authError };
+    }
+    
+    if (!authUserData.user) {
+      console.error('Пользователь не был создан');
+      return { success: false, error: 'User not created' };
+    }
+    
+    console.log('Пользователь успешно создан в auth.users:', {
+      id: authUserData.user.id,
+      email: authUserData.user.email
+    });
+    
+    // 2. Проверяем, был ли создан пользователь в таблице users автоматически
+    console.log('Проверяем пользователя в public.users...');
+    const { data: existingUser, error: checkError } = await serviceClient
+      .from('users')
+      .select('*')
+      .eq('id', authUserData.user.id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Ошибка при проверке пользователя в public.users:', checkError);
+    }
+    
+    // 3. Если пользователь не создан автоматически, создаем его
+    if (!existingUser) {
+      console.log('Пользователь не найден в public.users, создаем вручную');
+      
+      const newUserData = {
+        id: authUserData.user.id,
+        telegram_id: userData.id.toString(),
+        username: userData.username || '',
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        photo_url: userData.photo_url || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      };
+      
+      const { data: insertedUser, error: insertError } = await serviceClient
+        .from('users')
+        .insert(newUserData)
+        .select();
+      
+      if (insertError) {
+        console.error('Ошибка при создании пользователя в public.users:', insertError);
+        return { success: false, authUser: authUserData.user, error: insertError };
+      }
+      
+      console.log('Пользователь успешно создан в public.users:', insertedUser);
+      return { success: true, authUser: authUserData.user, dbUser: insertedUser };
+    } else {
+      console.log('Пользователь уже существует в public.users:', existingUser);
+      return { success: true, authUser: authUserData.user, dbUser: existingUser };
+    }
+  } catch (error) {
+    console.error('Необработанная ошибка при тестовом создании пользователя:', error);
+    return { success: false, error };
   }
 }; 
