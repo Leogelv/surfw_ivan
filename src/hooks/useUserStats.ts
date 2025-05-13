@@ -6,13 +6,19 @@ interface UserStats {
   power: number;
   practiceMinutes: number;
   streak: number;
+  totalMinutes: number;
+  sessionsCompleted: number;
+  level: number;
 }
 
 export const useUserStats = () => {
   const [stats, setStats] = useState<UserStats>({
     power: 3, // Дефолтные значения
     practiceMinutes: 100,
-    streak: 7
+    streak: 7,
+    totalMinutes: 120,
+    sessionsCompleted: 5,
+    level: 1
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +47,18 @@ export const useUserStats = () => {
         }
         
         if (data) {
-          setStats(data);
+          // API returns only power, practiceMinutes, and streak
+          // We need to calculate or provide default values for the other fields
+          setStats({
+            power: data.power || 3,
+            practiceMinutes: data.practiceMinutes || 100,
+            streak: data.streak || 7,
+            // Calculate totalMinutes from practiceMinutes or use default
+            totalMinutes: data.practiceMinutes || 120,
+            // These fields don't come from the API, use default values
+            sessionsCompleted: 5,
+            level: Math.floor((data.power || 3) / 10) + 1 // Calculate level based on power
+          });
         }
       } catch (err: any) {
         console.error('Error fetching user stats:', err);

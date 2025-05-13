@@ -2,7 +2,12 @@ import { createClient, Provider } from '@supabase/supabase-js';
 import { Database } from './database.types';
 import { createLogger } from './logger';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+// Fix: Remove the "/rest/v1" suffix from the URL that's in the env file
+const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+const supabaseUrl = rawSupabaseUrl.endsWith('/rest/v1') 
+  ? rawSupabaseUrl.substring(0, rawSupabaseUrl.length - 8) 
+  : rawSupabaseUrl;
+
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
 // Получаем сервисный ключ из окружения (только для тестирования)
@@ -24,7 +29,8 @@ export const getSupabaseClient = () => {
   }
   
   // Отладочная информация о ключах
-  console.log('DEBUG: Supabase URL:', supabaseUrl);
+  console.log('DEBUG: Supabase URL (raw):', rawSupabaseUrl);
+  console.log('DEBUG: Supabase URL (fixed):', supabaseUrl);
   console.log('DEBUG: Supabase Key Length:', supabaseAnonKey?.length);
   console.log('DEBUG: Supabase Key First 10 chars:', supabaseAnonKey?.substring(0, 10));
   console.log('DEBUG: Supabase Key Last 10 chars:', supabaseAnonKey?.substring(supabaseAnonKey.length - 10));
@@ -325,7 +331,12 @@ export const testSupabaseConnection = async () => {
     console.log('Прямая проверка соединения с Supabase');
     
     // 1. Тест через обычный fetch
-    const url = `${supabaseUrl}/rest/v1/users?select=count`;
+    // REST API требует полный URL с /rest/v1
+    const restUrl = supabaseUrl.endsWith('/rest/v1') ? supabaseUrl : `${supabaseUrl}/rest/v1`;
+    const url = `${restUrl}/users?select=count`;
+    
+    console.log('Тестовый URL для REST API:', url);
+    
     const response = await fetch(url, {
       method: 'GET',
       headers: {

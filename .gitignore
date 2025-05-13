@@ -40,3 +40,100 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQL and database files
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+database.json
+
+# Documentation
+/docs/unused/
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Legacy code 
+/src/components/screens/ProductScreen.tsx.bak
+/src/components/screens/ProductScreen.tsx.old
+**/coffee*
+**/coffee-*
+**/Coffee*
+/src/components/screens/CartScreen.tsx
+/src/components/screens/OrdersScreen.tsx
+/src/components/screens/AnimatedCoffeeCounter.tsx
+/src/components/screens/AnimatedModifierIcons.tsx
+**/surf*
+**/Surf*
+/src/app/oldpage.md
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+*.log
+/temp/
+/tmp/
+
+# Debugging and logs
+/logs
+*.log
+log.txt
+npm-debug.log*
+
+# Временные файлы
+/tmp
+/temp
+.tmp
+.temp
+*.tmp
+*.temp
+
+# Специфичные файлы для проекта
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Legacy code (coffee/surf related)
+**/coffee*
+**/coffee-*
+**/Coffee*
+**/surf*
+**/Surf*
+coffee*.txt
+surf*.txt
+
+# Сгенерированные файлы
+/src/gen
+/.vercel/output
+/dist
+/build
+/.next
+.swc
+
+# IDE files
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Файлы OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk

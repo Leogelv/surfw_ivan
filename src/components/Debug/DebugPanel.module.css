@@ -327,10 +327,51 @@
     bottom: 10px;
     right: 10px;
     left: 10px;
+    max-height: 80vh;
+    border-radius: 8px;
   }
   
   .content {
     max-width: 100%;
+    padding: 12px 8px;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tabButton {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .header h3 {
+    font-size: 12px;
+  }
+  
+  .actionButton {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  
+  .jsonData {
+    font-size: 10px;
+  }
+  
+  .healthSection h4 {
+    font-size: 12px;
+  }
+  
+  .healthSection li {
+    font-size: 11px;
+  }
+  
+  .closeButton {
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    font-size: 9px;
   }
 }
 

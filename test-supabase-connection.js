@@ -3,13 +3,25 @@ require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
 
 // Получаем URL и ключи из переменных окружения
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+// Исправление URL для клиента Supabase (удаляем '/rest/v1' если он есть)
+const supabaseUrl = rawSupabaseUrl && rawSupabaseUrl.endsWith('/rest/v1') 
+  ? rawSupabaseUrl.substring(0, rawSupabaseUrl.length - 8) 
+  : rawSupabaseUrl;
+
+// URL для REST API запросов (нужно добавить '/rest/v1' если его нет)
+const restApiUrl = rawSupabaseUrl && rawSupabaseUrl.endsWith('/rest/v1') 
+  ? rawSupabaseUrl 
+  : `${supabaseUrl}/rest/v1`;
+
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 console.log('Тестирование соединения с Supabase');
 console.log('-----------------------------------');
-console.log('URL:', supabaseUrl);
+console.log('Raw URL из .env:', rawSupabaseUrl);
+console.log('URL для Supabase клиента:', supabaseUrl);
+console.log('URL для REST API запросов:', restApiUrl);
 console.log('Anon Key доступен:', !!supabaseAnonKey);
 console.log('Service Key доступен:', !!supabaseServiceKey);
 console.log('');
@@ -100,8 +112,8 @@ async function testFetchRequest() {
   console.log('Тестирование через прямой fetch запрос...');
   
   try {
-    // Тестируем с анонимным ключом
-    const anonResponse = await fetch(`${supabaseUrl}/rest/v1/users?select=count`, {
+    // Тестируем с анонимным ключом, используя правильный URL для REST API
+    const anonResponse = await fetch(`${restApiUrl}/users?select=count`, {
       method: 'HEAD',
       headers: {
         'apikey': supabaseAnonKey,
@@ -118,7 +130,7 @@ async function testFetchRequest() {
     }
     
     // Тестируем с сервисным ключом
-    const serviceResponse = await fetch(`${supabaseUrl}/rest/v1/users?select=count`, {
+    const serviceResponse = await fetch(`${restApiUrl}/users?select=count`, {
       method: 'HEAD',
       headers: {
         'apikey': supabaseServiceKey,
