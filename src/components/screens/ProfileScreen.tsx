@@ -1,284 +1,159 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useTelegram } from '@/context/TelegramContext';
+import { useAuth } from '@/context/AuthContext'; // Для данных пользователя из Supabase
 import useHapticFeedback from '@/hooks/useHapticFeedback';
 import logger from '@/lib/logger';
+import Link from 'next/link'; // Для навигационных ссылок
 
 interface ProfileScreenProps {
   onClose: () => void;
-  onHomeClick: () => void;
-  onCartClick: () => void;
-  onOrdersClick: () => void;
+  // Убираем старые обработчики, т.к. навигация будет через Link или router
 }
 
-const ProfileScreen = ({ onClose, onHomeClick, onCartClick, onOrdersClick }: ProfileScreenProps) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [activeOrders, setActiveOrders] = useState(2); // Имитация активных заказов
-  const { user, webApp, isFullScreenEnabled, telegramHeaderPadding } = useTelegram();
+// Моковые данные для графика, пока нет реальных
+const weeklyActivityData = [
+  { day: '13', value: 0 },
+  { day: '20', value: 0 },
+  { day: '27', value: 0 },
+  { day: 'фев', value: 0 }, // Предположим, это начало месяца
+  { day: '10', value: 0 },
+  { day: '17', value: 8 }, // Пример значения
+  { day: '24', value: 0 },
+  { day: 'мар', value: 0 },
+];
+
+const ProfileScreen = ({ onClose }: ProfileScreenProps) => {
+  const { user: telegramUser, webApp, isFullScreenEnabled, telegramHeaderPadding } = useTelegram();
+  const { userData: supabaseUserData, isLoading: authLoading } = useAuth(); // Данные из public.users
   const haptic = useHapticFeedback();
   const profileLogger = logger.createLogger('ProfileScreen');
 
-  // Демо-данные для заказов
-  const orders = [
-    {
-      id: '2548',
-      date: '15 мая, 14:32',
-      status: 'Выполнен',
-      items: [
-        { name: 'Капучино (средний)', quantity: 1, image: '/surf/coffee_categ.png' },
-        { name: 'Эспрессо', quantity: 2, image: '/surf/coffee_categ.png' }
-      ],
-      total: 810
-    },
-    {
-      id: '2532',
-      date: '10 мая, 11:15',
-      status: 'Выполнен',
-      items: [
-        { name: 'Латте (большой)', quantity: 1, image: '/surf/coffee_categ.png' },
-        { name: 'Круассан', quantity: 1, image: '/surf/croissant.png' }
-      ],
-      total: 600
-    }
-  ];
+  const [remainingDays, setRemainingDays] = useState(26); // Мок: Осталось дней в подписке
+  const [avgMinutesPerDay, setAvgMinutesPerDay] = useState(20); // Мок: Средний показатель
 
-  // Анимация загрузки
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-      profileLogger.debug('Профиль загружен');
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [profileLogger]);
+    profileLogger.info('Профиль открыт', { telegramUser, supabaseUserData });
+    // Здесь можно будет загружать реальные данные о подписке и активности
+  }, [profileLogger, telegramUser, supabaseUserData]);
 
-  // Логирование данных пользователя
-  useEffect(() => {
-    if (user) {
-      profileLogger.info('Данные пользователя в профиле', { 
-        first_name: user.first_name,
-        last_name: user.last_name,
-        username: user.username
-      });
-    } else {
-      profileLogger.warn('Данные пользователя не доступны в профиле');
-    }
-  }, [user, profileLogger]);
+  const userToDisplay = supabaseUserData || telegramUser;
 
-  // Функция для закрытия профиля
-  const handleCloseProfile = () => {
-    haptic.buttonClick(); // Haptic feedback при нажатии
+  // Обработчик для кнопки "Закрыть"
+  const handleClose = () => {
+    haptic.buttonClick();
     profileLogger.info('Закрытие профиля');
-    onClose(); // Закрываем профиль
-    onHomeClick(); // Переходим на главную
+    onClose();
   };
+  
+  // Максимальное значение для нормализации высоты столбцов графика
+  const maxGraphValue = Math.max(...weeklyActivityData.map(d => d.value), 1); // Минимум 1, чтобы избежать деления на 0
 
   return (
-    <div className="fixed inset-0 bg-[#1D1816] z-50 flex flex-col text-white">
-      {/* Отступ для Telegram Header */}
-      {isFullScreenEnabled && (
-        <div style={{ height: `${telegramHeaderPadding}px` }} className="w-full"></div>
-      )}
-      
-      {/* Добавляем логотип над профилем */}
-      <div className="flex justify-center pt-6 pb-2">
-        <Image
-          src="/surf/logo.svg"
-          alt="Surf Coffee"
-          width={150}
-          height={65}
-          className="h-14 w-auto"
-          priority
-        />
-      </div>
-      
-      {/* Верхняя часть с данными пользователя - фиксированная */}
-      <div className="p-6 relative">
-        {/* Кнопка закрытия профиля */}
-        <button 
-          onClick={handleCloseProfile}
-          className="absolute top-6 right-6 p-2 bg-black/40 hover:bg-black/60 rounded-full border border-white/20 shadow-lg hover:shadow-xl transition-all z-50 active:scale-95"
+    <div 
+      className="fixed inset-0 bg-white z-50 flex flex-col text-black font-['Inter',_sans-serif]"
+      style={{ paddingTop: isFullScreenEnabled ? `${telegramHeaderPadding}px` : '0px' }}
+    >
+      {/* Шапка */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <button
+          onClick={handleClose}
+          className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-gray-700">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span className="ml-2 text-gray-700 font-medium">Закрыть</span>
+        </button>
+        <div className="text-lg font-semibold">Ученик</div>
+        <button className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors">
+          {/* Иконка троеточия */}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-gray-700">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
           </svg>
         </button>
-
-        <div className="flex items-center">
-          <div className="relative w-20 h-20 mr-4">
-            {user?.photo_url ? (
-              <Image
-                src={user.photo_url}
-                alt={user.first_name || 'Пользователь'}
-                fill
-                className="rounded-full object-cover border-2 border-[#A67C52]/50"
-              />
-            ) : (
-              <div className="w-full h-full rounded-full bg-gradient-to-r from-[#A67C52] to-[#5D4037] flex items-center justify-center text-2xl font-bold">
-                {user?.first_name?.charAt(0) || 'S'}
-              </div>
-            )}
-            <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-[#1D1816]"></div>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold">
-              {user ? `${user.first_name || ''} ${user.last_name || ''}` : 'Гость'}
-            </h2>
-            <p className="text-white/60 text-sm">
-              {user?.username ? `@${user.username}` : 'Пользователь Telegram'}
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Сам контент профиля в скроллящемся контейнере */}
-      <div className="flex-1 overflow-auto px-6 pb-8 bg-[#1D1816]">
-        {/* Бонусная система */}
-        <div className="mb-6">
-          <div className="bg-[#2A2118]/85 rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/30 p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium">Ваши бонусы</h3>
-              <div className="bg-gradient-to-r from-[#A67C52] to-[#5D4037] px-3 py-1 rounded-full text-white text-sm font-medium">
-                150 ☕
+      {/* Основной контент */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Информация о пользователе */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative w-24 h-24 mb-4">
+            {userToDisplay?.photo_url ? (
+              <Image
+                src={userToDisplay.photo_url}
+                alt={userToDisplay.first_name || 'Профиль'}
+                width={96}
+                height={96}
+                className="rounded-full object-cover border-2 border-gray-200"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-3xl font-medium text-gray-500">
+                {userToDisplay?.first_name?.charAt(0)?.toUpperCase() || '?'}
               </div>
-            </div>
-            <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
-              <div className="absolute left-0 top-0 bottom-0 w-2/3 bg-gradient-to-r from-[#A67C52] to-[#5D4037] rounded-full"></div>
-            </div>
-            <div className="flex justify-between text-xs text-white/50 mt-1">
-              <span>0</span>
-              <span>До следующего уровня: 75</span>
-              <span>225</span>
-            </div>
+            )}
+          </div>
+          <h2 className="text-2xl font-semibold mb-1">
+            Привет, {userToDisplay?.first_name || 'Ученик'}
+          </h2>
+          <p className="text-sm text-gray-500">
+            Осталось в Nova: {remainingDays} дней
+          </p>
+        </div>
+
+        {/* Статистика активности */}
+        <div className="mb-8 p-4 bg-gray-50 rounded-xl">
+          <h3 className="text-lg font-semibold mb-1">20 мин. на этой неделе</h3>
+          <p className="text-xs text-gray-500 mb-4">Средний показатель за день: {avgMinutesPerDay} мин.</p>
+          
+          <div className="flex justify-between items-end h-32 space-x-1">
+            {weeklyActivityData.map((item, index) => (
+              <div key={index} className="flex flex-col items-center flex-1">
+                <div 
+                  className="w-full bg-gray-700 rounded-t-md transition-all duration-500 ease-out"
+                  style={{ height: `${(item.value / maxGraphValue) * 100}%` }}
+                ></div>
+                <span className="mt-1 text-xs text-gray-500">{item.day}</span>
+              </div>
+            ))}
+          </div>
+           <div className="flex justify-between text-xs text-gray-400 mt-2 px-1">
+            <span>0с</span>
+            <span>5м</span>
+            <span>30м</span>
+            <span>1ч</span>
           </div>
         </div>
 
-        {/* История заказов */}
-        <div>
-          <h3 className="text-lg font-medium mb-3">
-            История заказов
-          </h3>
-          {orders.map((order) => (
-            <div 
-              key={order.id}
-              className="bg-[#2A2118]/85 rounded-xl overflow-hidden border border-white/5 shadow-[#A67C52]/10 p-4 mb-4"
+        {/* Меню */}
+        <div className="space-y-3">
+          {[
+            { label: 'Продлить подписку', href: '/subscribe' }, // Пример раута
+            { label: 'До / После', href: '/before-after' },
+            { label: 'Добавить на рабочий стол', action: () => profileLogger.info('Добавить на рабочий стол') },
+            { label: 'Поддержка', href: '/support' },
+          ].map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                haptic.buttonClick();
+                if (item.action) item.action();
+                // Для ссылок можно использовать router.push(item.href) если Link не подходит
+                profileLogger.info(`Нажатие на пункт меню: ${item.label}`);
+                if(item.href && !item.action) {
+                  // onClose(); // Возможно, закрывать профиль при переходе
+                  // Тут нужна логика навигации, если это не просто action
+                   profileLogger.info(`Переход по ссылке: ${item.href}`);
+                }
+              }}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 active:bg-gray-200 transition-colors"
             >
-              <div className="flex justify-between">
-                <div>
-                  <div className="flex items-center">
-                    <svg className="h-4 w-4 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <h4 className="font-medium">Заказ #{order.id}</h4>
-                  </div>
-                  <p className="text-xs text-white/60 mt-1">{order.date}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-white/80">{order.total} ₽</div>
-                  <div className="text-xs text-green-500">{order.status}</div>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-white/10">
-                <div className="space-y-2">
-                  {order.items.map((item, i) => (
-                    <div key={i} className="flex items-center py-2 px-2 bg-white/5 rounded-lg">
-                      <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/10 mr-3 flex-shrink-0">
-                        <Image
-                          src={item.image || '/surf/coffee_categ.png'}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 flex justify-between items-center">
-                        <span className="text-sm text-white/80">{item.name}</span>
-                        <span className="text-xs text-white/60">x{item.quantity}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button 
-                className="w-full mt-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white/80 transition-colors active:scale-95"
-                onClick={() => { 
-                  haptic.buttonClick(); // Haptic feedback при нажатии
-                  profileLogger.info('Повтор заказа', { order_id: order.id });
-                  onOrdersClick(); 
-                }}
-              >
-                Повторить заказ
-              </button>
-            </div>
+              <span className="text-base font-medium">{item.label}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-400">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
           ))}
-        </div>
-
-        {/* Настройки профиля */}
-        <div className="mt-6">
-          <h3 className="text-lg font-medium mb-3">Настройки</h3>
-          <div className="space-y-2">
-            <button 
-              className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-              onClick={() => {
-                haptic.buttonClick();
-                profileLogger.info('Нажатие кнопки "Уведомления"');
-              }}
-            >
-              <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="text-left flex-1">Уведомления</span>
-              <div className="w-10 h-5 bg-[#A67C52] rounded-full relative">
-                <div className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
-              </div>
-            </button>
-            <button 
-              className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-              onClick={() => {
-                haptic.buttonClick();
-                profileLogger.info('Нажатие кнопки "Способы оплаты"');
-              }}
-            >
-              <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              <span className="text-left flex-1">Способы оплаты</span>
-              <svg className="h-5 w-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <button 
-              className="flex items-center w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
-              onClick={() => {
-                haptic.buttonClick();
-                profileLogger.info('Нажатие кнопки "Адреса доставки"');
-              }}
-            >
-              <svg className="h-5 w-5 mr-3 text-[#A67C52]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="text-left flex-1">Адреса доставки</span>
-              <svg className="h-5 w-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Добавляем кнопку выхода в конец контента */}
-        <div className="mt-8">
-          <button 
-            onClick={handleCloseProfile}
-            className="w-full py-3 bg-gradient-to-r from-[#A67C52] to-[#5D4037] hover:from-[#B98D6F] hover:to-[#6D4C41] text-white rounded-xl font-bold text-lg shadow-md shadow-[#A67C52]/20 transition-all active:scale-98"
-          >
-            Вернуться в меню
-          </button>
-        </div>
-
-        {/* Версия и правовая информация */}
-        <div className="mt-8 text-center text-xs text-white/40">
-          <p>Surf Coffee © 2023</p>
-          <p className="mt-1">Версия 1.0.0</p>
         </div>
       </div>
     </div>

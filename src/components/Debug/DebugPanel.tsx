@@ -89,6 +89,8 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
   const [appHealth, setAppHealth] = useState<AppHealth | null>(null);
   const [overallSystemStatus, setOverallSystemStatus] = useState<SystemStatus>({ ok: false, message: "Проверка..." });
 
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
+
   // Функция для генерации статусного объекта
   const generateStatus = (ok: boolean, message: string, details?: any): SystemStatus => ({ ok, message, details });
 
@@ -357,166 +359,193 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     );
   };
 
+  // Эффект для скрытия/показа панели через глобальное событие (если понадобится)
+  useEffect(() => {
+    const handleToggleDebug = () => setIsPanelVisible(prev => !prev);
+    window.addEventListener('toggle-debug-panel', handleToggleDebug);
+    return () => window.removeEventListener('toggle-debug-panel', handleToggleDebug);
+  }, []);
+
+  if (!isPanelVisible) {
+    return null;
+  }
+
   return (
-    <div className={styles.debugPanel}>
-      <button className={styles.toggleButton} onClick={() => setIsExpanded(!isExpanded)}>
-        {isExpanded ? 'Скрыть Отладку 🚀' : 'Показать Отладку 🛰️'} {isExpanded && overallSystemStatus && <span className={overallSystemStatus.ok ? styles.statusOk : styles.statusError}>({overallSystemStatus.message})</span>}
-      </button>
-      
-      {isExpanded && (
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3>Центр Управления Полетом 🛸</h3>
-            {activeTab === 'health' && 
-                <button onClick={refreshHealthChecks} className={styles.actionButton}>Обновить Здоровье</button>
-            }
-          </div>
-          
-          <div className={styles.tabs}>
-            <button className={`${styles.tabButton} ${activeTab === 'health' ? styles.active : ''}`} onClick={() => setActiveTab('health')}>Обзор Здоровья</button>
-            <button className={`${styles.tabButton} ${activeTab === 'console' ? styles.active : ''}`} onClick={() => setActiveTab('console')}>Консоль</button>
-            <button className={`${styles.tabButton} ${activeTab === 'initData' ? styles.active : ''}`} onClick={() => setActiveTab('initData')}>Telegram InitData</button>
-            <button className={`${styles.tabButton} ${activeTab === 'auth' ? styles.active : ''}`} onClick={() => setActiveTab('auth')}>Авторизация Детали</button>
-            {/* Убрали старую вкладку "Состояние Системы", т.к. "Обзор Здоровья" ее заменяет и улучшает */}
-          </div>
-          
-          <div className={styles.tabContent}>
-            {/* Таб Обзор Здоровья Системы */}
-            {activeTab === 'health' && telegramHealth && supabaseHealth && authHealth && appHealth && (
-              <div className={styles.healthOverviewTab}>
-                <div className={styles.healthSection}>
-                  <h4>Telegram Интеграция 📡</h4>
-                  <ul>
-                    <li>SDK Init: <StatusIndicator status={telegramHealth.sdkInitialized} /></li>
-                    <li>Telegram User: <StatusIndicator status={telegramHealth.userRetrieved} /></li>
-                    <li>Telegram InitData (Context): <StatusIndicator status={telegramHealth.initDataRetrieved} /></li>
-                    <li>WebApp Object: <StatusIndicator status={telegramHealth.webAppAvailable} /></li>
-                    <li>Fullscreen: <StatusIndicator status={telegramHealth.fullscreen} /></li>
-                    <li>Safe Area: <StatusIndicator status={telegramHealth.safeArea} /></li>
-                    <li>Theme Params: <StatusIndicator status={telegramHealth.themeParams} /></li>
-                  </ul>
-                </div>
-                <div className={styles.healthSection}>
-                  <h4>Supabase Backend 🌩️</h4>
-                  <ul>
-                    <li>Client Init: <StatusIndicator status={supabaseHealth.clientInitialized} /></li>
-                    <li>ENV Vars (URL/Key): <StatusIndicator status={supabaseHealth.envVars} /></li>
-                    <li>Connection: <StatusIndicator status={supabaseHealth.connection} /></li>
-                  </ul>
-                </div>
-                <div className={styles.healthSection}>
-                  <h4>Аутентификация 🛂</h4>
-                  <ul>
-                    <li>AuthContext: <StatusIndicator status={authHealth.authContextLoaded} /></li>
-                    <li>Supabase Session: <StatusIndicator status={authHealth.supabaseSession} /></li>
-                    <li>Supabase Auth User: <StatusIndicator status={authHealth.supabaseUser} /></li>
-                    <li>User Data (public.users): <StatusIndicator status={authHealth.publicUserLoaded} /></li>
-                  </ul>
-                </div>
-                 <div className={styles.healthSection}>
-                  <h4>Приложение 📱</h4>
-                  <ul>
-                    <li>User Stats: <StatusIndicator status={appHealth.userStats} /></li>
-                    {/* Другие проверки состояния приложения */}
-                  </ul>
-                </div>
-              </div>
-            )}
-
-            {/* Таб консоли (без изменений в логике, только fetchConsoleLogs) */}
-            {activeTab === 'console' && (
-              <div className={styles.consoleTab}>
-                <div className={styles.sectionHeader}>
-                  <h4>Логи ({logs.length})</h4>
-                  <div>
-                    <button onClick={fetchConsoleLogs} disabled={loading || !!propsLogs?.length} className={styles.actionButton}>{loading ? 'Загрузка...' : 'Обновить'}</button>
-                    <button onClick={() => copyToClipboard(logs.map(log => `[${formatTime(log.created_at)}] [${log.level.toUpperCase()}] ${log.message} ${log.context ? JSON.stringify(log.context) : ''}`).join('\n'))} className={styles.actionButton}>Копировать</button>
-                  </div>
-                </div>
-                {error && <p className={styles.error}>{error}</p>}
-                <div className={styles.logs}>
-                  {logs.map((log) => ( <div key={log.id} className={`${styles.logEntry} ${styles[log.level]}`}><span className={styles.timestamp}>{formatTime(log.created_at)}</span> <span className={styles.level}>[{log.level.toUpperCase()}]</span> <span className={styles.message}>{log.message}</span> {log.context && (<pre className={styles.context}>{JSON.stringify(log.context, null, 2)}</pre>)}</div> ))}
-                  {logs.length === 0 && !loading && <p>Нет доступных логов</p>}
-                </div>
-              </div>
-            )}
+    <div className={styles.debugPanelContainer}>
+      <div className={styles.debugPanel}>
+        <button 
+          className={styles.closeButton} 
+          onClick={() => setIsPanelVisible(false)}
+        >
+          Закрыть (ESC)
+        </button>
+        {isExpanded && overallSystemStatus && 
+          <span className={`${styles.overallStatusIndicator} ${overallSystemStatus.ok ? styles.statusOk : styles.statusError}`}>
+            {overallSystemStatus.ok ? '✅' : '❌'} {overallSystemStatus.message}
+          </span>
+        }
+        
+        {isExpanded ? (
+          <div className={styles.content}>
+            <div className={styles.header}>
+              <h3>Центр Управления Полетом 🛸</h3>
+              {activeTab === 'health' && 
+                  <button onClick={refreshHealthChecks} className={styles.actionButton}>Обновить Здоровье</button>
+              }
+            </div>
             
-            {/* Таб Init Data (использует memoizedTgInitDataForDisplay) */}
-            {activeTab === 'initData' && (
-              <div className={styles.initDataTab}>
-                <div className={styles.sectionHeader}><h4>Telegram InitData (SDK & Context)</h4><button onClick={() => copyToClipboard(JSON.stringify(memoizedTgInitDataForDisplay, null, 2))} className={styles.actionButton}>Копировать</button></div>
-                <pre className={styles.jsonData}>{JSON.stringify(memoizedTgInitDataForDisplay, null, 2)}</pre>
-              </div>
-            )}
+            <div className={styles.tabs}>
+              <button className={`${styles.tabButton} ${activeTab === 'health' ? styles.active : ''}`} onClick={() => setActiveTab('health')}>Обзор Здоровья</button>
+              <button className={`${styles.tabButton} ${activeTab === 'console' ? styles.active : ''}`} onClick={() => setActiveTab('console')}>Консоль</button>
+              <button className={`${styles.tabButton} ${activeTab === 'initData' ? styles.active : ''}`} onClick={() => setActiveTab('initData')}>Telegram InitData</button>
+              <button className={`${styles.tabButton} ${activeTab === 'auth' ? styles.active : ''}`} onClick={() => setActiveTab('auth')}>Авторизация Детали</button>
+            </div>
+            
+            <div className={styles.tabContent}>
+              {/* Таб Обзор Здоровья Системы */}
+              {activeTab === 'health' && telegramHealth && supabaseHealth && authHealth && appHealth && (
+                <div className={styles.healthOverviewTab}>
+                  <div className={styles.healthSection}>
+                    <h4>Telegram Интеграция 📡</h4>
+                    <ul>
+                      <li>SDK Init: <StatusIndicator status={telegramHealth.sdkInitialized} /></li>
+                      <li>Telegram User: <StatusIndicator status={telegramHealth.userRetrieved} /></li>
+                      <li>Telegram InitData (Context): <StatusIndicator status={telegramHealth.initDataRetrieved} /></li>
+                      <li>WebApp Object: <StatusIndicator status={telegramHealth.webAppAvailable} /></li>
+                      <li>Fullscreen: <StatusIndicator status={telegramHealth.fullscreen} /></li>
+                      <li>Safe Area: <StatusIndicator status={telegramHealth.safeArea} /></li>
+                      <li>Theme Params: <StatusIndicator status={telegramHealth.themeParams} /></li>
+                    </ul>
+                  </div>
+                  <div className={styles.healthSection}>
+                    <h4>Supabase Backend 🌩️</h4>
+                    <ul>
+                      <li>Client Init: <StatusIndicator status={supabaseHealth.clientInitialized} /></li>
+                      <li>ENV Vars (URL/Key): <StatusIndicator status={supabaseHealth.envVars} /></li>
+                      <li>Connection: <StatusIndicator status={supabaseHealth.connection} /></li>
+                    </ul>
+                  </div>
+                  <div className={styles.healthSection}>
+                    <h4>Аутентификация 🛂</h4>
+                    <ul>
+                      <li>AuthContext: <StatusIndicator status={authHealth.authContextLoaded} /></li>
+                      <li>Supabase Session: <StatusIndicator status={authHealth.supabaseSession} /></li>
+                      <li>Supabase Auth User: <StatusIndicator status={authHealth.supabaseUser} /></li>
+                      <li>User Data (public.users): <StatusIndicator status={authHealth.publicUserLoaded} /></li>
+                    </ul>
+                  </div>
+                   <div className={styles.healthSection}>
+                    <h4>Приложение 📱</h4>
+                    <ul>
+                      <li>User Stats: <StatusIndicator status={appHealth.userStats} /></li>
+                      {/* Другие проверки состояния приложения */}
+                    </ul>
+                  </div>
+                </div>
+              )}
 
-            {/* Таб Авторизация Детали */}
-            {activeTab === 'auth' && (
-              <div className={styles.authTab}>
-                <div className={styles.sectionHeader}>
-                  <h4>Данные Авторизации (Детально)</h4>
-                  <button 
-                    onClick={() => copyToClipboard(JSON.stringify({ supabaseInfo: getSupabaseInfoForAuthTab(), authState: currentAuthStateDetails }, null, 2))} 
-                    className={styles.actionButton}
-                  >
-                    Копировать
-                  </button>
-                </div>
-                <div className={styles.section}>
-                  <h5>Подключение к Supabase</h5>
-                  <div className={`${styles.connectionStatus} ${currentSupabaseConnectionDetails.connected ? styles.connected : styles.disconnected}`}>
-                    Статус: {currentSupabaseConnectionDetails.connected ? 'Подключено' : 'Не подключено'}
-                  </div>
-                  {currentSupabaseConnectionDetails.error && (
-                    <div className={styles.error}>
-                      Ошибка: {typeof currentSupabaseConnectionDetails.error === 'object' 
-                                ? JSON.stringify(currentSupabaseConnectionDetails.error, null, 2) 
-                                : currentSupabaseConnectionDetails.error}
+              {/* Таб консоли (без изменений в логике, только fetchConsoleLogs) */}
+              {activeTab === 'console' && (
+                <div className={styles.consoleTab}>
+                  <div className={styles.sectionHeader}>
+                    <h4>Логи ({logs.length})</h4>
+                    <div>
+                      <button onClick={fetchConsoleLogs} disabled={loading || !!propsLogs?.length} className={styles.actionButton}>{loading ? 'Загрузка...' : 'Обновить'}</button>
+                      <button onClick={() => copyToClipboard(logs.map(log => `[${formatTime(log.created_at)}] [${log.level.toUpperCase()}] ${log.message} ${log.context ? JSON.stringify(log.context) : ''}`).join('\n'))} className={styles.actionButton}>Копировать</button>
                     </div>
-                  )}
-                  <pre className={styles.jsonData}>{JSON.stringify(getSupabaseInfoForAuthTab(), null, 2)}</pre>
-                </div>
-                <div className={styles.section}>
-                  <h5>Пользователь Telegram (из пропсов/контекста)</h5>
-                  <div className={styles.userStatus}>
-                    Статус: {telegramUserFromProps || telegramUserContext ? 'Данные есть' : 'Данные отсутствуют'}
                   </div>
-                  <pre className={styles.jsonData}>{JSON.stringify(telegramUserFromProps || telegramUserContext || 'Пользователь Telegram не найден', null, 2)}</pre>
-                </div>
-                <div className={styles.section}>
-                  <h5>Состояние Авторизации Supabase & AuthContext</h5>
-                  <div className={styles.userStatus}>
-                    AuthContext: {auth?.isAuthenticated ? 'Авторизован' : 'Не авторизован'}
+                  {error && <p className={styles.error}>{error}</p>}
+                  <div className={styles.logs}>
+                    {logs.map((log) => ( <div key={log.id} className={`${styles.logEntry} ${styles[log.level]}`}><span className={styles.timestamp}>{formatTime(log.created_at)}</span> <span className={styles.level}>[{log.level.toUpperCase()}]</span> <span className={styles.message}>{log.message}</span> {log.context && (<pre className={styles.context}>{JSON.stringify(log.context, null, 2)}</pre>)}</div> ))}
+                    {logs.length === 0 && !loading && <p>Нет доступных логов</p>}
                   </div>
-                  <pre className={styles.jsonData}>{JSON.stringify(currentAuthStateDetails || 'Данные не доступны', null, 2)}</pre>
                 </div>
-                <div className={styles.section}>
-                  <h5>Быстрая Диагностика (дублирует Health)</h5>
-                  <ul className={styles.diagnosticList}>
-                    <li className={telegramUserContext || telegramUserFromProps ? styles.success : styles.error}>
-                      {telegramUserContext || telegramUserFromProps ? '✅' : '❌'} Пользователь Telegram
-                    </li>
-                    <li className={telegramInitDataContext ? styles.success : styles.error}>
-                      {telegramInitDataContext ? '✅' : '❌'} InitData Telegram
-                    </li>
-                    <li className={currentSupabaseConnectionDetails.connected ? styles.success : styles.error}>
-                      {currentSupabaseConnectionDetails.connected ? '✅' : '❌'} Соединение Supabase
-                    </li>
-                    <li className={currentAuthStateDetails?.session ? styles.success : styles.error}>
-                      {currentAuthStateDetails?.session ? '✅' : '❌'} Сессия Supabase
-                    </li> 
-                    <li className={currentAuthStateDetails?.user ? styles.success : styles.error}>
-                      {currentAuthStateDetails?.user ? '✅' : '❌'} Пользователь Supabase Auth
-                    </li>
-                    <li className={auth?.userData ? styles.success : styles.error}>
-                      {auth?.userData ? '✅' : '❌'} Данные public.users
-                    </li>
-                  </ul>
+              )}
+              
+              {/* Таб Init Data (использует memoizedTgInitDataForDisplay) */}
+              {activeTab === 'initData' && (
+                <div className={styles.initDataTab}>
+                  <div className={styles.sectionHeader}><h4>Telegram InitData (SDK & Context)</h4><button onClick={() => copyToClipboard(JSON.stringify(memoizedTgInitDataForDisplay, null, 2))} className={styles.actionButton}>Копировать</button></div>
+                  <pre className={styles.jsonData}>{JSON.stringify(memoizedTgInitDataForDisplay, null, 2)}</pre>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Таб Авторизация Детали */}
+              {activeTab === 'auth' && (
+                <div className={styles.authTab}>
+                  <div className={styles.sectionHeader}>
+                    <h4>Данные Авторизации (Детально)</h4>
+                    <button 
+                      onClick={() => copyToClipboard(JSON.stringify({ supabaseInfo: getSupabaseInfoForAuthTab(), authState: currentAuthStateDetails }, null, 2))} 
+                      className={styles.actionButton}
+                    >
+                      Копировать
+                    </button>
+                  </div>
+                  <div className={styles.section}>
+                    <h5>Подключение к Supabase</h5>
+                    <div className={`${styles.connectionStatus} ${currentSupabaseConnectionDetails.connected ? styles.connected : styles.disconnected}`}>
+                      Статус: {currentSupabaseConnectionDetails.connected ? 'Подключено' : 'Не подключено'}
+                    </div>
+                    {currentSupabaseConnectionDetails.error && (
+                      <div className={styles.error}>
+                        Ошибка: {typeof currentSupabaseConnectionDetails.error === 'object' 
+                                  ? JSON.stringify(currentSupabaseConnectionDetails.error, null, 2) 
+                                  : currentSupabaseConnectionDetails.error}
+                      </div>
+                    )}
+                    <pre className={styles.jsonData}>{JSON.stringify(getSupabaseInfoForAuthTab(), null, 2)}</pre>
+                  </div>
+                  <div className={styles.section}>
+                    <h5>Пользователь Telegram (из пропсов/контекста)</h5>
+                    <div className={styles.userStatus}>
+                      Статус: {telegramUserFromProps || telegramUserContext ? 'Данные есть' : 'Данные отсутствуют'}
+                    </div>
+                    <pre className={styles.jsonData}>{JSON.stringify(telegramUserFromProps || telegramUserContext || 'Пользователь Telegram не найден', null, 2)}</pre>
+                  </div>
+                  <div className={styles.section}>
+                    <h5>Состояние Авторизации Supabase & AuthContext</h5>
+                    <div className={styles.userStatus}>
+                      AuthContext: {auth?.isAuthenticated ? 'Авторизован' : 'Не авторизован'}
+                    </div>
+                    <pre className={styles.jsonData}>{JSON.stringify(currentAuthStateDetails || 'Данные не доступны', null, 2)}</pre>
+                  </div>
+                  <div className={styles.section}>
+                    <h5>Быстрая Диагностика (дублирует Health)</h5>
+                    <ul className={styles.diagnosticList}>
+                      <li className={telegramUserContext || telegramUserFromProps ? styles.success : styles.error}>
+                        {telegramUserContext || telegramUserFromProps ? '✅' : '❌'} Пользователь Telegram
+                      </li>
+                      <li className={telegramInitDataContext ? styles.success : styles.error}>
+                        {telegramInitDataContext ? '✅' : '❌'} InitData Telegram
+                      </li>
+                      <li className={currentSupabaseConnectionDetails.connected ? styles.success : styles.error}>
+                        {currentSupabaseConnectionDetails.connected ? '✅' : '❌'} Соединение Supabase
+                      </li>
+                      <li className={currentAuthStateDetails?.session ? styles.success : styles.error}>
+                        {currentAuthStateDetails?.session ? '✅' : '❌'} Сессия Supabase
+                      </li> 
+                      <li className={currentAuthStateDetails?.user ? styles.success : styles.error}>
+                        {currentAuthStateDetails?.user ? '✅' : '❌'} Пользователь Supabase Auth
+                      </li>
+                      <li className={auth?.userData ? styles.success : styles.error}>
+                        {auth?.userData ? '✅' : '❌'} Данные public.users
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <button 
+            className={styles.expandButton} 
+            onClick={() => setIsExpanded(true)}
+          >
+            Развернуть Отладку 🚀
+          </button>
+        )}
+      </div>
     </div>
   );
 };

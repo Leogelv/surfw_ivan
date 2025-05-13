@@ -25,6 +25,7 @@ function YogaApp() {
   const { isFullScreenEnabled, webApp, telegramHeaderPadding, initializeTelegramApp, 
           enableFullScreen, user: telegramUser, setTelegramUser, setIsFullScreenEnabled } = useTelegram();
   const appLogger = createLogger('HomePage');
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Получение и мемоизация данных инициализации из SDK
   const sdkInitData = useMemo(() => {
@@ -784,17 +785,29 @@ function YogaApp() {
     }
   };
 
+  // Функция для переключения видимости DebugPanel
+  const toggleDebugPanel = () => {
+    setShowDebugPanel(prev => !prev);
+    // Можно также использовать глобальное событие, если DebugPanel его слушает
+    // window.dispatchEvent(new CustomEvent('toggle-debug-panel'));
+  };
+
   // Если отображается профиль, показываем компонент ProfileScreen
   if (showProfile) {
     return (
       <>
         <ProfileScreen 
-          onClose={() => setShowProfile(false)}
-          onHomeClick={handleHomeClick}
-          onCartClick={handleCartClick}
-          onOrdersClick={handleOrdersClick}
+          onClose={() => {
+            setShowProfile(false);
+            // При закрытии профиля, если активной была вкладка 'profile',
+            // нужно решить, какую вкладку сделать активной. 
+            // Например, возвращаемся на 'home' или на предыдущую активную.
+            // Пока просто закрываем, активная вкладка навигации останется 'profile' до явного переключения.
+            // setActiveTab('home'); // Опционально
+          }}
+          // Убраны onHomeClick, onCartClick, onOrdersClick, т.к. они не используются в новом ProfileScreen
         />
-        <DebugPanel telegramUser={telegramUser} supabaseUser={userData} logs={appLogs} />
+        {showDebugPanel && <DebugPanel telegramUser={telegramUser} supabaseUser={userData} logs={appLogs} />}
       </>
     );
   }
@@ -921,71 +934,67 @@ function YogaApp() {
 
         {/* Навигация - закрепляем внизу экрана */}
         <div className="border-t border-gray-200 grid grid-cols-4 px-4 bg-white sticky bottom-0 mt-auto">
-          <button 
-            className={`flex flex-col items-center py-3 ${activeTab === 'home' ? 'text-black' : 'text-gray-400'}`}
-            onClick={() => {
-              setActiveTab('home');
-              appLogger.info('Переход на вкладку Главная', null, telegramUser?.id?.toString());
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M3 10.25V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V10.25M3 10.25L12 3L21 10.25M3 10.25L4.5 11.5M21 10.25L19.5 11.5" 
-                stroke={activeTab === 'home' ? 'black' : 'currentColor'} 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-xs mt-1">Главная</span>
-          </button>
+          <Link href="/" passHref legacyBehavior>
+            <a className={`flex flex-col items-center py-3 ${activeTab === 'home' ? 'text-black' : 'text-gray-400'}`}
+              onClick={() => {
+                setActiveTab('home');
+                appLogger.info('Переход на вкладку Главная', null, telegramUser?.id?.toString());
+              }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M3 10.25V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V10.25M3 10.25L12 3L21 10.25M3 10.25L4.5 11.5M21 10.25L19.5 11.5" 
+                  stroke={activeTab === 'home' ? 'black' : 'currentColor'} 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-xs mt-1">Главная</span>
+            </a>
+          </Link>
+          
+          <Link href="/library" passHref legacyBehavior>
+            <a className={`flex flex-col items-center py-3 ${activeTab === 'library' ? 'text-black' : 'text-gray-400'}`}
+              onClick={() => {
+                setActiveTab('library'); // Это нужно будет синхронизировать с pathname
+                appLogger.info('Переход на вкладку Библиотека');
+              }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke={activeTab === 'library' ? 'black' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke={activeTab === 'library' ? 'black' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="text-xs mt-1">Библиотека</span>
+            </a>
+          </Link>
+          
+          <Link href="/schedule" passHref legacyBehavior>
+            <a className={`flex flex-col items-center py-3 ${activeTab === 'schedule' ? 'text-black' : 'text-gray-400'}`}
+              onClick={() => {
+                setActiveTab('schedule'); // Это нужно будет синхронизировать с pathname
+                appLogger.info('Переход на вкладку Расписание');
+              }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" 
+                  stroke={activeTab === 'schedule' ? 'black' : 'currentColor'} 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-xs mt-1">Расписание</span>
+            </a>
+          </Link>
           
           <button 
-            className={`flex flex-col items-center py-3 ${activeTab === 'library' ? 'text-black' : 'text-gray-400'}`}
+            className={`flex flex-col items-center py-3 ${activeTab === 'profile' || showProfile ? 'text-black' : 'text-gray-400'}`}
             onClick={() => {
-              setActiveTab('library');
-              appLogger.info('Переход на вкладку Библиотека');
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5.5V3M12 5.5V8M12 5.5H8M19 21V19C19 17.9 18.1 17 17 17H7C5.9 17 5 17.9 5 19V21H19ZM12 13C14.2091 13 16 11.2091 16 9C16 6.79086 14.2091 5 12 5C9.79086 5 8 6.79086 8 9C8 11.2091 9.79086 13 12 13Z" 
-                stroke={activeTab === 'library' ? 'black' : 'currentColor'} 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-xs mt-1">Библиотека</span>
-          </button>
-          
-          <button 
-            className={`flex flex-col items-center py-3 ${activeTab === 'schedule' ? 'text-black' : 'text-gray-400'}`}
-            onClick={() => {
-              setActiveTab('schedule');
-              appLogger.info('Переход на вкладку Расписание');
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" 
-                stroke={activeTab === 'schedule' ? 'black' : 'currentColor'} 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-xs mt-1">Расписание</span>
-          </button>
-          
-          <button 
-            className={`flex flex-col items-center py-3 ${activeTab === 'profile' ? 'text-black' : 'text-gray-400'}`}
-            onClick={() => {
-              setActiveTab('profile');
+              setActiveTab('profile'); // setActiveTab теперь управляется открытием/закрытием ProfileScreen
               toggleProfile();
               appLogger.info('Переход в профиль', null, telegramUser?.id?.toString());
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" 
-                fill={activeTab === 'profile' ? 'black' : 'currentColor'} />
+                fill={activeTab === 'profile' || showProfile ? 'black' : 'currentColor'} />
             </svg>
             <span className="text-xs mt-1">Профиль</span>
           </button>
@@ -1036,7 +1045,35 @@ function YogaApp() {
           </div>
         </div>
       </div>
-      <DebugPanel telegramUser={telegramUser} supabaseUser={userData} logs={appLogs} />
+      {/* Плавающая кнопка для отладки */}
+      <button 
+        onClick={toggleDebugPanel}
+        title="Открыть/Закрыть панель отладки"
+        style={{
+          position: 'fixed',
+          bottom: '70px', // Немного выше навигации
+          right: '20px',
+          zIndex: 1000,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          color: 'white',
+          border: '1px solid rgba(255,255,255,0.3)',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+          cursor: 'pointer'
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 000-4.773L6.75 2.25a3.375 3.375 0 00-4.773 0L2.25 6.75a3.375 3.375 0 000 4.773l2.472 2.472M6.75 2.25L11.42 7.83m0 0L6.75 2.25m4.67 5.58L2.25 6.75" />
+        </svg>
+      </button>
+
+      {/* Условный рендеринг DebugPanel */}
+      {showDebugPanel && <DebugPanel telegramUser={telegramUser} supabaseUser={userData} logs={appLogs} />}
     </div>
   );
 }
