@@ -11,6 +11,21 @@
   max-height: 60vh;
   overflow-y: auto;
   transition: all 0.3s ease;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 8px;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 14px;
 }
 
 .content {
@@ -209,6 +224,90 @@
 .authTab, 
 .consoleTab,
 .systemStateTab {
+  padding-bottom: 16px;
+}
+
+.statusOk {
+  color: #2ecc71; /* Зеленый */
+  font-weight: bold;
+}
+
+.statusError {
+  color: #e74c3c; /* Красный */
+  font-weight: bold;
+}
+
+.statusPending {
+  color: #f39c12; /* Оранжевый */
+}
+
+.statusDetails {
+  margin-left: 20px;
+  font-size: 11px;
+  color: #bdc3c7; /* Светло-серый */
+  background-color: rgba(0,0,0,0.1);
+  padding: 5px;
+  border-radius: 3px;
+  margin-top: 3px;
+}
+
+.statusDetails summary {
+  cursor: pointer;
+  outline: none;
+}
+
+.statusDetails pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin-top: 5px;
+  background-color: rgba(0,0,0,0.2);
+  padding: 5px;
+  border-radius: 3px;
+}
+
+.healthOverviewTab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.healthSection {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #3a3a3a;
+}
+
+.healthSection h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #ecf0f1; /* Светлый */
+  border-bottom: 1px solid #4a4a4a;
+  padding-bottom: 6px;
+}
+
+.healthSection ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.healthSection li {
+  padding: 4px 0;
+  border-bottom: 1px dashed #333;
+  display: flex;
+  justify-content: space-between;
+}
+
+.healthSection li:last-child {
+  border-bottom: none;
+}
+
+.consoleTab, 
+.initDataTab, 
+.authTab, 
+.systemStateTab, /* Оставил на всякий случай, если где-то используется */
+.healthOverviewTab {
   padding-bottom: 16px;
 }
 
