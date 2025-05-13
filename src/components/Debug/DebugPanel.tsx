@@ -9,56 +9,29 @@ import styles from './DebugPanel.module.css';
 import { retrieveLaunchParams } from '@telegram-apps/sdk';
 import logger from '@/lib/logger';
 
-type LogEntry = {
-  id: string;
-  level: string;
-  message: string;
-  created_at: string;
-  context?: Record<string, any>;
-};
+// Импортируем типы и компоненты вкладок
+import {
+  SystemStatus, 
+  TelegramHealth, 
+  SupabaseHealth, 
+  AuthHealth, 
+  AppHealth, 
+  LogEntry,
+  DebugPanelProps as ExternalDebugPanelProps // Переименовываем, чтобы не конфликтовать с внутренним
+} from './types';
+import ConsoleLogsTab from './tabs/ConsoleLogsTab';
+import TelegramInitDataTab from './tabs/TelegramInitDataTab';
+import AuthDetailsTab from './tabs/AuthDetailsTab';
+import HealthOverviewTab from './tabs/HealthOverviewTab';
 
-type DebugPanelProps = {
-  logs?: any[];
-  telegramUser?: any;
-  supabaseUser?: any;
-};
+// Пропсы для основного компонента DebugPanel
+interface DebugPanelComponentProps extends ExternalDebugPanelProps {}
 
-// Добавляем интерфейсы для более структурированного состояния
-interface SystemStatus {
-  ok: boolean;
-  message: string;
-  details?: any;
-}
-
-interface TelegramHealth {
-  sdkInitialized: SystemStatus;
-  userRetrieved: SystemStatus;
-  initDataRetrieved: SystemStatus;
-  webAppAvailable: SystemStatus;
-  fullscreen: SystemStatus;
-  safeArea: SystemStatus;
-  themeParams: SystemStatus;
-}
-
-interface SupabaseHealth {
-  clientInitialized: SystemStatus;
-  connection: SystemStatus;
-  envVars: SystemStatus;
-}
-
-interface AuthHealth {
-  authContextLoaded: SystemStatus;
-  supabaseSession: SystemStatus;
-  supabaseUser: SystemStatus;
-  publicUserLoaded: SystemStatus; // Пользователь из public.users в AuthContext
-}
-
-interface AppHealth {
-  userStats: SystemStatus;
-  // Можно добавить другие специфичные для приложения проверки
-}
-
-const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supabaseUser: supabaseUserFromProps }: DebugPanelProps = {}) => {
+const DebugPanel = ({ 
+  logs: propsLogs, 
+  telegramUser: telegramUserFromProps, 
+  supabaseUser: supabaseUserFromProps 
+}: DebugPanelComponentProps = {}) => {
   const debugLogger = logger.createLogger('DebugPanel');
   const { 
     user: telegramUserContext, 
@@ -67,34 +40,32 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     isFullScreenEnabled,
     telegramHeaderPadding 
   } = useTelegram();
-  const auth = useAuth(); // AuthContext
-  const { stats: userStats, isLoading: statsLoading } = useUserStats(); // Предполагается, что хук useUserStats существует
+  const auth = useAuth();
+  const { stats: userStats, isLoading: statsLoading } = useUserStats();
 
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState('health'); // По умолчанию открываем новую вкладку
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isPanelVisible, setIsPanelVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Теперь панель по умолчанию развернута, если видима
+  const [activeTab, setActiveTab] = useState('health');
   
-  // Состояния для детальной информации, используемой в существующих вкладках
+  // Состояния для данных логов и ошибок их загрузки
+  const [consoleLogs, setConsoleLogs] = useState<LogEntry[]>([]);
+  const [consoleLogsLoading, setConsoleLogsLoading] = useState(false);
+  const [consoleLogsError, setConsoleLogsError] = useState<string | null>(null);
+  
+  // Состояния для данных, используемых на детальных вкладках
   const [currentAuthStateDetails, setCurrentAuthStateDetails] = useState<any>(null);
-  const [currentSupabaseConnectionDetails, setCurrentSupabaseConnectionDetails] = useState({ connected: false, error: null });
+  const [currentSupabaseConnectionDetails, setCurrentSupabaseConnectionDetails] = useState({ connected: false, error: null as string | object | null });
   
   const MAX_LOGS = 30;
 
-  // --- Ключевые состояния для вкладки "Обзор Здоровья Системы" ---
   const [telegramHealth, setTelegramHealth] = useState<TelegramHealth | null>(null);
   const [supabaseHealth, setSupabaseHealth] = useState<SupabaseHealth | null>(null);
   const [authHealth, setAuthHealth] = useState<AuthHealth | null>(null);
   const [appHealth, setAppHealth] = useState<AppHealth | null>(null);
   const [overallSystemStatus, setOverallSystemStatus] = useState<SystemStatus>({ ok: false, message: "Проверка..." });
 
-  const [isPanelVisible, setIsPanelVisible] = useState(false);
-
-  // Функция для генерации статусного объекта
   const generateStatus = (ok: boolean, message: string, details?: any): SystemStatus => ({ ok, message, details });
 
-  // Функция для обновления всех показателей здоровья
   const refreshHealthChecks = async () => {
     debugLogger.info("Запуск обновления показателей здоровья системы...");
 
@@ -112,7 +83,7 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
       tgSdkInitStatus = generateStatus(true, "SDK параметры запуска получены", launchParams);
       
       if (launchParams && launchParams.initData && typeof launchParams.initData === 'object' && 'user' in launchParams.initData && launchParams.initData.user) {
-        const tgUserFromSDK = launchParams.initData.user as any; // Приведение типа, если необходимо, для доступа к id
+        const tgUserFromSDK = launchParams.initData.user as any;
         tgUserStatus = generateStatus(true, `Пользователь TG получен из SDK: ${tgUserFromSDK.id}`, tgUserFromSDK);
       } else if (telegramUserContext) {
         tgUserStatus = generateStatus(true, `Пользователь TG из контекста: ${telegramUserContext.id}`, telegramUserContext);
@@ -175,8 +146,7 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     } else {
         sbConnectionStatus = generateStatus(false, "Соединение не может быть проверено (клиент не инициализирован)");
     }
-    setCurrentSupabaseConnectionDetails({connected: sbConnectionStatus.ok, error: sbConnectionStatus.ok ? null : sbConnectionStatus.details || sbConnectionStatus.message } as any);
-
+    setCurrentSupabaseConnectionDetails({connected: sbConnectionStatus.ok, error: sbConnectionStatus.ok ? null : (sbConnectionStatus.details || sbConnectionStatus.message) });
 
     const sbEnvStatus = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder-url.supabase.co' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'placeholder-key')
         ? generateStatus(true, "URL и ANON_KEY заданы", { url: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0,20)+'...', keyPresent: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY})
@@ -208,17 +178,16 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
                 ? generateStatus(false, `Ошибка получения пользователя Supabase Auth: ${userAuthError.message}`, userAuthError)
                 : (userAuthData.user ? generateStatus(true, `Auth User ID: ${userAuthData.user.id}`, userAuthData.user) : generateStatus(false, "Supabase Auth User отсутствует"));
             
-            // Обновляем детали для вкладки "Авторизация"
             setCurrentAuthStateDetails({
                 session: sessionData?.session || null,
                 user: userAuthData?.user || null,
                 sessionError: sessionError?.message || null,
                 userError: userAuthError?.message || null,
-                contextUser: supabaseUserFromProps || null, // Используем пропс, если есть
-                authContext: { // Данные из нашего AuthContext
+                contextUser: supabaseUserFromProps || auth?.userData || null,
+                authContext: { 
                     isLoading: auth?.isLoading || false,
                     isAuthenticated: auth?.isAuthenticated || false,
-                    userData: auth?.userData || null, // Данные из public.users
+                    userData: auth?.userData || null, 
                     error: auth?.error || null
                 }
             });
@@ -264,15 +233,12 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     debugLogger.info("Обновление показателей здоровья системы завершено.", { isHealthy });
   };
 
-  // Первоначальная загрузка и при изменении активной вкладки на 'health' или 'auth'
   useEffect(() => {
     if (isExpanded && (activeTab === 'health' || activeTab === 'auth')) {
-      refreshHealthChecks(); // Эта функция готовит currentAuthStateDetails и currentSupabaseConnectionDetails
+      refreshHealthChecks();
     }
   }, [isExpanded, activeTab]);
 
-
-  // --- Логика для существующих вкладок (немного адаптированная) ---
   useEffect(() => {
     if (propsLogs?.length) {
       const formattedLogs = propsLogs.map((log, index) => ({
@@ -282,7 +248,7 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
         created_at: log.timestamp || new Date().toISOString(),
         context: log.context || log.data || undefined
       }));
-      setLogs(formattedLogs);
+      setConsoleLogs(formattedLogs);
     }
   }, [propsLogs]);
 
@@ -293,16 +259,16 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     } catch (e) { return 'Invalid date'; }
   };
 
-  const memoizedTgInitDataForDisplay = useMemo(() => { // Переименовано, чтобы не конфликтовать с переменной контекста
+  const memoizedTgInitDataForDisplay = useMemo(() => {
     try {
       const sdkData = retrieveLaunchParams();
       return {
         ...sdkData,
         userFromContext: telegramUserContext || null,
-        userFromProps: telegramUserFromProps || null, // Используем пропс
-        supabaseUserFromContext: auth?.userData || null, // Данные из public.users
+        userFromProps: telegramUserFromProps || null,
+        supabaseUserFromContext: auth?.userData || null,
         hasWebApp: typeof window !== 'undefined' && !!window.Telegram?.WebApp,
-        telegramInitDataContext: telegramInitDataContext || null // Данные initData из TelegramContext
+        telegramInitDataContext: telegramInitDataContext || null
       };
     } catch (e) {
       debugLogger.error('Ошибка при получении initData для отображения', e);
@@ -310,22 +276,22 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     }
   }, [debugLogger, telegramUserContext, telegramUserFromProps, auth?.userData, telegramInitDataContext]);
 
-  const fetchConsoleLogs = async () => { // Переименовано для ясности
+  const fetchConsoleLogsInternal = async () => {
     if (propsLogs?.length) return;
     const supabase = getSupabaseClient();
-    if (!supabase) { setError('Supabase client not available'); return; }
+    if (!supabase) { setConsoleLogsError('Supabase client not available'); return; }
     try {
-      setLoading(true); setError(null);
+      setConsoleLogsLoading(true); setConsoleLogsError(null);
       const { data, error: fetchError } = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(MAX_LOGS);
-      if (fetchError) { debugLogger.error('Ошибка при получении логов консоли', fetchError); setError(`Ошибка: ${fetchError.message}`); return; }
-      setLogs(data || []);
-    } catch (e) { debugLogger.error('Необработанная ошибка при получении логов консоли', e); setError(`Ошибка: ${e instanceof Error ? e.message : String(e)}`); } 
-    finally { setLoading(false); }
+      if (fetchError) { debugLogger.error('Ошибка при получении логов консоли', fetchError); setConsoleLogsError(`Ошибка: ${fetchError.message}`); return; }
+      setConsoleLogs(data || []);
+    } catch (e) { debugLogger.error('Необработанная ошибка при получении логов консоли', e); setConsoleLogsError(`Ошибка: ${e instanceof Error ? e.message : String(e)}`); } 
+    finally { setConsoleLogsLoading(false); }
   };
 
   useEffect(() => {
     if (isExpanded && activeTab === 'console' && !propsLogs?.length) {
-      fetchConsoleLogs();
+      fetchConsoleLogsInternal();
     }
   }, [isExpanded, activeTab, propsLogs]);
   
@@ -335,7 +301,33 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
       .catch(err => debugLogger.error('Ошибка при копировании в буфер обмена', err));
   };
 
-  const getSupabaseInfoForAuthTab = () => ({ // Переименовано для ясности
+  // Функция для копирования ВСЕХ данных дебаггера
+  const copyAllDebugData = () => {
+    const allData = {
+      healthOverview: {
+        telegramHealth,
+        supabaseHealth,
+        authHealth,
+        appHealth,
+        overallSystemStatus,
+      },
+      consoleLogs: consoleLogs.map(log => `[${formatTime(log.created_at)}] [${log.level.toUpperCase()}] ${log.message} ${log.context ? JSON.stringify(log.context) : ''}`).join('\n'),
+      telegramInitData: memoizedTgInitDataForDisplay,
+      authDetails: {
+        supabaseConnection: getSupabaseInfoForAuthTabInternal(),
+        authState: currentAuthStateDetails,
+      },
+      propsReceived: {
+        telegramUserFromProps,
+        supabaseUserFromProps,
+      }
+    };
+    copyToClipboard(JSON.stringify(allData, null, 2));
+    debugLogger.info('Все данные отладки скопированы в буфер обмена.');
+  };
+
+
+  const getSupabaseInfoForAuthTabInternal = () => ({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'не задан',
     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 5) + '...' + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.length - 5)) : 'не задан',
     isClientInitialized: !!getSupabaseClient(),
@@ -343,13 +335,12 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     connectionError: currentSupabaseConnectionDetails.error,
   });
 
-  // Helper для отображения статуса
-  const StatusIndicator = ({ status }: { status: SystemStatus | undefined }) => {
+  const StatusIndicator: React.FC<{ status: SystemStatus | undefined }> = ({ status }) => {
     if (!status) return <span className={styles.statusPending}>Проверка...</span>;
     return (
       <span className={status.ok ? styles.statusOk : styles.statusError}>
         {status.ok ? '✅' : '❌'} {status.message}
-        {status.details && activeTab === 'health' && ( // Показываем детали только на главной вкладке здоровья, если есть
+        {status.details && activeTab === 'health' && (
             <details className={styles.statusDetails}>
                 <summary>Детали</summary>
                 <pre>{JSON.stringify(status.details, null, 2)}</pre>
@@ -359,26 +350,32 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     );
   };
 
-  // Эффект для скрытия/показа панели через глобальное событие (если понадобится)
   useEffect(() => {
-    const handleToggleDebug = () => setIsPanelVisible(prev => !prev);
-    window.addEventListener('toggle-debug-panel', handleToggleDebug);
-    return () => window.removeEventListener('toggle-debug-panel', handleToggleDebug);
-  }, []);
+    const handleToggleDebug = (event?: CustomEvent) => setIsPanelVisible(prev => event?.detail?.forceState ?? !prev);
+    window.addEventListener('toggle-debug-panel', handleToggleDebug as EventListener);
+    // Hotkey: Ctrl + Shift + D (или Cmd + Shift + D на Mac)
+    const handleKeyDown = (event: KeyboardEvent) => {
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
+            event.preventDefault();
+            setIsPanelVisible(prev => !prev);
+        }
+        if (event.key === 'Escape' && isPanelVisible) {
+            setIsPanelVisible(false);
+        }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('toggle-debug-panel', handleToggleDebug as EventListener);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPanelVisible]);
 
-  if (!isPanelVisible) {
-    return null;
-  }
+  if (!isPanelVisible) return null;
 
   return (
     <div className={styles.debugPanelContainer}>
       <div className={styles.debugPanel}>
-        <button 
-          className={styles.closeButton} 
-          onClick={() => setIsPanelVisible(false)}
-        >
-          Закрыть (ESC)
-        </button>
+        <button className={styles.closeButton} onClick={() => setIsPanelVisible(false)} title="Закрыть (Esc)">⊗</button>
         {isExpanded && overallSystemStatus && 
           <span className={`${styles.overallStatusIndicator} ${overallSystemStatus.ok ? styles.statusOk : styles.statusError}`}>
             {overallSystemStatus.ok ? '✅' : '❌'} {overallSystemStatus.message}
@@ -389,9 +386,12 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
           <div className={styles.content}>
             <div className={styles.header}>
               <h3>Центр Управления Полетом 🛸</h3>
-              {activeTab === 'health' && 
-                  <button onClick={refreshHealthChecks} className={styles.actionButton}>Обновить Здоровье</button>
-              }
+              <div className={styles.headerActions}>
+                {activeTab === 'health' && 
+                    <button onClick={refreshHealthChecks} className={styles.actionButton} title="Обновить все проверки здоровья">🔄 Обновить</button>
+                }
+                <button onClick={copyAllDebugData} className={styles.actionButton} title="Копировать все данные отладки">📋 Копировать все</button>
+              </div>
             </div>
             
             <div className={styles.tabs}>
@@ -402,147 +402,44 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
             </div>
             
             <div className={styles.tabContent}>
-              {/* Таб Обзор Здоровья Системы */}
-              {activeTab === 'health' && telegramHealth && supabaseHealth && authHealth && appHealth && (
-                <div className={styles.healthOverviewTab}>
-                  <div className={styles.healthSection}>
-                    <h4>Telegram Интеграция 📡</h4>
-                    <ul>
-                      <li>SDK Init: <StatusIndicator status={telegramHealth.sdkInitialized} /></li>
-                      <li>Telegram User: <StatusIndicator status={telegramHealth.userRetrieved} /></li>
-                      <li>Telegram InitData (Context): <StatusIndicator status={telegramHealth.initDataRetrieved} /></li>
-                      <li>WebApp Object: <StatusIndicator status={telegramHealth.webAppAvailable} /></li>
-                      <li>Fullscreen: <StatusIndicator status={telegramHealth.fullscreen} /></li>
-                      <li>Safe Area: <StatusIndicator status={telegramHealth.safeArea} /></li>
-                      <li>Theme Params: <StatusIndicator status={telegramHealth.themeParams} /></li>
-                    </ul>
-                  </div>
-                  <div className={styles.healthSection}>
-                    <h4>Supabase Backend 🌩️</h4>
-                    <ul>
-                      <li>Client Init: <StatusIndicator status={supabaseHealth.clientInitialized} /></li>
-                      <li>ENV Vars (URL/Key): <StatusIndicator status={supabaseHealth.envVars} /></li>
-                      <li>Connection: <StatusIndicator status={supabaseHealth.connection} /></li>
-                    </ul>
-                  </div>
-                  <div className={styles.healthSection}>
-                    <h4>Аутентификация 🛂</h4>
-                    <ul>
-                      <li>AuthContext: <StatusIndicator status={authHealth.authContextLoaded} /></li>
-                      <li>Supabase Session: <StatusIndicator status={authHealth.supabaseSession} /></li>
-                      <li>Supabase Auth User: <StatusIndicator status={authHealth.supabaseUser} /></li>
-                      <li>User Data (public.users): <StatusIndicator status={authHealth.publicUserLoaded} /></li>
-                    </ul>
-                  </div>
-                   <div className={styles.healthSection}>
-                    <h4>Приложение 📱</h4>
-                    <ul>
-                      <li>User Stats: <StatusIndicator status={appHealth.userStats} /></li>
-                      {/* Другие проверки состояния приложения */}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Таб консоли (без изменений в логике, только fetchConsoleLogs) */}
-              {activeTab === 'console' && (
-                <div className={styles.consoleTab}>
-                  <div className={styles.sectionHeader}>
-                    <h4>Логи ({logs.length})</h4>
-                    <div>
-                      <button onClick={fetchConsoleLogs} disabled={loading || !!propsLogs?.length} className={styles.actionButton}>{loading ? 'Загрузка...' : 'Обновить'}</button>
-                      <button onClick={() => copyToClipboard(logs.map(log => `[${formatTime(log.created_at)}] [${log.level.toUpperCase()}] ${log.message} ${log.context ? JSON.stringify(log.context) : ''}`).join('\n'))} className={styles.actionButton}>Копировать</button>
-                    </div>
-                  </div>
-                  {error && <p className={styles.error}>{error}</p>}
-                  <div className={styles.logs}>
-                    {logs.map((log) => ( <div key={log.id} className={`${styles.logEntry} ${styles[log.level]}`}><span className={styles.timestamp}>{formatTime(log.created_at)}</span> <span className={styles.level}>[{log.level.toUpperCase()}]</span> <span className={styles.message}>{log.message}</span> {log.context && (<pre className={styles.context}>{JSON.stringify(log.context, null, 2)}</pre>)}</div> ))}
-                    {logs.length === 0 && !loading && <p>Нет доступных логов</p>}
-                  </div>
-                </div>
-              )}
-              
-              {/* Таб Init Data (использует memoizedTgInitDataForDisplay) */}
-              {activeTab === 'initData' && (
-                <div className={styles.initDataTab}>
-                  <div className={styles.sectionHeader}><h4>Telegram InitData (SDK & Context)</h4><button onClick={() => copyToClipboard(JSON.stringify(memoizedTgInitDataForDisplay, null, 2))} className={styles.actionButton}>Копировать</button></div>
-                  <pre className={styles.jsonData}>{JSON.stringify(memoizedTgInitDataForDisplay, null, 2)}</pre>
-                </div>
-              )}
-
-              {/* Таб Авторизация Детали */}
-              {activeTab === 'auth' && (
-                <div className={styles.authTab}>
-                  <div className={styles.sectionHeader}>
-                    <h4>Данные Авторизации (Детально)</h4>
-                    <button 
-                      onClick={() => copyToClipboard(JSON.stringify({ supabaseInfo: getSupabaseInfoForAuthTab(), authState: currentAuthStateDetails }, null, 2))} 
-                      className={styles.actionButton}
-                    >
-                      Копировать
-                    </button>
-                  </div>
-                  <div className={styles.section}>
-                    <h5>Подключение к Supabase</h5>
-                    <div className={`${styles.connectionStatus} ${currentSupabaseConnectionDetails.connected ? styles.connected : styles.disconnected}`}>
-                      Статус: {currentSupabaseConnectionDetails.connected ? 'Подключено' : 'Не подключено'}
-                    </div>
-                    {currentSupabaseConnectionDetails.error && (
-                      <div className={styles.error}>
-                        Ошибка: {typeof currentSupabaseConnectionDetails.error === 'object' 
-                                  ? JSON.stringify(currentSupabaseConnectionDetails.error, null, 2) 
-                                  : currentSupabaseConnectionDetails.error}
-                      </div>
-                    )}
-                    <pre className={styles.jsonData}>{JSON.stringify(getSupabaseInfoForAuthTab(), null, 2)}</pre>
-                  </div>
-                  <div className={styles.section}>
-                    <h5>Пользователь Telegram (из пропсов/контекста)</h5>
-                    <div className={styles.userStatus}>
-                      Статус: {telegramUserFromProps || telegramUserContext ? 'Данные есть' : 'Данные отсутствуют'}
-                    </div>
-                    <pre className={styles.jsonData}>{JSON.stringify(telegramUserFromProps || telegramUserContext || 'Пользователь Telegram не найден', null, 2)}</pre>
-                  </div>
-                  <div className={styles.section}>
-                    <h5>Состояние Авторизации Supabase & AuthContext</h5>
-                    <div className={styles.userStatus}>
-                      AuthContext: {auth?.isAuthenticated ? 'Авторизован' : 'Не авторизован'}
-                    </div>
-                    <pre className={styles.jsonData}>{JSON.stringify(currentAuthStateDetails || 'Данные не доступны', null, 2)}</pre>
-                  </div>
-                  <div className={styles.section}>
-                    <h5>Быстрая Диагностика (дублирует Health)</h5>
-                    <ul className={styles.diagnosticList}>
-                      <li className={telegramUserContext || telegramUserFromProps ? styles.success : styles.error}>
-                        {telegramUserContext || telegramUserFromProps ? '✅' : '❌'} Пользователь Telegram
-                      </li>
-                      <li className={telegramInitDataContext ? styles.success : styles.error}>
-                        {telegramInitDataContext ? '✅' : '❌'} InitData Telegram
-                      </li>
-                      <li className={currentSupabaseConnectionDetails.connected ? styles.success : styles.error}>
-                        {currentSupabaseConnectionDetails.connected ? '✅' : '❌'} Соединение Supabase
-                      </li>
-                      <li className={currentAuthStateDetails?.session ? styles.success : styles.error}>
-                        {currentAuthStateDetails?.session ? '✅' : '❌'} Сессия Supabase
-                      </li> 
-                      <li className={currentAuthStateDetails?.user ? styles.success : styles.error}>
-                        {currentAuthStateDetails?.user ? '✅' : '❌'} Пользователь Supabase Auth
-                      </li>
-                      <li className={auth?.userData ? styles.success : styles.error}>
-                        {auth?.userData ? '✅' : '❌'} Данные public.users
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
+              {activeTab === 'health' && 
+                <HealthOverviewTab 
+                  telegramHealth={telegramHealth} 
+                  supabaseHealth={supabaseHealth} 
+                  authHealth={authHealth} 
+                  appHealth={appHealth} 
+                  StatusIndicator={StatusIndicator} 
+                />}
+              {activeTab === 'console' && 
+                <ConsoleLogsTab 
+                  logs={propsLogs || consoleLogs} 
+                  error={consoleLogsError} 
+                  loading={consoleLogsLoading} 
+                  onFetchLogs={fetchConsoleLogsInternal} 
+                  onCopyLogs={() => copyToClipboard( (propsLogs || consoleLogs).map(log => `[${formatTime(log.created_at)}] [${log.level.toUpperCase()}] ${log.message} ${log.context ? JSON.stringify(log.context) : ''}`).join('\n'))}
+                  formatTime={formatTime} 
+                />}
+              {activeTab === 'initData' && 
+                <TelegramInitDataTab 
+                  initData={memoizedTgInitDataForDisplay} 
+                  onCopy={() => copyToClipboard(JSON.stringify(memoizedTgInitDataForDisplay, null, 2))} 
+                />}
+              {activeTab === 'auth' && 
+                <AuthDetailsTab 
+                  authStateDetails={currentAuthStateDetails} 
+                  supabaseConnectionDetails={currentSupabaseConnectionDetails} 
+                  telegramUserFromProps={telegramUserFromProps}
+                  telegramUserContext={telegramUserContext}
+                  telegramInitDataContext={telegramInitDataContext}
+                  authContextData={auth} // Передаем весь объект AuthContext
+                  getSupabaseInfoForAuthTab={getSupabaseInfoForAuthTabInternal}
+                  onCopy={() => copyToClipboard(JSON.stringify({ supabaseInfo: getSupabaseInfoForAuthTabInternal(), authState: currentAuthStateDetails }, null, 2))} 
+                />}
             </div>
           </div>
         ) : (
-          <button 
-            className={styles.expandButton} 
-            onClick={() => setIsExpanded(true)}
-          >
-            Развернуть Отладку 🚀
+          <button className={styles.expandButton} onClick={() => setIsExpanded(true)}>
+            Развернуть Отладку 🚀 {overallSystemStatus && <span className={overallSystemStatus.ok ? styles.statusOk : styles.statusError}>({overallSystemStatus.message})</span>}
           </button>
         )}
       </div>

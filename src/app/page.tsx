@@ -258,243 +258,130 @@ function YogaApp() {
   // Функция для сохранения пользователя Telegram в Supabase
   const saveTelegramUserToSupabase = async (user: any) => {
     if (!user || !user.id) {
-      appLogger.warn('Невозможно сохранить пользователя: отсутствуют данные');
+      appLogger.warn('saveTelegramUserToSupabase: Невозможно сохранить пользователя - отсутствуют данные Telegram user или user.id', { user });
+      return;
+    }
+
+    appLogger.info('saveTelegramUserToSupabase: Начало сохранения/обновления пользователя', { telegramId: user.id });
+    const supabase = getSupabaseClient();
+
+    if (!supabase) {
+      appLogger.error('saveTelegramUserToSupabase: Клиент Supabase не инициализирован.');
       return;
     }
 
     try {
-      appLogger.info('Сохранение пользователя Telegram в Supabase', {
-        telegramId: user.id,
-        username: user.username,
-        first_name: user.first_name,
-        last_name: user.last_name
-      });
-      
-      // Импортируем и вызываем тестовую функцию
-      const { testSupabaseConnection } = await import('@/lib/supabase');
-      const testResult = await testSupabaseConnection();
-      appLogger.info('Результат теста соединения Supabase', { success: testResult });
-      
-      const supabase = getSupabaseClient();
-      
-      if (!supabase) {
-        appLogger.error('Невозможно сохранить пользователя: клиент Supabase не инициализирован');
-        console.error('Supabase клиент не инициализирован. Проверьте переменные окружения:', {
-          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Установлен' : 'Не установлен'
-        });
-        return;
+      // 1. Проверяем, есть ли пользователь в public.users по telegram_id
+      appLogger.debug('saveTelegramUserToSupabase: Поиск существующего пользователя в public.users', { telegramId: user.id.toString() });
+      const { data: existingPublicUser, error: findError } = await supabase
+        .from('users')
+        .select('id, telegram_id, first_name, last_name, photo_url, last_login')
+        .eq('telegram_id', user.id.toString())
+        .maybeSingle();
+
+      if (findError) {
+        appLogger.error('saveTelegramUserToSupabase: Ошибка при поиске пользователя в public.users', { error: findError });
+        // Не прерываем, попытаемся создать через signUp, возможно, это проблема RLS для select, но signUp пройдет
       }
-      
-      // Проверяем соединение с Supabase простым запросом
-      try {
-        appLogger.debug('Проверка соединения с Supabase перед сохранением пользователя...');
-        const { error: pingError } = await supabase.from('users')
-          .select('count', { count: 'exact', head: true })
-          .limit(1);
-        
-        if (pingError) {
-          appLogger.error('Ошибка соединения с Supabase при проверке', { 
-            code: pingError.code, 
-            message: pingError.message,
-            details: pingError.details 
-          });
-          console.error('Ошибка соединения с Supabase:', pingError.message);
-          return;
+
+      if (existingPublicUser) {
+        appLogger.info('saveTelegramUserToSupabase: Пользователь найден в public.users, обновляем данные', { userId: existingPublicUser.id });
+        const updateData = {
+          first_name: user.first_name || existingPublicUser.first_name || '',
+          last_name: user.last_name || existingPublicUser.last_name || '',
+          username: user.username || undefined, // Обновляем username только если он есть в TG-данных
+          photo_url: user.photo_url || existingPublicUser.photo_url || '',
+          last_login: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // telegram_auth_date можно обновлять, если он есть в user объекте и изменился
+        };
+
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', existingPublicUser.id) // Обновляем по основному ID (UUID)
+          .select('id')
+          .single();
+
+        if (updateError) {
+          appLogger.error('saveTelegramUserToSupabase: Ошибка при обновлении пользователя в public.users', { error: updateError });
         } else {
-          appLogger.info('Соединение с Supabase установлено успешно');
+          appLogger.info('saveTelegramUserToSupabase: Пользователь в public.users успешно обновлен', { updatedUser });
+          // Возможно, нужно обновить сессию или данные в AuthContext, если они не совпадают
+          // Например, auth.refreshUserData(); (если такая функция будет)
         }
-      } catch (pingErr) {
-        appLogger.error('Необработанная ошибка при проверке соединения с Supabase', pingErr);
-        console.error('Критическая ошибка проверки соединения Supabase:', pingErr);
-        return;
+        // Если пользователь есть в public.users, предполагаем, что он есть и в auth.users
+        // и его сессия должна быть активна или будет восстановлена.
+        // Можно дополнительно проверить auth.currentUser и, если нужно, вызвать signIn, но это усложнит.
+        return; // Завершаем, т.к. пользователь уже есть
       }
+
+      // 2. Если пользователь НЕ найден в public.users, значит, его нет и в auth.users (из-за ON DELETE CASCADE и триггера)
+      // Пробуем зарегистрировать нового пользователя через supabase.auth.signUp()
+      appLogger.info('saveTelegramUserToSupabase: Пользователь не найден в public.users, попытка signUp', { telegramId: user.id });
       
-      // Данные для создания/обновления
-      const userData = {
-        telegram_id: user.id.toString(),
-        username: user.username || '',
+      const email = `telegram_${user.id}@telegram.user`; // Уникальный email на основе telegram_id
+      const randomPassword = Math.random().toString(36).slice(-12) + 'P!1'; // Генерируем случайный пароль
+
+      const userMetadata = {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
-        photo_url: user.photo_url || '',
-        updated_at: new Date().toISOString(),
-        last_login: new Date().toISOString(),
-        is_test: false  // добавляем поле is_test из миграции
+        username: user.username || null, // Или telegram_username, как в триггере
+        photo_url: user.photo_url || null,
+        telegram_id: user.id.toString(),
+        auth_date: user.auth_date || Math.floor(Date.now() / 1000).toString() // auth_date из Telegram или текущее время
       };
-      
-      try {
-        // Проверяем, существует ли пользователь по telegram_id
-        appLogger.debug('Проверка наличия пользователя с Telegram ID', { telegramId: user.id });
-        
-        const { data: existingUserByTelegramId, error: telegramIdError } = await supabase
-          .from('users')
-          .select('id, telegram_id')
-          .eq('telegram_id', user.id.toString())
-          .maybeSingle();
-        
-        if (telegramIdError) {
-          appLogger.error('Ошибка при поиске пользователя по Telegram ID', { 
-            code: telegramIdError.code,
-            message: telegramIdError.message,
-            details: telegramIdError.details
-          });
-        }
-        
-        if (existingUserByTelegramId) {
-          // Пользователь найден, обновляем данные
-          appLogger.info('Найден пользователь по Telegram ID, обновляем данные', { 
-            userId: existingUserByTelegramId.id 
-          });
-          
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update(userData)
-            .eq('id', existingUserByTelegramId.id)
-            .select('id, telegram_id, username, first_name, last_name')
-            .single();
-          
-          if (updateError) {
-            appLogger.error('Ошибка при обновлении пользователя', { 
-              code: updateError.code,
-              message: updateError.message,
-              details: updateError.details
-            });
-          } else {
-            appLogger.info('Пользователь успешно обновлен', updatedUser);
-          }
-          
-          return;
-        }
-        
-        // Пользователь не найден, создаем новую запись напрямую в users
-        appLogger.info('Пользователь не найден, создаем новую запись');
-        
-        // Сначала пробуем создать пользователя через auth API
-        const email = `telegram_${user.id}@example.com`;
-        const password = Math.random().toString(36).slice(-10) + Math.random().toString(36).toUpperCase().slice(-2) + '!1';
-        
-        appLogger.debug('Создание пользователя через auth API', { email });
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              telegram_id: user.id.toString(),
-              first_name: user.first_name || '',
-              last_name: user.last_name || '',
-              username: user.username || '',
-              photo_url: user.photo_url || '',
-              provider: 'telegram'
-            }
-          }
-        });
-        
-        if (signUpError) {
-          appLogger.error('Ошибка при создании пользователя через auth.signUp', { 
-            code: signUpError.code, 
-            message: signUpError.message,
-            name: signUpError.name
-          });
-          
-          // Пробуем войти, возможно пользователь уже создан
-          appLogger.debug('Пробуем войти с существующими учетными данными');
+      appLogger.debug('saveTelegramUserToSupabase: Данные для signUp (options.data)', userMetadata);
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: email,
+        password: randomPassword,
+        options: {
+          data: userMetadata, // Эти данные будут доступны триггеру handle_new_user
+        },
+      });
+
+      if (signUpError) {
+        // Если ошибка "User already registered", пробуем войти
+        if (signUpError.message.includes('User already registered') || signUpError.message.includes('already registered')) {
+          appLogger.warn('saveTelegramUserToSupabase: Пользователь уже зарегистрирован в auth, попытка signIn', { email });
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+            email: email,
+            password: randomPassword, // Пытаемся с тем же паролем, если он был создан ранее этой же логикой
           });
-          
+
           if (signInError) {
-            appLogger.error('Ошибка при входе', { 
-              code: signInError.code,
-              message: signInError.message
-            });
-            
-            // Последняя попытка - создаем запись напрямую в таблице users с новым UUID
-            appLogger.info('Создание записи напрямую в таблице users');
-            
-            const { data: insertedUser, error: insertError } = await supabase
-              .from('users')
-              .insert([{
-                ...userData,
-                id: crypto.randomUUID(),
-                created_at: new Date().toISOString()
-              }])
-              .select('id, telegram_id, username')
-              .single();
-            
-            if (insertError) {
-              appLogger.error('Ошибка при создании записи напрямую', { 
-                code: insertError.code,
-                message: insertError.message,
-                details: insertError.details
-              });
-            } else {
-              appLogger.info('Запись успешно создана напрямую', insertedUser);
-            }
+            appLogger.error('saveTelegramUserToSupabase: Ошибка при signIn после signUp (User already registered)', { error: signInError });
+            // Тут может быть ситуация, что пароль другой. Сложно восстановить.
+            // Можно попробовать обновить метаданные существующего auth пользователя, если это необходимо
           } else {
-            appLogger.info('Успешный вход с существующими учетными данными', { 
-              userId: signInData.user?.id 
-            });
+            appLogger.info('saveTelegramUserToSupabase: Успешный signIn после signUp (User already registered)', { userId: signInData?.user?.id });
+            // Триггер handle_new_user должен был отработать при первоначальном signUp.
+            // Если нет, то это проблема триггера или RLS.
+            // Можно добавить проверку и создание/обновление в public.users здесь, если триггер не надежен,
+            // но это дублирование логики. Лучше полагаться на триггер.
           }
         } else {
-          appLogger.info('Пользователь успешно создан через auth.signUp', { 
-            id: signUpData?.user?.id,
-            email: signUpData?.user?.email 
-          });
-          
-          // Дополнительно проверяем, создана ли запись в таблице users
-          if (signUpData?.user?.id) {
-            setTimeout(async () => {
-              try {
-                if (signUpData?.user?.id) {
-                    const { data: checkUser, error: checkError } = await supabase
-                        .from('users')
-                        .select('id, telegram_id')
-                        .eq('id', signUpData.user.id)
-                        .maybeSingle();
-
-                    if (checkError) {
-                        appLogger.error('Ошибка при проверке созданного пользователя', checkError);
-                    } else if (!checkUser) {
-                        appLogger.warn('Запись в таблице users не создана автоматически, создаем вручную');
-                        
-                        if (signUpData?.user?.id) { 
-                            const { data: manualUser, error: manualError } = await supabase
-                                .from('users')
-                                .insert([{
-                                    id: signUpData.user.id,
-                                    ...userData,
-                                    created_at: new Date().toISOString()
-                                }])
-                                .select('id')
-                                .single();
-                          
-                            if (manualError) {
-                                appLogger.error('Ошибка при создании записи вручную', manualError);
-                            } else {
-                                appLogger.info('Запись успешно создана вручную', manualUser);
-                            }
-                        }
-                    } else {
-                        appLogger.info('Запись в таблице users успешно создана автоматически', checkUser);
-                    }
-                } else {
-                    appLogger.warn('signUpData.user или signUpData.user.id отсутствует для проверки в setTimeout');
-                }
-              } catch (checkErr) {
-                appLogger.error('Необработанная ошибка при проверке созданного пользователя в setTimeout', checkErr);
-              }
-            }, 500); 
-          }
+          appLogger.error('saveTelegramUserToSupabase: Ошибка при signUp', { error: signUpError });
         }
-      } catch (authProcessError) {
-        appLogger.error('Необработанная ошибка в процессе аутентификации', authProcessError);
-        console.error('Критическая ошибка процесса аутентификации:', authProcessError);
+        return; // Прерываем в случае ошибки signUp (кроме already registered, где пробуем signIn)
       }
+
+      if (signUpData.user) {
+        appLogger.info('saveTelegramUserToSupabase: Успешный signUp! Пользователь создан в auth.users.', { userId: signUpData.user.id, email: signUpData.user.email });
+        appLogger.info('saveTelegramUserToSupabase: Ожидаем, что триггер handle_new_user создаст запись в public.users.');
+        // Сессия пользователя должна автоматически установиться после успешного signUp
+        // AuthContext через onAuthStateChange должен подхватить нового пользователя
+      } else if (signUpData.session) {
+        // Это бывает, если email_confirm=true, но у нас он false по умолчанию для signUp.
+        // Если бы был true, то signUpData.user был бы null, а session - нет.
+        appLogger.warn('saveTelegramUserToSupabase: signUp вернул сессию, но не пользователя. Проверьте настройки подтверждения email.', { session: signUpData.session });
+      } else {
+         appLogger.warn('saveTelegramUserToSupabase: signUp не вернул ни пользователя, ни сессию. Странная ситуация.');
+      }
+
     } catch (error) {
-      appLogger.error('Необработанная ошибка при сохранении пользователя', error);
-      console.error('Критическая ошибка сохранения пользователя:', error);
+      appLogger.error('saveTelegramUserToSupabase: Необработанная ошибка в процессе сохранения пользователя', { error });
     }
   };
 

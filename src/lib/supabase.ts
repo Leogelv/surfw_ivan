@@ -490,108 +490,83 @@ export const diagnoseClientIssues = () => {
 };
 
 // Функция создания пользователя с сервисным ключом (ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ)
-export const testCreateUserWithServiceKey = async (userData: any) => {
+export const testCreateUserWithServiceKey = async (tgUserData: any) => {
   try {
-    console.log('----------------------');
-    console.log('ТЕСТОВОЕ СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ С СЕРВИСНЫМ КЛЮЧОМ');
-    console.log('----------------------');
+    supabaseLogger.info('testCreateUserWithServiceKey: Запуск тестового создания пользователя', { tgUserData });
     
-    // Только для разработки!
     if (process.env.NODE_ENV !== 'development') {
-      console.error('Эта функция должна использоваться только при разработке!');
+      supabaseLogger.error('testCreateUserWithServiceKey: Эта функция должна использоваться только в режиме разработки!');
       return { success: false, error: 'Not in development mode' };
     }
 
-    // Создаем клиент с сервисным ключом
     const serviceClient = createTestServiceClient();
     if (!serviceClient) {
-      console.error('Не удалось создать сервисный клиент');
+      supabaseLogger.error('testCreateUserWithServiceKey: Не удалось создать сервисный клиент Supabase.');
       return { success: false, error: 'Failed to create service client' };
     }
     
-    const email = `telegram_${userData.id}@example.com`;
-    const password = `Test123_${Date.now()}`;
-    
-    console.log('Создаем пользователя в auth.users через сервисный клиент:', {
-      email,
-      telegramId: userData.id
-    });
-    
-    // 1. Создаем пользователя в auth.users
-    const { data: authUserData, error: authError } = await serviceClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        telegram_id: userData.id.toString(),
-        username: userData.username || '',
-        first_name: userData.first_name || '',
-        last_name: userData.last_name || '',
-        provider: 'telegram'
-      }
+    const uniqueEmail = `test_${tgUserData.id}_${Date.now()}@example.com`;
+    const randomPassword = `P@ssword${Date.now()}`;
+
+    // Данные, которые будут переданы в raw_user_meta_data и использованы триггером
+    const userMetadataForAuth = {
+        first_name: tgUserData.first_name || 'ТестИмя',
+        last_name: tgUserData.last_name || 'ТестФамилия',
+        username: tgUserData.username || `testuser_${tgUserData.id}`,
+        photo_url: tgUserData.photo_url || null,
+        telegram_id: tgUserData.id.toString(),
+        auth_date: tgUserData.auth_date || Math.floor(Date.now() / 1000).toString()
+        // Добавьте любые другие поля, которые ваш триггер ожидает из raw_user_meta_data
+    };
+    supabaseLogger.debug('testCreateUserWithServiceKey: userMetadataForAuth', userMetadataForAuth);
+
+    // 1. Создаем пользователя в auth.users через Admin API
+    const { data: authResponse, error: authError } = await serviceClient.auth.admin.createUser({
+      email: uniqueEmail,
+      password: randomPassword,
+      email_confirm: true, // Для тестовых созданий можно ставить true, чтобы не слать писем
+      user_metadata: userMetadataForAuth 
     });
     
     if (authError) {
-      console.error('Ошибка при создании пользователя в auth.users:', authError);
-      return { success: false, error: authError };
+      supabaseLogger.error('testCreateUserWithServiceKey: Ошибка при создании пользователя в auth.users через Admin API', { error: authError });
+      return { success: false, error: authError.message, details: authError };
     }
     
-    if (!authUserData.user) {
-      console.error('Пользователь не был создан');
-      return { success: false, error: 'User not created' };
+    if (!authResponse.user) {
+      supabaseLogger.error('testCreateUserWithServiceKey: Admin API не вернул пользователя после создания.');
+      return { success: false, error: 'Admin API did not return a user object' };
     }
     
-    console.log('Пользователь успешно создан в auth.users:', {
-      id: authUserData.user.id,
-      email: authUserData.user.email
-    });
-    
-    // 2. Проверяем, был ли создан пользователь в таблице users автоматически
-    console.log('Проверяем пользователя в public.users...');
-    const { data: existingUser, error: checkError } = await serviceClient
-      .from('users')
+    supabaseLogger.info('testCreateUserWithServiceKey: Пользователь успешно создан в auth.users', { userId: authResponse.user.id });
+
+    // 2. Проверяем, создалась ли запись в public.users (триггером handle_new_user)
+    // Даем триггеру немного времени
+    await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+    supabaseLogger.debug('testCreateUserWithServiceKey: Проверка записи в public.users', { userId: authResponse.user.id });
+    const { data: publicUser, error: publicUserError } = await serviceClient
+      .from('users') // Наша таблица public.users
       .select('*')
-      .eq('id', authUserData.user.id)
+      .eq('id', authResponse.user.id)
       .maybeSingle();
-    
-    if (checkError) {
-      console.error('Ошибка при проверке пользователя в public.users:', checkError);
+
+    if (publicUserError) {
+      supabaseLogger.error('testCreateUserWithServiceKey: Ошибка при проверке пользователя в public.users', { error: publicUserError });
+      // Не считаем это полной неудачей, если auth.user создался
+      return { success: true, authUser: authResponse.user, errorPublicUser: publicUserError.message, warning: "Auth user created, but failed to verify public.users record." };
     }
-    
-    // 3. Если пользователь не создан автоматически, создаем его
-    if (!existingUser) {
-      console.log('Пользователь не найден в public.users, создаем вручную');
-      
-      const newUserData = {
-        id: authUserData.user.id,
-        telegram_id: userData.id.toString(),
-        username: userData.username || '',
-        first_name: userData.first_name || '',
-        last_name: userData.last_name || '',
-        photo_url: userData.photo_url || '',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        last_login: new Date().toISOString()
-      };
-      
-      const { data: insertedUser, error: insertError } = await serviceClient
-        .from('users')
-        .insert(newUserData)
-        .select();
-      
-      if (insertError) {
-        console.error('Ошибка при создании пользователя в public.users:', insertError);
-        return { success: false, authUser: authUserData.user, error: insertError };
-      }
-      
-      console.log('Пользователь успешно создан в public.users:', insertedUser);
-      return { success: true, authUser: authUserData.user, dbUser: insertedUser };
+
+    if (publicUser) {
+      supabaseLogger.info('testCreateUserWithServiceKey: Запись в public.users успешно найдена (создана триггером)!', { publicUser });
+      return { success: true, authUser: authResponse.user, dbUser: publicUser };
     } else {
-      console.log('Пользователь уже существует в public.users:', existingUser);
-      return { success: true, authUser: authUserData.user, dbUser: existingUser };
+      supabaseLogger.warn('testCreateUserWithServiceKey: Запись в public.users НЕ найдена. Триггер handle_new_user мог не сработать или работает с ошибкой.', { authUserId: authResponse.user.id });
+      return { success: true, authUser: authResponse.user, warning: "Auth user created, but public.users record was not found. Check trigger.", errorPublicUser: "Record in public.users not found" };
     }
-  } catch (error) {
-    console.error('Необработанная ошибка при тестовом создании пользователя:', error);
-    return { success: false, error };
+
+  } catch (error: any) {
+    supabaseLogger.error('testCreateUserWithServiceKey: Необработанная ошибка', { error: error.message, stack: error.stack });
+    return { success: false, error: error.message };
   }
 }; 
