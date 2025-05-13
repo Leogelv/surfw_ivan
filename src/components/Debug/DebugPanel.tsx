@@ -262,10 +262,10 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
     debugLogger.info("Обновление показателей здоровья системы завершено.", { isHealthy });
   };
 
-  // Первоначальная загрузка и при изменении активной вкладки на 'health'
+  // Первоначальная загрузка и при изменении активной вкладки на 'health' или 'auth'
   useEffect(() => {
-    if (isExpanded && activeTab === 'health') {
-      refreshHealthChecks();
+    if (isExpanded && (activeTab === 'health' || activeTab === 'auth')) {
+      refreshHealthChecks(); // Эта функция готовит currentAuthStateDetails и currentSupabaseConnectionDetails
     }
   }, [isExpanded, activeTab]);
 
@@ -449,15 +449,69 @@ const DebugPanel = ({ logs: propsLogs, telegramUser: telegramUserFromProps, supa
               </div>
             )}
 
-            {/* Таб Авторизация Детали (использует currentAuthStateDetails и getSupabaseInfoForAuthTab) */}
+            {/* Таб Авторизация Детали */}
             {activeTab === 'auth' && (
               <div className={styles.authTab}>
-                <div className={styles.sectionHeader}><h4>Данные Авторизации (Детально)</h4><button onClick={() => copyToClipboard(JSON.stringify({ supabaseInfo: getSupabaseInfoForAuthTab(), authState: currentAuthStateDetails }, null, 2))} className={styles.actionButton}>Копировать</button></div>
-                <div className={styles.section}><h5>Подключение к Supabase</h5><div className={`${styles.connectionStatus} ${currentSupabaseConnectionDetails.connected ? styles.connected : styles.disconnected}`}>Статус: {currentSupabaseConnectionDetails.connected ? 'Подключено' : 'Не подключено'}</div>{currentSupabaseConnectionDetails.error && (<div className={styles.error}>Ошибка: {currentSupabaseConnectionDetails.error}</div>)}<pre className={styles.jsonData}>{JSON.stringify(getSupabaseInfoForAuthTab(), null, 2)}</pre></div>
-                <div className={styles.section}><h5>Пользователь Telegram (из пропсов/контекста)</h5><div className={styles.userStatus}>Статус: {telegramUserFromProps || telegramUserContext ? 'Данные есть' : 'Данные отсутствуют'}</div><pre className={styles.jsonData}>{JSON.stringify(telegramUserFromProps || telegramUserContext || 'Пользователь Telegram не найден', null, 2)}</pre></div>
-                <div className={styles.section}><h5>Состояние Авторизации Supabase & AuthContext</h5><div className={styles.userStatus}>AuthContext: {auth?.isAuthenticated ? 'Авторизован' : 'Не авторизован'}</div><pre className={styles.jsonData}>{JSON.stringify(currentAuthStateDetails || 'Данные не доступны', null, 2)}</pre></div>
-                {/* Диагностика оставлена для наглядности, но основное в Health Overview */}
-                <div className={styles.section}><h5>Быстрая Диагностика (дублирует Health)</h5><ul className={styles.diagnosticList}><li className={telegramUserContext || telegramUserFromProps ? styles.success : styles.error}>{telegramUserContext || telegramUserFromProps ? '✅' : '❌'} Пользователь Telegram</li><li className={telegramInitDataContext ? styles.success : styles.error}>{telegramInitDataContext ? '✅' : '❌'} InitData Telegram</li><li className={currentSupabaseConnectionDetails.connected ? styles.success : styles.error}>{currentSupabaseConnectionDetails.connected ? '✅' : '❌'} Соединение Supabase</li><li className={currentAuthStateDetails?.session ? styles.success : styles.error}>{currentAuthStateDetails?.session ? '✅' : '❌'} Сессия Supabase</li> <li className={currentAuthStateDetails?.user ? styles.success : styles.error}>{currentAuthStateDetails?.user ? '✅' : '❌'} Пользователь Supabase Auth</li><li className={auth?.userData ? styles.success : styles.error}>{auth?.userData ? '✅' : '❌'} Данные public.users</li></ul></div>
+                <div className={styles.sectionHeader}>
+                  <h4>Данные Авторизации (Детально)</h4>
+                  <button 
+                    onClick={() => copyToClipboard(JSON.stringify({ supabaseInfo: getSupabaseInfoForAuthTab(), authState: currentAuthStateDetails }, null, 2))} 
+                    className={styles.actionButton}
+                  >
+                    Копировать
+                  </button>
+                </div>
+                <div className={styles.section}>
+                  <h5>Подключение к Supabase</h5>
+                  <div className={`${styles.connectionStatus} ${currentSupabaseConnectionDetails.connected ? styles.connected : styles.disconnected}`}>
+                    Статус: {currentSupabaseConnectionDetails.connected ? 'Подключено' : 'Не подключено'}
+                  </div>
+                  {currentSupabaseConnectionDetails.error && (
+                    <div className={styles.error}>
+                      Ошибка: {typeof currentSupabaseConnectionDetails.error === 'object' 
+                                ? JSON.stringify(currentSupabaseConnectionDetails.error, null, 2) 
+                                : currentSupabaseConnectionDetails.error}
+                    </div>
+                  )}
+                  <pre className={styles.jsonData}>{JSON.stringify(getSupabaseInfoForAuthTab(), null, 2)}</pre>
+                </div>
+                <div className={styles.section}>
+                  <h5>Пользователь Telegram (из пропсов/контекста)</h5>
+                  <div className={styles.userStatus}>
+                    Статус: {telegramUserFromProps || telegramUserContext ? 'Данные есть' : 'Данные отсутствуют'}
+                  </div>
+                  <pre className={styles.jsonData}>{JSON.stringify(telegramUserFromProps || telegramUserContext || 'Пользователь Telegram не найден', null, 2)}</pre>
+                </div>
+                <div className={styles.section}>
+                  <h5>Состояние Авторизации Supabase & AuthContext</h5>
+                  <div className={styles.userStatus}>
+                    AuthContext: {auth?.isAuthenticated ? 'Авторизован' : 'Не авторизован'}
+                  </div>
+                  <pre className={styles.jsonData}>{JSON.stringify(currentAuthStateDetails || 'Данные не доступны', null, 2)}</pre>
+                </div>
+                <div className={styles.section}>
+                  <h5>Быстрая Диагностика (дублирует Health)</h5>
+                  <ul className={styles.diagnosticList}>
+                    <li className={telegramUserContext || telegramUserFromProps ? styles.success : styles.error}>
+                      {telegramUserContext || telegramUserFromProps ? '✅' : '❌'} Пользователь Telegram
+                    </li>
+                    <li className={telegramInitDataContext ? styles.success : styles.error}>
+                      {telegramInitDataContext ? '✅' : '❌'} InitData Telegram
+                    </li>
+                    <li className={currentSupabaseConnectionDetails.connected ? styles.success : styles.error}>
+                      {currentSupabaseConnectionDetails.connected ? '✅' : '❌'} Соединение Supabase
+                    </li>
+                    <li className={currentAuthStateDetails?.session ? styles.success : styles.error}>
+                      {currentAuthStateDetails?.session ? '✅' : '❌'} Сессия Supabase
+                    </li> 
+                    <li className={currentAuthStateDetails?.user ? styles.success : styles.error}>
+                      {currentAuthStateDetails?.user ? '✅' : '❌'} Пользователь Supabase Auth
+                    </li>
+                    <li className={auth?.userData ? styles.success : styles.error}>
+                      {auth?.userData ? '✅' : '❌'} Данные public.users
+                    </li>
+                  </ul>
+                </div>
               </div>
             )}
           </div>
