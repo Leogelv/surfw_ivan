@@ -277,6 +277,12 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
             >
               Авторизация
             </button>
+            <button 
+              className={`${styles.tabButton} ${activeTab === 'systemState' ? styles.active : ''}`}
+              onClick={() => setActiveTab('systemState')}
+            >
+              Состояние Системы
+            </button>
           </div>
           
           {/* Содержимое табов */}
@@ -426,6 +432,88 @@ const DebugPanel = ({ logs: propsLogs, telegramUser, supabaseUser }: DebugPanelP
                       {(initData && 'tgWebAppData' in initData && initData.tgWebAppData?.user) ? '✅' : '❌'} Данные пользователя в tgWebAppData
                     </li>
                   </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Таб Состояние Системы */}
+            {activeTab === 'systemState' && (
+              <div className={styles.systemStateTab}>
+                <div className={styles.sectionHeader}>
+                  <h4>Общее Состояние Системы</h4>
+                  <button 
+                    onClick={() => copyToClipboard(JSON.stringify({
+                      authContext: {
+                        isLoading: auth?.isLoading,
+                        isAuthenticated: auth?.isAuthenticated,
+                        user: auth?.user,
+                        userData: auth?.userData,
+                        error: auth?.error,
+                      },
+                      telegramContext: {
+                        user: telegramUserContext,
+                        initData: telegramInitData,
+                        webAppInitialized: !!(typeof window !== 'undefined' && window.Telegram?.WebApp),
+                        isFullScreenEnabled: useTelegram().isFullScreenEnabled, // Получаем актуальное значение
+                      },
+                      supabaseConnection: getSupabaseInfo(),
+                      propsReceived: {
+                        telegramUserFromProps: telegramUser,
+                        supabaseUserFromProps: supabaseUser,
+                      }
+                    }, null, 2))}
+                    className={styles.actionButton}
+                  >
+                    Копировать все состояние
+                  </button>
+                </div>
+
+                {/* Секция AuthContext */}
+                <div className={styles.section}>
+                  <h5>AuthContext</h5>
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify({
+                      isLoading: auth?.isLoading,
+                      isAuthenticated: auth?.isAuthenticated,
+                      user: auth?.user, // Supabase Auth User
+                      userData: auth?.userData, // public.users data
+                      error: auth?.error,
+                    }, null, 2)}
+                  </pre>
+                </div>
+
+                {/* Секция TelegramContext */}
+                <div className={styles.section}>
+                  <h5>TelegramContext</h5>
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify({
+                      user: telegramUserContext,
+                      initData: telegramInitData,
+                      webAppInitialized: !!(typeof window !== 'undefined' && window.Telegram?.WebApp),
+                      isFullScreenEnabled: useTelegram().isFullScreenEnabled, // Получаем актуальное значение
+                      // webAppObject: useTelegram().webApp, // Показывает слишком много, можно раскомментировать при необходимости
+                    }, null, 2)}
+                  </pre>
+                </div>
+                
+                {/* Секция Supabase Connection (дублирует инфо из Auth таба, но для наглядности) */}
+                <div className={styles.section}>
+                  <h5>Supabase Connection</h5>
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify(getSupabaseInfo(), null, 2)}
+                  </pre>
+                </div>
+
+                {/* Секция пропсов, полученных панелью */}
+                <div className={styles.section}>
+                  <h5>Пропсы, полученные DebugPanel</h5>
+                  <pre className={styles.jsonData}>
+                    {JSON.stringify({
+                      telegramUserFromProps: telegramUser,
+                      supabaseUserFromProps: supabaseUser,
+                      // logsFromProps: propsLogs, // Могут быть большими
+                    }, null, 2)}
+                  </pre>
                 </div>
               </div>
             )}

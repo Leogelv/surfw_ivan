@@ -446,39 +446,45 @@ function YogaApp() {
           if (signUpData?.user?.id) {
             setTimeout(async () => {
               try {
-                const { data: checkUser, error: checkError } = await supabase
-                  .from('users')
-                  .select('id, telegram_id')
-                  .eq('id', signUpData.user.id)
-                  .maybeSingle();
-                
-                if (checkError) {
-                  appLogger.error('Ошибка при проверке созданного пользователя', checkError);
-                } else if (!checkUser) {
-                  appLogger.warn('Запись в таблице users не создана автоматически, создаем вручную');
-                  
-                  const { data: manualUser, error: manualError } = await supabase
-                    .from('users')
-                    .insert([{
-                      id: signUpData.user.id,
-                      ...userData,
-                      created_at: new Date().toISOString()
-                    }])
-                    .select('id')
-                    .single();
-                  
-                  if (manualError) {
-                    appLogger.error('Ошибка при создании записи вручную', manualError);
-                  } else {
-                    appLogger.info('Запись успешно создана вручную', manualUser);
-                  }
+                if (signUpData?.user?.id) {
+                    const { data: checkUser, error: checkError } = await supabase
+                        .from('users')
+                        .select('id, telegram_id')
+                        .eq('id', signUpData.user.id)
+                        .maybeSingle();
+
+                    if (checkError) {
+                        appLogger.error('Ошибка при проверке созданного пользователя', checkError);
+                    } else if (!checkUser) {
+                        appLogger.warn('Запись в таблице users не создана автоматически, создаем вручную');
+                        
+                        if (signUpData?.user?.id) { 
+                            const { data: manualUser, error: manualError } = await supabase
+                                .from('users')
+                                .insert([{
+                                    id: signUpData.user.id,
+                                    ...userData,
+                                    created_at: new Date().toISOString()
+                                }])
+                                .select('id')
+                                .single();
+                          
+                            if (manualError) {
+                                appLogger.error('Ошибка при создании записи вручную', manualError);
+                            } else {
+                                appLogger.info('Запись успешно создана вручную', manualUser);
+                            }
+                        }
+                    } else {
+                        appLogger.info('Запись в таблице users успешно создана автоматически', checkUser);
+                    }
                 } else {
-                  appLogger.info('Запись в таблице users успешно создана автоматически', checkUser);
+                    appLogger.warn('signUpData.user или signUpData.user.id отсутствует для проверки в setTimeout');
                 }
               } catch (checkErr) {
-                appLogger.error('Необработанная ошибка при проверке созданного пользователя', checkErr);
+                appLogger.error('Необработанная ошибка при проверке созданного пользователя в setTimeout', checkErr);
               }
-            }, 500); // Небольшая задержка для работы триггеров
+            }, 500); 
           }
         }
       } catch (authProcessError) {
@@ -717,13 +723,14 @@ function YogaApp() {
         const { diagnoseClientIssues } = await import('@/lib/supabase');
         const diagnostics = diagnoseClientIssues();
         
-        setSupabaseInfo({
+        setSupabaseInfo((prev: any) => ({
+          ...prev,
           url: process.env.NEXT_PUBLIC_SUPABASE_URL,
           anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(0, 5) + '....' + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.slice(-5) : 'Not set',
           isClientInitialized: diagnostics.isClientInitialized,
           connectionStatus: 'Не подключено',
           connectionError: null
-        });
+        }));
         
         setAuthState(userData || null);
       } catch (error) {
@@ -732,9 +739,13 @@ function YogaApp() {
     };
     
     updateDiagnosticInfo();
+    updateConnectionStatus(); // Первоначальное обновление статуса соединения
     
     // Обновляем каждые 5 секунд
-    const interval = setInterval(updateDiagnosticInfo, 5000);
+    const interval = setInterval(() => {
+        updateDiagnosticInfo();
+        updateConnectionStatus();
+    }, 5000);
     return () => clearInterval(interval);
   }, [userData]);
 
@@ -744,14 +755,14 @@ function YogaApp() {
       const { testSupabaseConnection } = await import('@/lib/supabase');
       const success = await testSupabaseConnection();
       
-      setSupabaseInfo(prev => ({
+      setSupabaseInfo((prev: any) => ({
         ...prev,
         connectionStatus: success ? 'Подключено' : 'Не подключено',
         connectionError: success ? null : 'Не удалось подключиться',
         lastChecked: new Date().toLocaleTimeString()
       }));
     } catch (error) {
-      setSupabaseInfo(prev => ({
+      setSupabaseInfo((prev: any) => ({
         ...prev,
         connectionStatus: 'Ошибка',
         connectionError: error instanceof Error ? error.message : String(error),

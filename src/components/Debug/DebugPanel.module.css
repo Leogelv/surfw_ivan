@@ -207,7 +207,8 @@
 
 .initDataTab, 
 .authTab, 
-.consoleTab {
+.consoleTab,
+.systemStateTab {
   padding-bottom: 16px;
 }
 
