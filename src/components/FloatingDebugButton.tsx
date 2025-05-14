@@ -10,9 +10,37 @@ interface FloatingDebugButtonProps {
  * Плавающая кнопка для отладки приложения
  */
 const FloatingDebugButton: React.FC<FloatingDebugButtonProps> = ({ onClick }) => {
+  // Обработчик клика с дебаг логами
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('FloatingDebugButton: Клик по кнопке отладки');
+    
+    // Проверяем, что обработчик передан
+    if (typeof onClick !== 'function') {
+      console.error('FloatingDebugButton: обработчик onClick не определен или не является функцией');
+      return;
+    }
+    
+    // Вызываем переданный обработчик
+    console.log('FloatingDebugButton: Вызываем обработчик onClick');
+    onClick();
+    
+    // Для надежности добавляем прямое создание события
+    try {
+      console.log('FloatingDebugButton: Пытаемся создать и отправить событие toggle-debug-panel напрямую');
+      const event = new CustomEvent('toggle-debug-panel', { 
+        detail: { forceState: true } 
+      });
+      window.dispatchEvent(event);
+      console.log('FloatingDebugButton: Событие отправлено успешно');
+    } catch (e) {
+      console.error('FloatingDebugButton: Ошибка при отправке события', e);
+    }
+  };
+
   return (
     <button 
-      onClick={onClick}
+      onClick={handleClick}
       title="Открыть/Закрыть панель отладки"
       style={{
         position: 'fixed',

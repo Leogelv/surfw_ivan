@@ -27,6 +27,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
   error: string | null;
+  forceCreateUser: (telegramData: any) => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +48,136 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { telegramUser, initData } = useTelegram();
   const supabase = getSupabaseClient();
   const authLogger = logger.createLogger('AuthContext');
+
+  // Принудительное создание пользователя - публичный метод для отладки
+  const forceCreateUser = async (telegramData: any): Promise<User | null> => {
+    authLogger.info('Вызвана функция принудительного создания пользователя', { telegramData });
+    
+    if (!supabase) {
+      authLogger.error('forceCreateUser: Клиент Supabase не инициализирован');
+      setError('Клиент Supabase не инициализирован');
+      return null;
+    }
+    
+    if (!telegramData || !telegramData.id) {
+      authLogger.error('forceCreateUser: Отсутствуют необходимые данные пользователя', { telegramData });
+      setError('Отсутствуют необходимые данные пользователя');
+      return null;
+    }
+    
+    try {
+      // Генерируем UUID для пользователя
+      const userId = uuidv4();
+      
+      const userData = {
+        id: userId,
+        telegram_id: telegramData.id.toString(),
+        username: telegramData.username || '',
+        first_name: telegramData.first_name || '',
+        last_name: telegramData.last_name || '',
+        photo_url: telegramData.photo_url || '',
+        auth_date: telegramData.auth_date ? parseInt(telegramData.auth_date.toString()) : Math.floor(Date.now() / 1000),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_login: new Date().toISOString()
+      };
+      
+      authLogger.info('forceCreateUser: Попытка прямой вставки пользователя', { 
+        userId,
+        telegramId: telegramData.id.toString(),
+        username: telegramData.username
+      });
+      
+      // Проверка существующего пользователя
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, telegram_id')
+        .eq('telegram_id', telegramData.id.toString())
+        .maybeSingle();
+      
+      if (checkError) {
+        authLogger.error('forceCreateUser: Ошибка при проверке существования пользователя', checkError);
+      }
+      
+      if (existingUser) {
+        authLogger.info('forceCreateUser: Пользователь уже существует, обновляем данные', { 
+          existingId: existingUser.id,
+          telegramId: existingUser.telegram_id
+        });
+        
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({
+            username: telegramData.username || '',
+            first_name: telegramData.first_name || '',
+            last_name: telegramData.last_name || '',
+            photo_url: telegramData.photo_url || '',
+            updated_at: new Date().toISOString(),
+            last_login: new Date().toISOString()
+          })
+          .eq('id', existingUser.id)
+          .select()
+          .single();
+        
+        if (updateError) {
+          authLogger.error('forceCreateUser: Ошибка при обновлении пользователя', updateError);
+          setError(`Ошибка при обновлении пользователя: ${updateError.message}`);
+          return null;
+        }
+        
+        authLogger.info('forceCreateUser: Пользователь успешно обновлен', updatedUser);
+        setUserData(updatedUser);
+        return updatedUser;
+      }
+      
+      // Вставка нового пользователя
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert(userData)
+        .select()
+        .single();
+      
+      if (insertError) {
+        authLogger.error('forceCreateUser: Ошибка при создании пользователя', insertError);
+        
+        if (insertError.code === '23505') { // unique constraint violation
+          authLogger.warn('forceCreateUser: Пользователь уже существует (constraint violation)');
+          
+          // Попытка получить пользователя
+          const { data: retryUser, error: retryError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('telegram_id', telegramData.id.toString())
+            .single();
+          
+          if (retryError) {
+            authLogger.error('forceCreateUser: Не удалось получить пользователя после ошибки', retryError);
+            setError(`Не удалось создать или получить пользователя: ${retryError.message}`);
+            return null;
+          }
+          
+          authLogger.info('forceCreateUser: Пользователь найден после ошибки', retryUser);
+          setUserData(retryUser);
+          return retryUser;
+        }
+        
+        setError(`Ошибка при создании пользователя: ${insertError.message}`);
+        return null;
+      }
+      
+      authLogger.info('forceCreateUser: Пользователь успешно создан', newUser);
+      
+      // Обновляем состояние контекста
+      setUserData(newUser);
+      
+      return newUser;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      authLogger.error('forceCreateUser: Необработанная ошибка', { error: errorMessage });
+      setError(`Необработанная ошибка: ${errorMessage}`);
+      return null;
+    }
+  };
 
   // Функция для создания/обновления пользователя Telegram в Supabase
   const createOrUpdateTelegramUser = async (telegramData: any) => {
@@ -292,6 +423,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else {
           authLogger.warn('Не удалось получить данные пользователя после создания/обновления');
+          // Пробуем создать пользователя принудительно
+          authLogger.info('Применяем принудительное создание пользователя');
+          const forcedUser = await forceCreateUser(telegramUser);
+          if (forcedUser) {
+            authLogger.info('Принудительное создание пользователя успешно', { userId: forcedUser.id });
+            setUserData(forcedUser);
+          } else {
+            authLogger.error('Не удалось принудительно создать пользователя');
+          }
         }
       } catch (error) {
         authLogger.error('Ошибка при авторизации через Telegram', error);
@@ -375,6 +515,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     isAuthenticated: !!user || !!userData,
     error,
+    forceCreateUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -351,26 +351,56 @@ const DebugPanel = ({
   };
 
   useEffect(() => {
-    const handleToggleDebug = (event?: CustomEvent) => setIsPanelVisible(prev => event?.detail?.forceState ?? !prev);
+    const handleToggleDebug = (event?: CustomEvent) => {
+      console.log('DebugPanel: handleToggleDebug вызван', { 
+        isPanelVisible, 
+        eventType: event?.type, 
+        eventDetail: event?.detail,
+        forceState: event?.detail?.forceState
+      });
+      
+      // Явно устанавливаем значение, если detail.forceState задан
+      if (event?.detail?.forceState !== undefined) {
+        console.log(`DebugPanel: Принудительная установка состояния в ${event.detail.forceState}`);
+        setIsPanelVisible(event.detail.forceState);
+      } else {
+        // Иначе инвертируем текущее значение
+        console.log(`DebugPanel: Инвертирование состояния с ${isPanelVisible} на ${!isPanelVisible}`);
+        setIsPanelVisible(prev => !prev);
+      }
+    };
+    
+    console.log('DebugPanel: Установка обработчика события toggle-debug-panel');
     window.addEventListener('toggle-debug-panel', handleToggleDebug as EventListener);
+    
     // Hotkey: Ctrl + Shift + D (или Cmd + Shift + D на Mac)
     const handleKeyDown = (event: KeyboardEvent) => {
         if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
             event.preventDefault();
+            console.log('DebugPanel: Нажата горячая клавиша Ctrl+Shift+D');
             setIsPanelVisible(prev => !prev);
         }
         if (event.key === 'Escape' && isPanelVisible) {
+            console.log('DebugPanel: Нажата клавиша Escape, закрываем панель');
             setIsPanelVisible(false);
         }
     };
+    
     document.addEventListener('keydown', handleKeyDown);
+    
     return () => {
+      console.log('DebugPanel: Удаление обработчиков событий');
       window.removeEventListener('toggle-debug-panel', handleToggleDebug as EventListener);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isPanelVisible]);
 
-  if (!isPanelVisible) return null;
+  if (!isPanelVisible) {
+    console.log('DebugPanel: Панель невидима, возвращаем null');
+    return null;
+  }
+
+  console.log('DebugPanel: Рендер панели, isPanelVisible =', isPanelVisible);
 
   return (
     <div className={styles.debugPanelContainer}>
