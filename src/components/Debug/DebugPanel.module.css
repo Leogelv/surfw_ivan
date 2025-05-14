@@ -13,202 +13,241 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background-color: rgba(30, 30, 30, 0.95);
+  background-color: rgba(18, 18, 30, 0.95);
   color: #fff;
-  font-family: monospace;
-  font-size: 12px;
-  max-height: 70vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  max-height: 80vh;
   overflow-y: auto;
   transition: all 0.3s ease;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
   pointer-events: auto;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  border-top: 1px solid rgba(79, 70, 229, 0.3);
+  border-left: 1px solid rgba(79, 70, 229, 0.2);
+  border-right: 1px solid rgba(79, 70, 229, 0.2);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0px;
-  border-bottom: 1px solid #444;
-  margin-bottom: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+  margin-bottom: 14px;
+  background-color: rgba(30, 30, 45, 0.5);
 }
 
 .header h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+  letter-spacing: 0.5px;
 }
 
 .content {
-  padding: 8px 12px;
+  padding: 0 18px 18px;
 }
 
 .toggleButton {
   width: 100%;
-  padding: 4px;
-  background-color: rgba(50, 50, 50, 0.9);
+  padding: 10px;
+  background-color: rgba(50, 50, 70, 0.9);
   color: #fff;
   border: none;
-  font-family: monospace;
+  font-family: inherit;
   cursor: pointer;
+  font-weight: 500;
 }
 
 .toggleButton:hover {
-  background-color: rgba(60, 60, 60, 0.9);
+  background-color: rgba(60, 60, 80, 0.9);
 }
 
 .tabs {
   display: flex;
-  border-bottom: 1px solid #444;
-  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+  margin-bottom: 14px;
+  gap: 4px;
+  padding: 0 2px;
 }
 
 .tabButton {
   background: transparent;
   border: none;
-  color: #ccc;
-  padding: 6px 12px;
+  color: #cbd5e1;
+  padding: 10px 16px;
   cursor: pointer;
-  margin-right: 2px;
-  font-family: monospace;
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.tabButton:hover {
+  background-color: rgba(79, 70, 229, 0.2);
+  color: #fff;
 }
 
 .tabButton.active {
-  background-color: #444;
+  background-color: rgba(79, 70, 229, 0.9);
   color: #fff;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  font-weight: 600;
 }
 
 .tabContent {
-  max-height: 50vh;
+  max-height: 60vh;
   overflow-y: auto;
+  padding: 0 4px;
 }
 
 .logs {
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
-  margin-top: 8px;
+  margin-top: 12px;
+  border-radius: 8px;
+  background-color: rgba(25, 25, 35, 0.7);
+  padding: 10px;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
 .logEntry {
-  padding: 4px 0;
-  border-bottom: 1px solid #333;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.1);
   word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
 }
 
 .timestamp {
-  color: #888;
-  margin-right: 6px;
+  color: #94a3b8;
+  margin-right: 8px;
 }
 
 .level {
   font-weight: bold;
-  margin-right: 6px;
+  margin-right: 8px;
 }
 
 .message {
-  color: #eee;
+  color: #f1f5f9;
 }
 
 .context {
-  margin-top: 4px;
-  padding: 4px;
-  background-color: rgba(70, 70, 70, 0.5);
-  border-radius: 2px;
-  color: #ddd;
+  margin-top: 8px;
+  padding: 10px;
+  background-color: rgba(25, 25, 40, 0.7);
+  border-radius: 6px;
+  color: #e2e8f0;
   font-size: 11px;
   max-height: 150px;
   overflow-y: auto;
   white-space: pre-wrap;
+  border-left: 2px solid rgba(79, 70, 229, 0.4);
 }
 
 .error {
-  color: #ff6b6b;
+  color: #f87171;
 }
 
 .warn {
-  color: #ffd166;
+  color: #fbbf24;
 }
 
 .info {
-  color: #06d6a0;
+  color: #4ade80;
 }
 
 .debug {
-  color: #118ab2;
+  color: #60a5fa;
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
 
-.sectionHeader h4 {
+.sectionHeader h3 {
+  font-size: 15px;
   margin: 0;
+  color: #f1f5f9;
+  font-weight: 600;
 }
 
 .actionButton {
-  background-color: #333;
+  background-color: rgba(79, 70, 229, 0.9);
   color: #fff;
   border: none;
-  padding: 4px 8px;
-  border-radius: 2px;
+  padding: 7px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  font-family: monospace;
-  font-size: 11px;
-  margin-left: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  margin-left: 8px;
+  transition: all 0.2s;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .actionButton:hover {
-  background-color: #444;
+  background-color: rgba(99, 102, 241, 0.9);
+  transform: translateY(-1px);
 }
 
 .actionButton:disabled {
-  background-color: #222;
-  color: #666;
+  background-color: rgba(51, 51, 65, 0.7);
+  color: #94a3b8;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .jsonData {
   max-height: 300px;
   overflow-y: auto;
-  background-color: rgba(20, 20, 20, 0.7);
-  padding: 8px;
-  border-radius: 4px;
+  background-color: rgba(25, 25, 35, 0.7);
+  padding: 14px;
+  border-radius: 8px;
   white-space: pre-wrap;
-  font-size: 11px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
-/* Новые стили для вкладки авторизации */
+/* Стили для вкладки авторизации */
 .authTab .section {
-  margin-bottom: 16px;
-  border-bottom: 1px solid #444;
-  padding-bottom: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+  padding-bottom: 18px;
 }
 
 .authTab h5 {
-  margin: 0 0 8px 0;
-  color: #aaa;
+  margin: 0 0 10px 0;
+  color: #cbd5e1;
+  font-weight: 600;
 }
 
 .connectionStatus,
 .userStatus {
-  margin-bottom: 8px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  border-radius: 6px;
   display: inline-block;
 }
 
 .connectionStatus.connected {
-  background-color: rgba(0, 128, 0, 0.3);
-  color: #4caf50;
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
 }
 
 .connectionStatus.disconnected {
-  background-color: rgba(128, 0, 0, 0.3);
-  color: #f44336;
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
 .diagnosticList {
@@ -218,61 +257,64 @@
 }
 
 .diagnosticList li {
-  padding: 4px 0;
-  border-bottom: 1px solid #333;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.1);
 }
 
 .diagnosticList .success {
-  color: #4caf50;
+  color: #4ade80;
 }
 
 .diagnosticList .error {
-  color: #f44336;
+  color: #f87171;
 }
 
 .initDataTab, 
 .authTab, 
 .consoleTab,
 .systemStateTab {
-  padding-bottom: 16px;
+  padding-bottom: 18px;
 }
 
 .statusOk {
-  color: #2ecc71; /* Зеленый */
+  color: #4ade80;
   font-weight: bold;
 }
 
 .statusError {
-  color: #e74c3c; /* Красный */
+  color: #f87171;
   font-weight: bold;
 }
 
 .statusPending {
-  color: #f39c12; /* Оранжевый */
+  color: #fbbf24;
 }
 
 .statusDetails {
   margin-left: 20px;
   font-size: 11px;
-  color: #bdc3c7; /* Светло-серый */
-  background-color: rgba(0,0,0,0.1);
-  padding: 5px;
-  border-radius: 3px;
-  margin-top: 3px;
+  color: #cbd5e1;
+  background-color: rgba(25, 25, 40, 0.7);
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  border-left: 2px solid rgba(79, 70, 229, 0.4);
 }
 
 .statusDetails summary {
   cursor: pointer;
   outline: none;
+  font-weight: 500;
+  padding: 2px 0;
 }
 
 .statusDetails pre {
   white-space: pre-wrap;
   word-break: break-all;
-  margin-top: 5px;
-  background-color: rgba(0,0,0,0.2);
-  padding: 5px;
-  border-radius: 3px;
+  margin-top: 8px;
+  background-color: rgba(15, 15, 25, 0.5);
+  padding: 10px;
+  border-radius: 6px;
 }
 
 .healthOverviewTab {
@@ -282,18 +324,20 @@
 }
 
 .healthSection {
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #3a3a3a;
+  background-color: rgba(25, 25, 40, 0.7);
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
 .healthSection h4 {
   margin-top: 0;
-  margin-bottom: 10px;
-  color: #ecf0f1; /* Светлый */
-  border-bottom: 1px solid #4a4a4a;
-  padding-bottom: 6px;
+  margin-bottom: 14px;
+  color: #f1f5f9;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+  padding-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .healthSection ul {
@@ -303,10 +347,11 @@
 }
 
 .healthSection li {
-  padding: 4px 0;
-  border-bottom: 1px dashed #333;
+  padding: 8px 10px;
+  border-bottom: 1px dashed rgba(79, 70, 229, 0.2);
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
 }
 
 .healthSection li:last-child {
@@ -318,22 +363,22 @@
 .authTab, 
 .systemStateTab, /* Оставил на всякий случай, если где-то используется */
 .healthOverviewTab {
-  padding-bottom: 16px;
+  padding-bottom: 18px;
 }
 
 /* Медиа-запрос для мобильных устройств */
 @media (max-width: 600px) {
   .debugPanel {
-    bottom: 10px;
-    right: 10px;
-    left: 10px;
-    max-height: 80vh;
-    border-radius: 8px;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
   }
   
   .content {
     max-width: 100%;
-    padding: 12px 8px;
+    padding: 12px 10px;
   }
   
   .tabs {
@@ -341,166 +386,189 @@
   }
   
   .tabButton {
-    padding: 4px 8px;
-    font-size: 11px;
+    padding: 8px 12px;
+    font-size: 13px;
   }
   
   .header h3 {
-    font-size: 12px;
+    font-size: 15px;
   }
   
   .actionButton {
-    padding: 3px 6px;
-    font-size: 10px;
-  }
-  
-  .jsonData {
-    font-size: 10px;
-  }
-  
-  .healthSection h4 {
-    font-size: 12px;
-  }
-  
-  .healthSection li {
+    padding: 6px 10px;
     font-size: 11px;
   }
   
+  .jsonData {
+    font-size: 11px;
+  }
+  
+  .healthSection h4 {
+    font-size: 13px;
+  }
+  
+  .healthSection li {
+    font-size: 12px;
+  }
+  
   .closeButton {
-    top: 4px;
-    right: 4px;
-    width: 24px;
-    height: 24px;
-    font-size: 9px;
+    top: 10px;
+    right: 10px;
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
   }
 }
 
 .closeButton {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255,255,255,0.1);
+  top: 12px;
+  right: 12px;
+  background: rgba(79, 70, 229, 0.3);
   color: white;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(79, 70, 229, 0.4);
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 10px;
+  font-size: 16px;
   line-height: 1;
   z-index: 1001;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: all 0.2s;
 }
+
 .closeButton:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(79, 70, 229, 0.5);
+  transform: scale(1.05);
 }
 
 .overallStatusIndicator {
   display: block;
   text-align: center;
-  padding: 6px 0;
-  font-size: 11px;
-  background-color: rgba(0,0,0,0.2);
+  padding: 10px 0;
+  font-size: 13px;
+  background-color: rgba(25, 25, 40, 0.7);
+  font-weight: 600;
+  margin: 0 18px 14px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
 }
 
 .expandButton {
   width: 100%;
-  padding: 10px;
-  background-color: rgba(50, 50, 50, 0.9);
-  color: #fff;
+  padding: 14px;
+  background-color: rgba(30, 30, 45, 0.9);
+  color: #f1f5f9;
   border: none;
-  font-family: monospace;
+  font-family: inherit;
   cursor: pointer;
   text-align: center;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  transition: all 0.2s;
+  border-top: 1px solid rgba(79, 70, 229, 0.3);
+  letter-spacing: 0.5px;
 }
 
 .expandButton:hover {
-  background-color: rgba(60, 60, 60, 0.9);
+  background-color: rgba(40, 40, 60, 0.9);
 }
 
 /* Стили для табов контента */
 .tabContentInner {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 16px;
+  gap: 18px;
+  padding-bottom: 18px;
 }
 
 /* Стили для AuthDetailsTab */
 .authDebugGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 .authDebugInfo {
-  padding: 8px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  padding: 12px;
+  background-color: rgba(25, 25, 40, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
 .supabaseConnection,
 .telegramUserInfo,
 .supabaseUserInfo {
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 12px;
-  border-radius: 4px;
+  background-color: rgba(25, 25, 40, 0.7);
+  padding: 16px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  border: 1px solid rgba(79, 70, 229, 0.2);
 }
 
 .errorText {
-  background-color: rgba(255, 0, 0, 0.1);
-  padding: 8px;
-  border-radius: 4px;
-  color: #ff6b6b;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  color: #f87171;
   max-height: 200px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  border-left: 2px solid #f87171;
 }
 
 .copySection {
   display: flex;
   justify-content: center;
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 .copyButton {
-  background-color: #4f46e5;
+  background-color: rgba(79, 70, 229, 0.9);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
+  border-radius: 8px;
+  padding: 12px 20px;
   cursor: pointer;
-  font-size: 12px;
-  font-family: system-ui, -apple-system, sans-serif;
-  transition: background-color 0.2s;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  letter-spacing: 0.5px;
 }
 
 .copyButton:hover {
-  background-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 .creationResult {
-  background-color: rgba(46, 204, 113, 0.1);
-  padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
-  border-left: 3px solid #2ecc71;
+  background-color: rgba(34, 197, 94, 0.1);
+  padding: 14px;
+  border-radius: 8px;
+  margin-top: 14px;
+  border-left: 3px solid #4ade80;
 }
 
 .creationResult h4 {
   margin-top: 0;
-  color: #2ecc71;
+  color: #4ade80;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .creationResult pre {
@@ -508,29 +576,31 @@
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-all;
-  margin-top: 5px;
-  background-color: rgba(0,0,0,0.2);
-  padding: 5px;
-  border-radius: 3px;
+  margin-top: 10px;
+  background-color: rgba(15, 15, 25, 0.5);
+  padding: 10px;
+  border-radius: 6px;
   font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .creationError {
-  background-color: rgba(231, 76, 60, 0.1);
-  padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
-  border-left: 3px solid #e74c3c;
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 14px;
+  border-radius: 8px;
+  margin-top: 14px;
+  border-left: 3px solid #f87171;
 }
 
 .creationError h4 {
   margin-top: 0;
-  color: #e74c3c;
+  color: #f87171;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .creationError p {
-  margin: 5px 0 0;
+  margin: 10px 0 0;
   font-size: 12px;
 }
 
@@ -543,14 +613,14 @@
   .supabaseConnection,
   .telegramUserInfo,
   .supabaseUserInfo {
-    padding: 8px;
-    font-size: 11px;
+    padding: 12px;
+    font-size: 12px;
   }
   
   .copyButton {
     width: 100%;
-    padding: 6px 12px;
-    font-size: 11px;
+    padding: 10px 16px;
+    font-size: 12px;
   }
   
   .creationResult h4,

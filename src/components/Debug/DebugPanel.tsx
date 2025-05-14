@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { getSupabaseClient } from '@/lib/supabase';
 import { useTelegram } from '@/context/TelegramContext';
 import { useAuth } from '@/context/AuthContext';
@@ -42,6 +42,7 @@ const DebugPanel = ({
   } = useTelegram();
   const auth = useAuth();
   const { stats: userStats, isLoading: statsLoading } = useUserStats();
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [isPanelVisible, setIsPanelVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true); // Теперь панель по умолчанию развернута, если видима
@@ -285,8 +286,12 @@ const DebugPanel = ({
       const { data, error: fetchError } = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(MAX_LOGS);
       if (fetchError) { debugLogger.error('Ошибка при получении логов консоли', fetchError); setConsoleLogsError(`Ошибка: ${fetchError.message}`); return; }
       setConsoleLogs(data || []);
-    } catch (e) { debugLogger.error('Необработанная ошибка при получении логов консоли', e); setConsoleLogsError(`Ошибка: ${e instanceof Error ? e.message : String(e)}`); } 
-    finally { setConsoleLogsLoading(false); }
+    } catch (e) { 
+      debugLogger.error('Необработанная ошибка при получении логов консоли', e); 
+      setConsoleLogsError(`Ошибка: ${e instanceof Error ? e.message : String(e)}`); 
+    } finally { 
+      setConsoleLogsLoading(false); 
+    }
   };
 
   useEffect(() => {
@@ -350,40 +355,52 @@ const DebugPanel = ({
     );
   };
 
-  useEffect(() => {
-    const handleToggleDebug = (event?: CustomEvent) => {
-      console.log('DebugPanel: handleToggleDebug вызван', { 
-        isPanelVisible, 
-        eventType: event?.type, 
-        eventDetail: event?.detail,
-        forceState: event?.detail?.forceState
-      });
-      
-      // Явно устанавливаем значение, если detail.forceState задан
-      if (event?.detail?.forceState !== undefined) {
-        console.log(`DebugPanel: Принудительная установка состояния в ${event.detail.forceState}`);
-        setIsPanelVisible(event.detail.forceState);
-      } else {
-        // Иначе инвертируем текущее значение
-        console.log(`DebugPanel: Инвертирование состояния с ${isPanelVisible} на ${!isPanelVisible}`);
-        setIsPanelVisible(prev => !prev);
-      }
-    };
+  const handleToggleDebug = useCallback((event?: CustomEvent) => {
+    console.log('DebugPanel: handleToggleDebug вызван', { 
+      isPanelVisible, 
+      eventType: event?.type, 
+      eventDetail: event?.detail,
+      forceState: event?.detail?.forceState
+    });
     
+    if (event?.detail?.forceState !== undefined) {
+      console.log(`DebugPanel: Принудительная установка состояния в ${event.detail.forceState}`);
+      setIsPanelVisible(event.detail.forceState);
+    } else {
+      console.log(`DebugPanel: Инвертирование состояния с ${isPanelVisible} на ${!isPanelVisible}`);
+      setIsPanelVisible(prev => !prev);
+    }
+  }, [isPanelVisible]);
+
+  // Эффект для анимации появления панели
+  useEffect(() => {
+    if (isPanelVisible && panelRef.current) {
+      const panel = panelRef.current;
+      panel.style.transform = 'translateY(100%)';
+      panel.style.opacity = '0';
+      
+      // Небольшая задержка перед анимацией
+      setTimeout(() => {
+        panel.style.transform = 'translateY(0)';
+        panel.style.opacity = '1';
+      }, 10);
+    }
+  }, [isPanelVisible]);
+  
+  useEffect(() => {
     console.log('DebugPanel: Установка обработчика события toggle-debug-panel');
     window.addEventListener('toggle-debug-panel', handleToggleDebug as EventListener);
     
-    // Hotkey: Ctrl + Shift + D (или Cmd + Shift + D на Mac)
     const handleKeyDown = (event: KeyboardEvent) => {
-        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
-            event.preventDefault();
-            console.log('DebugPanel: Нажата горячая клавиша Ctrl+Shift+D');
-            setIsPanelVisible(prev => !prev);
-        }
-        if (event.key === 'Escape' && isPanelVisible) {
-            console.log('DebugPanel: Нажата клавиша Escape, закрываем панель');
-            setIsPanelVisible(false);
-        }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        console.log('DebugPanel: Нажата горячая клавиша Ctrl+Shift+D');
+        handleToggleDebug();
+      }
+      if (event.key === 'Escape' && isPanelVisible) {
+        console.log('DebugPanel: Нажата клавиша Escape, закрываем панель');
+        setIsPanelVisible(false);
+      }
     };
     
     document.addEventListener('keydown', handleKeyDown);
@@ -393,7 +410,7 @@ const DebugPanel = ({
       window.removeEventListener('toggle-debug-panel', handleToggleDebug as EventListener);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isPanelVisible]);
+  }, [isPanelVisible, handleToggleDebug]);
 
   if (!isPanelVisible) {
     console.log('DebugPanel: Панель невидима, возвращаем null');
@@ -404,8 +421,18 @@ const DebugPanel = ({
 
   return (
     <div className={styles.debugPanelContainer}>
-      <div className={styles.debugPanel}>
-        <button className={styles.closeButton} onClick={() => setIsPanelVisible(false)} title="Закрыть (Esc)">⊗</button>
+      <div 
+        ref={panelRef} 
+        className={styles.debugPanel}
+        style={{ transition: 'transform 0.3s ease-out, opacity 0.3s ease-out' }}
+      >
+        <button 
+          className={styles.closeButton} 
+          onClick={() => setIsPanelVisible(false)} 
+          title="Закрыть (Esc)"
+        >
+          ⊗
+        </button>
         {isExpanded && overallSystemStatus && 
           <span className={`${styles.overallStatusIndicator} ${overallSystemStatus.ok ? styles.statusOk : styles.statusError}`}>
             {overallSystemStatus.ok ? '✅' : '❌'} {overallSystemStatus.message}

@@ -88,6 +88,33 @@ const AuthDetailsTab: React.FC<AuthDetailsTabProps> = ({
           <div className={styles.authDebugInfo}>
             <strong>Ошибка:</strong> {authContextData?.error || 'Нет'}
           </div>
+
+          {!authContextData?.isAuthenticated && telegramUser && (
+            <div className={styles.authDebugInfo} style={{
+              backgroundColor: 'rgba(79, 70, 229, 0.15)',
+              padding: '12px',
+              borderRadius: '8px',
+              borderLeft: '3px solid rgba(79, 70, 229, 0.8)',
+              marginTop: '10px',
+              gridColumn: '1 / -1'
+            }}>
+              <button 
+                className={styles.actionButton}
+                style={{
+                  fontSize: '14px',
+                  padding: '8px 16px',
+                  margin: '0',
+                  width: '100%',
+                  fontWeight: '600',
+                  backgroundColor: 'rgba(79, 70, 229, 0.9)'
+                }}
+                onClick={handleForceCreateUser}
+                disabled={isCreatingUser}
+              >
+                {isCreatingUser ? 'Создание пользователя...' : '🛠️ Создать пользователя вручную'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
@@ -140,15 +167,19 @@ const AuthDetailsTab: React.FC<AuthDetailsTabProps> = ({
                   ? <a href={telegramUser.photo_url} target="_blank" rel="noopener noreferrer">Ссылка</a> 
                   : 'Не указано'}
               </div>
-              <div>
-                <button 
-                  className={styles.actionButton} 
-                  onClick={handleForceCreateUser}
-                  disabled={isCreatingUser}
-                >
-                  {isCreatingUser ? 'Создание...' : 'Принудительно создать пользователя'}
-                </button>
-              </div>
+              
+              {!authContextData?.isAuthenticated && (
+                <div style={{ marginTop: '10px' }}>
+                  <button 
+                    className={styles.actionButton} 
+                    onClick={handleForceCreateUser}
+                    disabled={isCreatingUser}
+                    style={{ width: '100%', padding: '10px', marginLeft: 0 }}
+                  >
+                    {isCreatingUser ? 'Создание...' : 'Принудительно создать пользователя'}
+                  </button>
+                </div>
+              )}
               
               {creationResult && (
                 <div className={styles.creationResult}>
